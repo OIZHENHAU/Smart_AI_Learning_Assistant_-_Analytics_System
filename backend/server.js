@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import errorHandling from './middleware/ErrorHandle.js';
-import authRoutes from './routes/AuthRoute.js'
+import authRoutes from './routes/AuthRoute.js';
 dotenv.config();
 
 //Import mysql
@@ -55,7 +55,7 @@ app.use((req, res) => {
 });
 
 //Server Start
-const PORT = 3000;
+const PORT = process.env.PORT || 5528;
 
 app.listen(PORT, () => {
     console.log(`Server running on the port ${PORT} in ${process.env.NODE_ENV} mode.`);

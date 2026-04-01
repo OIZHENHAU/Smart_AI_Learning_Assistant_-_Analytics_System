@@ -9,7 +9,6 @@ import {
     changePassword
 } from "../controller/AuthController.js";
 
-
 const router = express.Router();
 
 const registerValidationCheck = [
