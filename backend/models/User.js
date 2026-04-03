@@ -30,6 +30,43 @@ const User = {
 
     async findMatchPassword(enteredPassword, storedHash) {
         return await bcrypt.compare(enteredPassword, storedHash);
+    },
+
+    async findAcountById(userId) {
+        const [rows] = await db.execute(
+            `SELECT * FROM users WHERE id = ?`, [userId]
+        );
+
+        return rows[0];
+    },
+
+    async updateUserProfile(userId, {username, email, phone_number}) {
+        const [result] = await db.execute(
+            `UPDATE users
+             SET username = ?, email = ?, phone_number = ?
+             WHERE id = ?`,
+             [username, email.toLowerCase(), phone_number || null, userId]
+        );
+        return result;
+    },
+
+    async updateNewPassword(userId, newPassword) {
+        const salt = await bcrypt.genSalt(10);
+        const newHashPassword = await bcrypt.hash(newPassword, salt);
+
+        const [result] = await db.execute(
+            `UPDATE users SET password_hash = ? WHERE id = ?`, [newHashPassword, userId]
+        );
+
+        return result;
+    },
+
+    async deleteUserAccount(userId) {
+        const [result] = await db.execute(
+            `DELETE FROM users WHERE id = ?`, [userId]
+        );
+
+        return result;
     }
 };
 

@@ -1,11 +1,12 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import errorHandling from './middleware/ErrorHandle.js';
 import authRoutes from './routes/AuthRoute.js';
-dotenv.config();
+import documentRoutes from './routes/DocumentRoute.js';
 
 //Import mysql
 import mysql from 'mysql2';
@@ -41,7 +42,11 @@ app.get('/', (req, res) => {
     res.send('Server + MySQL is working!');
 });
 
+//Routes to connect the backend call
 app.use('/api/auth', authRoutes);
+app.use('/api/document', documentRoutes);
+
+//Handling error
 app.use(errorHandling);
 
 app.use('/uploads', express.static(path.join(__dirname, "uploads")));
