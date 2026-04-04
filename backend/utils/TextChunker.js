@@ -11,7 +11,7 @@ export const chunkText = (text, chunkSize=1000, overlap=100) => {
         return [];
     }
 
-    const cleanedText = text.replace(/\r\n/g, '\n').replace(/\s+/g).replace(/\n /g).replace(/ \n/g).trim();
+    const cleanedText = text.replace(/\r\n/g, '\n').replace(/\s+/g + ' ').replace(/\n /g).replace(/ \n/g).trim();
 
     const paragraphs = cleanedText.split(/\n+/).filter(p => p.trim().length > 0);
 

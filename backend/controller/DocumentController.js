@@ -2,6 +2,9 @@ import Document from "../models/Document.js";
 import Flashcard from "../models/Flashcard.js";
 import Quiz from "../models/Quiz.js";
 import { extractTextFromPDFFile } from '../utils/PdfParse.js';
+//import { extractTextFromPDFFile } from '../utils/PdfParse.js';
+import { extractTextFromWord } from '../utils/WordParser.js';
+import { extractTextFromPPT } from '../utils/PptParser.js';
 import { chunkText } from "../utils/TextChunker.js";
 import fs from 'fs/promises';
 
@@ -11,7 +14,19 @@ export const uploadDocument = async (req, res, next) => {
         if (!req.file) {
             return res.status(400).json({
                 success: false,
-                error: 'Please upload a PDF file.',
+                error: "Please upload a file.",
+                statusCode: 400
+            });
+        }
+
+        const fileType = getFileType(req.file);
+
+        if (fileType === "unsupported") {
+            await fs.unlink(req.file.path);
+
+            return res.status(400).json({
+                success: false,
+                error: "Unsupported file type. Only PDF, DOCX, PPTX allowed.",
                 statusCode: 400
             });
         }
@@ -43,8 +58,8 @@ export const uploadDocument = async (req, res, next) => {
             status: 'processing'
         });
 
-        processPDF(currentDocumentId, req.file.path).catch(err => {
-            console.error('Fail to processing the PDF file due to: ' + err);
+        processDocument(currentDocumentId, req.file.path, fileType).catch(err => {
+            console.error('Fail to processing the file due to: ' + err);
 
         });
 
@@ -66,7 +81,6 @@ export const uploadDocument = async (req, res, next) => {
                 fileName: currentDocument.file_name,
                 filePath: currentDocument.file_path,
                 fileSize: currentDocument.file_size,
-                extractedText: currentDocument.extracted_text,
                 status: currentDocument.status,
                 uploadDate: currentDocument.upload_date,
                 lastAccess: currentDocument.last_accessed
@@ -135,10 +149,28 @@ export const deleteDocument = async (req, res, next) => {
     }
 }
 
-//Functon to process PDF file
-async function processPDF(documentId, filePath) {
+//Functon to process PDF, Word, PowerPoint file
+async function processDocument(documentId, filePath, fileType) {
     try {
-        const { text } = await extractTextFromPDFFile(filePath);
+        let text = "";
+
+        if (fileType === "pdf") {
+            const { text: pdfText } = await extractTextFromPDFFile(filePath);
+            text = pdfText;
+
+        } else if (fileType === "docx") {
+            text = await extractTextFromWord(filePath);
+
+        } else if (fileType === "pptx") {
+            text = await extractTextFromPPT(filePath);
+
+        }
+
+        // Safety check
+        if (!text || text.trim().length === 0) {
+            console.warn(`Empty text extracted for document ${documentId}`);
+            throw new Error("No text extracted from file");
+        }
 
         //Create chunks
         const chunks = chunkText(text, 500, 50);
@@ -153,7 +185,7 @@ async function processPDF(documentId, filePath) {
         console.log(successMessage);
 
     } catch (error) {
-        console.error(`Fail to process the document with id: ${documentId} due to: " + error`);
+        console.error(`Fail to process the document with id: ${documentId} due to: ` + error);
 
         await Document.updateDocument(documentId, {
             extractedText: null,
@@ -163,3 +195,32 @@ async function processPDF(documentId, filePath) {
 
     }
 }
+
+//Upload file based on pdf, word, or powerpoint
+const getFileType = (file) => {
+    const mime = file.mimetype;
+    const ext = file.originalname.split('.').pop().toLowerCase();
+
+    // PDF
+    if (mime === "application/pdf" || ext === "pdf") {
+        return "pdf";
+    }
+
+    // Word
+    if (
+        mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        ext === "docx"
+    ) {
+        return "docx";
+    }
+
+    // PowerPoint
+    if (
+        mime === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+        ext === "pptx"
+    ) {
+        return "pptx";
+    }
+
+    return "unsupported";
+};
