@@ -5,7 +5,6 @@ import {
     uploadDocument,
     getDocument,
     getAllDocuments,
-    updateDocument,
     deleteDocument,
 } from "../controller/DocumentController.js";
 
@@ -16,10 +15,10 @@ router.post('/upload', upload.single('file'), uploadDocument);
 //Get all document
 router.get('/all-document', getAllDocuments);
 //Get particular document
-//router.get('/:id', getDocument);
+router.get('/:id', getDocument);
 //Update document
 //router.put('/:id', updateDocument);
 //Delete document
-//router.delete(':/id', deleteDocument);
+router.delete('/:id', deleteDocument);
 
 export default router;

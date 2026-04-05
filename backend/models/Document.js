@@ -1,5 +1,5 @@
 import db from '../config/MySQL.js';
-import { updateDocument } from '../controller/DocumentController.js';
+//import { updateDocument } from '../controller/DocumentController.js';
 
 const Document = {
     async createDocument({userId, title, fileName, filePath, fileSize, status}) {
@@ -130,6 +130,38 @@ const Document = {
         } finally {
             connection.release();
         }
+    },
+
+    async deleteDocument(documentId, userId) {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            //Delete document chunks
+            await connection.execute(
+                `DELETE FROM document_chunks WHERE document_id = ?`,
+                [documentId]
+            );
+
+            //Delete document
+            await connection.execute(
+                `DELETE FROM documents
+                 WHERE id = ? AND user_id = ?`,
+                 [documentId, userId]
+            );
+
+            await connection.commit();
+
+        } catch (error) {
+            await connection.rollback();
+            console.error(`Fail to delete document with id: ${documentId} due to: ` + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+
     }
 }
 

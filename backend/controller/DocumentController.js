@@ -122,6 +122,30 @@ export const getAllDocuments = async (req, res, next) => {
 //Get a particular document GET /api/document/:id
 export const getDocument = async (req, res, next) => {
     try {
+        const documentId = req.params.id;
+        const userId = req.user.id;
+
+        const document = await Document.getParticularDocument(documentId);
+
+        if (!document || document.user_id !== userId) {
+            return res.status(404).json({
+                success: false,
+                error: "Document not found when get a particular document.",
+                statusCode: 404
+            });
+        }
+
+        const flashcardCount = await Flashcard.countDocumentFlashcard(documentId, userId);
+        const quizCount = await Quiz.countDocumentQuiz(documentId, userId);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                ...document,
+                flashcardCount: flashcardCount,
+                quizCount: quizCount
+            }
+        });
 
     } catch (error) {
         console.error("Fail to retrieve the document due to: " + error);
@@ -129,19 +153,32 @@ export const getDocument = async (req, res, next) => {
     }
 }
 
-//Update a particular document PUT /api/document/:id
-export const updateDocument = async (req, res, next) => {
-    try {
-
-    } catch (error) {
-        console.error("Fail to update the document due to: " + error);
-        next(error);
-    }
-}
 
 //Delete a particulat document DELETE /api/document/:id
 export const deleteDocument = async (req, res, next) => {
     try {
+        const documentId = req.params.id;
+        const userId = req.user.id;
+
+        const currentDocument = await Document.getParticularDocument(documentId);
+
+        if (!currentDocument || currentDocument.user_id !== userId) {
+            return res.status(404).json({
+                success: false,
+                error: "Document not found when try to delete."
+            });
+        }
+
+        //Delete the file from the file system
+        await fs.unlink(currentDocument.file_path).catch(() => {});
+
+        await Document.deleteDocument(documentId, userId);
+
+        res.status(200).json({
+            success: true,
+            message: "Document deleted successfully.",
+            statusCode: 200
+        });
 
     } catch (error) {
         console.error("Fail to delete the document due to: " + error);
