@@ -6,7 +6,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import errorHandling from './middleware/ErrorHandle.js';
 import authRoutes from './routes/AuthRoute.js';
+import aiRoutes from './routes/AIRoute.js';
 import documentRoutes from './routes/DocumentRoute.js';
+import flashcardRoutes from './routes/FlashcardRoute.js';
 
 //Import mysql
 import mysql from 'mysql2';
@@ -44,7 +46,10 @@ app.get('/', (req, res) => {
 
 //Routes to connect the backend call
 app.use('/api/auth', authRoutes);
-app.use('/api/document', documentRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/flashcards', flashcardRoutes);
+app.use('/api/ai', aiRoutes);
+
 
 //Handling error
 app.use(errorHandling);
