@@ -2,7 +2,7 @@ import db from '../config/MySQL.js';
 
 const Quiz = {
     async createQuiz({userId, documentId, title, questions}) {
-        //1.) Insert Quiz
+        //Insert Quiz
         const [quizResult] = await db.execute(
             `INSERT INTO quizzes (user_id, document_id, title, total_questions)
              VALUES (?, ?, ?, ?)`,
@@ -11,7 +11,7 @@ const Quiz = {
 
         const quizId = quizResult.insertId;
 
-        //2.) Insert Questions
+        //Insert Questions
         for (const q of questions) {
             const [questionResult] = await db.execute(
                 `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty)
@@ -63,6 +63,17 @@ const Quiz = {
             VALUES (?, ?, ?, ?)`,
             [quizId, questionId, selectedAnswer, isCorrect]
         );
+    },
+
+    async countDocumentQuiz(documentId, userId) {
+        const [rows] = await db.execute(`
+            SELECT COUNT(*) AS total
+            FROM quizzes
+            WHERE document_id = ? AND user_id = ?`,
+            [documentId, userId]
+        );
+
+        return rows[0].total;
     }
 }
 
