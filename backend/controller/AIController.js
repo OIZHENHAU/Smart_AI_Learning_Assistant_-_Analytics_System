@@ -72,7 +72,7 @@ export const generateFlashcards = async (req, res, next) => {
 //Generate quiz from document POST /api/ai/generate-quiz
 export const generateQuiz = async (req, res, next) => {
     try {
-        const {documentId, numOfQuestons = 10, title} = req.body;
+        const {documentId, numOfQuestions = 10, title} = req.body;
 
         //Validate if document is ever exist
         if (!documentId) {
@@ -95,7 +95,7 @@ export const generateQuiz = async (req, res, next) => {
         }
 
         //Generate quiz using Gemini AI
-        const questions = await geminiService.generateQuiz(document.extracted_text, parseInt(numOfQuestons));
+        const questions = await geminiService.generateQuiz(document.extracted_text, parseInt(numOfQuestions));
 
         //Check if th quiz generated successfully or not
         if (!questions || !Array.isArray(questions)) {

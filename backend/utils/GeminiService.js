@@ -107,6 +107,10 @@ export const generateQuiz = async (text, numQuestions = 10) => {
 
         const generateText = response.text;
 
+        if (!generateText) {
+            return [];
+        }
+
         const questions = [];
         const questionBlocks = generateText.split('---').filter(x => x.trim());
 
@@ -124,7 +128,7 @@ export const generateQuiz = async (text, numQuestions = 10) => {
                 if (line_trim.startsWith('Q:')) {
                     question = line_trim.substring(2).trim();
 
-                } else if (line_trim.match(/^O\d:/)) {
+                } else if (line_trim.match(/^Q\d:/)) {
                     options.push(line_trim.substring(3).trim());
 
                 } else if (line_trim.startsWith('C:')) {
@@ -140,14 +144,25 @@ export const generateQuiz = async (text, numQuestions = 10) => {
                         difficulty = diff;
                     }
 
+                } else if (line_trim.match(/^Q\d:/) || line_trim.match(/^\d+\./) ||
+                        line_trim.match(/^[A-D]\)/) || line_trim.toLowerCase().startsWith('option')) {
+                            const optionText = line_trim.replace(/^Q\d:/, '').replace(/^\d+\./, '')
+                                                        .replace(/^[A-D]\)/, '')
+                                                        .replace(/option\s*\d*:/i, '')
+                                                        .trim();
+
+                    options.push(optionText);
                 }
             }
 
-            if (question && options.length === 4 && correctAnswer) {
+            if (question && options.length >= 2 && correctAnswer) {
                 questions.push({ question, options, correctAnswer, explanation, difficulty});
+
             }
 
         }
+
+        return questions;
 
     } catch (error) {
         console.error("Fail to generate quiz by AI due to: " + error);
