@@ -21,10 +21,15 @@ const ChatHistory = {
 
             //Insert the relevant chunk
             if (relevantChunks && relevantChunks.length > 0) {
+
                 for(const chunkIndex of relevantChunks) {
+                    if (chunkIndex === undefined) {
+                        continue;
+                    }
+
                     await db.execute(
                         `INSERT INTO relevant_chunks (chat_id, document_id, chunk_index)
-                        VALUES (?, ?)`,
+                        VALUES (?, ?, ?)`,
                         [chatId, documentId, chunkIndex]
                     );
                 }

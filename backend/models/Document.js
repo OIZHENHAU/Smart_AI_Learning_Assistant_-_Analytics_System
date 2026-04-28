@@ -162,6 +162,28 @@ const Document = {
             connection.release();
         }
 
+    },
+
+    async getDocumentChunks(documentId) {
+        const connection = await db.getConnection();
+
+        try {
+            const [rows] = await connection.execute(
+                `SELECT id, document_id, content, chunk_index, page_number
+                 FROM document_chunks
+                 WHERE document_id = ?
+                 ORDER BY chunk_index ASC
+                `, [documentId]);
+
+            return rows    
+
+        } catch (error) {
+            console.error(`Fail to get chunks for document id ${documentId} due to: ` + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     }
 }
 

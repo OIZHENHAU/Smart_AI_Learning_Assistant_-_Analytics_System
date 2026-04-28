@@ -3,7 +3,7 @@ import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
 import ChatHistory from '../models/ChatHistory.js';
 import * as geminiService from '../utils/GeminiService.js';
-import { findRelevantChunks } from '../utils/TextChunker.js';
+import { chunkText, findRelevantChunks } from '../utils/TextChunker.js';
 
 
 //Generate flashcards from the document POST /api/ai/generate-flashcards
@@ -130,7 +130,38 @@ export const generateQuiz = async (req, res, next) => {
 //Generate summary from the document by AI POST /api/ai/generate-summary
 export const generateSummary = async (req, res, next) => {
     try {
+        const { documentId } = req.body;
 
+        if (!documentId) {
+            return res.status(400).json({
+                success: false,
+                error: "Document not found when generate summary, please provide a correct document ID.",
+                statusCode: 400
+            });
+        }
+
+        const document = await Document.getParticularDocument(documentId);
+
+        if (!document || document.user_id !== req.user.id || document.status !== "ready") {
+            return res.status(404).json({
+                success: false,
+                error: "Docuemnt is not found or not ready when try to generate summary.",
+                statusCode: 404
+            });
+        }
+
+        const summary = await geminiService.generateSummary(document.extracted_text);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                documentId: document.id,
+                title: document.title,
+                summary: summary
+            },
+            message: "Summary was generated successfully.",
+            statusCode: 200
+        });
 
     } catch (error) {
         console.error("Fail to generate a summary from AI due to: " + error);
@@ -138,9 +169,58 @@ export const generateSummary = async (req, res, next) => {
     }
 }
 
-//Ask AI for assistant through chat communication POST /api/ai/chat
-export const chat = async (req, res, next) => {
+//Ask Gemini AI for assistant through chat communication POST /api/ai/chat
+export const geminiAIChat = async (req, res, next) => {
     try {
+        const { documentId, question } = req.body;
+
+        if (!documentId || !question) {
+            return res.status(404).json({
+                success: false,
+                error: "Invalid document ID or questions during chat, please provide a valid document ID or questions.",
+                statusCode: 404
+            });
+        }
+
+        const document = await Document.getParticularDocument(documentId);
+
+        if (!document || document.user_id !== req.user.id || document.status !== "ready") {
+            return res.status(404).json({
+                success: false,
+                error: "Document not found or not ready what chatting with AI Assistant.",
+                statusCode: 404
+            });
+        }
+
+        const currentChunk = chunkText(document.extracted_text);
+        //console.log("The current chunk is: " + currentChunk);
+
+        const relevantChunks = findRelevantChunks(currentChunk, question, 3);
+
+        const chunkIndices = relevantChunks.map(c => c.chunkIndex).filter(x => x !== undefined);
+
+        const answer = await geminiService.chatWithContext(question, relevantChunks);
+
+        const chatId = await ChatHistory.createChatHistory({
+            userId: req.user.id,
+            documentId: document.id,
+            messages: [
+                { role: 'user', content: question }, { role: 'assistant', content: answer }
+            ],
+            relevantChunks: chunkIndices
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                question,
+                answer,
+                relevantChunks: chunkIndices,
+                chatHistoryId: chatId
+            },
+            message: "Gemini AI generated response successfully.",
+            statusCode: 200
+        });
 
     } catch (error) {
         console.error("Fail to ask AI for assistant through chat due to: " + error);
@@ -151,6 +231,51 @@ export const chat = async (req, res, next) => {
 //Explain concept from document POST /api/ai/explain-concept
 export const explainConcept = async (req, res, next) => {
     try {
+        const { documentId, concept } = req.body;
+
+        if (!documentId || !concept) {
+            return res.status(400).json({
+                success: false,
+                error: "Invalid document ID and concept dutring explanation. Please provide a valid document ID or concept.",
+                statusCode: 400
+            });
+        }
+
+        const document = await Document.getParticularDocument(documentId);
+
+        if (!document || document.user_id !== req.user.id || document.status !== "ready") {
+            return res.status(404).json({
+                success: false,
+                error: "Document is not found or not ready yet during explanation."
+            })
+        }
+
+        const chunks = await Document.getDocumentChunks(documentId);
+
+        if (!chunks || chunks.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: "No text chunk was found for this document during explanation.",
+                statusCode: 404
+            });
+        }
+
+        const relevantChunks = findRelevantChunks(chunks, concept, 3);
+
+        const context = relevantChunks.map(c => c.content).join('\n\n');
+
+        const explanation = await geminiService.explainConcept(concept, context);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                concept: concept,
+                explanation: explanation,
+                relevantChunks: relevantChunks.map(c => c.chunkIndex)
+            },
+            message: "Explanation of concept was successfully.",
+            ststusCode: 200
+        });
 
     } catch (error) {
         console.error("Fail to explain the concept from the document due to: " + error);

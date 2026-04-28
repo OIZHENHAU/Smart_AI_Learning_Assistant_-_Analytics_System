@@ -11,7 +11,7 @@ export const chunkText = (text, chunkSize=1000, overlap=100) => {
         return [];
     }
 
-    const cleanedText = text.replace(/\r\n/g, '\n').replace(/\s+/g + ' ').replace(/\n /g).replace(/ \n/g).trim();
+    const cleanedText = text.replace(/\r\n/g, '\n').replace(/\s+/g, ' ').replace(/\n /g).replace(/ \n/g).trim();
 
     const paragraphs = cleanedText.split(/\n+/).filter(p => p.trim().length > 0);
 
@@ -150,12 +150,12 @@ export const findRelevantChunks = (chunks, query, maxChunks = 3) => {
             score += exactMatch * 3;
 
             //Partial match (lower score)
-            const partialMatch = (content,match(new RegExp(word, 'g')) || []).length;
+            const partialMatch = (content.match(new RegExp(word, 'g')) || []).length;
             score += Math.max(0, partialMatch - exactMatch) * 1.5;
         }
 
         //Bonus: Multiple query words found
-        const uniqueWordsFound = queryWords.filter(word => content.include(word)).length;
+        const uniqueWordsFound = queryWords.filter(word => content.includes(word)).length;
 
         if (uniqueWordsFound > 1) {
             score += uniqueWordsFound * 2;
@@ -165,7 +165,7 @@ export const findRelevantChunks = (chunks, query, maxChunks = 3) => {
         const normalizeScore = score / Math.sqrt(contentWords);
 
         //Small bonus for earlier chunks
-        const positionBonus = 1 - (index / chunk.length) * 0.1;
+        const positionBonus = 1 - (index / chunks.length) * 0.1;
 
         //Return clean object without MySQL metadata
         return {
