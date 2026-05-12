@@ -1,3 +1,5 @@
+import db from '../config/MySQL.js';
+
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
@@ -286,6 +288,53 @@ export const explainConcept = async (req, res, next) => {
 //Get chat history for a document GET /api/ai/chat-history/:documentId
 export const getChatHistory = async (req, res, next) => {
     try {
+        const { documentId } = req.params;
+
+        //Check is the document exist based on the ID
+        if (!documentId) {
+            return res.status(400).json({
+                success: false,
+                error: "The document is not exist when get chat history, please provide a valid ID.",
+                statusCode: 400
+            });
+        }
+
+        //Find chat history
+        const [chatRows] = await db.execute(
+            `
+            SELECT id
+            FROM chat_histories
+            WHERE user_id = ? AND document_id = ?
+            ORDER BY created_at ASC
+            `,
+            [req.user.id, documentId]
+        );
+
+        if (chatRows.length === 0) {
+            return res.status(200).json({
+                success: true,
+                data: [],
+                message: "No chat history found for this document."
+            });
+        }
+
+        //Get all chat histories
+        const allChatHistories = [];
+
+        //Get all message based on the documentId
+        for (const row of chatRows) {
+            const chat = await ChatHistory.getChatHistory(row.id);
+
+            if (chat) {
+                allChatHistories.push(chat);
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: allChatHistories,
+            message: "Chat history retrieved successfully."
+        });
 
     } catch (error) {
         console.error("Fail to get the chat history based on a particular document due to: " + error);

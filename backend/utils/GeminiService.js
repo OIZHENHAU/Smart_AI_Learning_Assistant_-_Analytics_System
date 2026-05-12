@@ -116,10 +116,8 @@ export const generateQuiz = async (text, numQuestions = 10) => {
 
         for (const block of questionBlocks) {
             const lines = block.trim().split('\n');
-            let question = "";
+            let question, explanation, correctAnswer = "";
             let options = [];
-            let correctAnswer = "";
-            let explanation = "";
             let difficulty = "medium";
 
             for (const line of lines) {
@@ -172,11 +170,11 @@ export const generateQuiz = async (text, numQuestions = 10) => {
 /**
  * Generate document summary
  * @param {string} text - Document text
- * @returns {Promise<string>}
+ * @returns {Promise<string>} - Return a generated text summary from Gemini AI
  */
 export const generateSummary = async (text) => {
-    const promptQuestion = `Provide a brief but comprehensive summary of the following text, 
-    highlighting the key concept, main ideas, and important points. Keep the summary clear and well structured.
+    const promptQuestion = `Provide a brief summary of the following text, 
+    highlighting the key concept, main ideas, and important points. Please keep the summary clear and well structured.
 
     Text:
     ${text.substring(0, 20000)}`;
@@ -197,10 +195,10 @@ export const generateSummary = async (text) => {
 };
 
 /**
- * Chat with document context
+ * Chat with Gemini AI about the document context
  * @param {string} question - Question ask from the user
  * @param {Array<Object>} chunks - Relevanrt document chunks
- * @return {Promise<string>}
+ * @return {Promise<string>} - 
  */
 export const chatWithContext = async (question, chunks) => {
     const context = chunks.map((c, i) => `[Chunk ${i + 1}]\n${c.content}`).join('\n\n');
