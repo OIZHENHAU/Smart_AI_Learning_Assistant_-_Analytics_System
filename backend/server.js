@@ -9,6 +9,8 @@ import authRoutes from './routes/AuthRoute.js';
 import aiRoutes from './routes/AIRoute.js';
 import documentRoutes from './routes/DocumentRoute.js';
 import flashcardRoutes from './routes/FlashcardRoute.js';
+import quizRoutes from './routes/QuizesRoute.js';
+
 
 //Import mysql
 import mysql from 'mysql2';
@@ -49,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 
 //Handling error

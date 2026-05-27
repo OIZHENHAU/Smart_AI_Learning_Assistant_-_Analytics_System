@@ -33,7 +33,7 @@ const Quiz = {
         return quizId;
     },
 
-    async getQuizById({quizId}) {
+    async getQuizById({quizId, userId}) {
         const [quiz] = await db.execute(
             `SELECT * FROM quizzes WHERE id = ?`,
             [quizId]
@@ -53,7 +53,15 @@ const Quiz = {
         }
 
         return {
-            ...quiz[0], questions
+            ...quiz[0], 
+            questions: questions.map(q => ({
+                id: q.id,
+                question: q.question,
+                options: q.options,
+                correct_answer: q.correct_answer,
+                explanation: q.explanation,
+                difficulty: q.difficulty
+            }))
         };
     },
 
@@ -74,6 +82,193 @@ const Quiz = {
         );
 
         return rows[0].total;
+    },
+
+    async getQuizzesByDocument({userId, documentId}) {
+        const [quizzes] = await db.execute(
+            `
+            SELECT q.id, q.title, q.score, q.total_questions, q.completed_at, q.created_at,
+            d.title AS document_title, d.file_name
+            FROM quizzes q
+            JOIN documents d
+                ON q.document_id = d.id
+            WHERE q.user_id = ?
+            AND q.document_id = ?
+            ORDER BY q.created_at DESC
+            `,
+            [userId, documentId]
+        );
+
+        //Get questions with options for each quiz
+        for (const quiz of quizzes) {
+            //Gret questions
+            const [questions] = await db.execute(
+                `
+                SELECT *
+                FROM questions 
+                WHERE quiz_id = ?
+                `, [quiz.id]
+            );
+
+            //Get options for every questions
+            for (const question of questions) {
+                const [options] = await db.execute(
+                    `
+                    SELECT option_text
+                    FROM options
+                    WHERE question_id = ?
+                    `, [question.id]
+                );
+
+                question.options = options.map(o => o.option_text);
+            }
+
+            //Attach questions to quiz
+            quiz.questions = questions.map(q => ({
+                id: q.id,
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correct_answer,
+                explanation: q.explanation,
+                difficulty: q.difficulty
+
+            }));
+        }
+
+        return quizzes;
+    },
+
+    async submitQuiz({ quizId, score, completedAt }) {
+        await db.execute(
+            `
+            UPDATE quizzes
+            SET score = ?, completed_at = ?
+            WHERE id = ?
+            `,
+            [score, completedAt, quizId]
+        );
+
+        return true;
+    },
+
+    async getQuizResults({ quizId, userId }) {
+        //Get quiz
+        const [quizzes] = await db.execute(
+            `
+            SELECT q.*, d.title as document_title
+            FROM quizzes q
+            JOIN documents d
+                ON q.document_id = d.id
+            WHERE q.id = ?
+                AND q.user_id = ?
+            LIMIT 1
+            `,
+            [quizId, userId]
+        );
+
+        if (quizzes.length === 0) {
+            return null;
+        }
+
+        const quiz = quizzes[0];
+        const [questions] = await db.execute(
+            `
+            SELECT * FROM questions
+            WHERE quiz_id = ? 
+            `,
+            [quizId]
+        );
+
+        //Get options
+        for (const question of questions) {
+            const [options] = await db.execute(
+                `
+                SELECT option_text
+                FROM options
+                WHERE question_id = ?
+                `,
+                [question.id]
+            );
+
+            question.options = options.map(o => o.option_text);
+        }
+
+        //Build questions array
+        quiz.questions = questions.map(q => ({
+            id: q.id,
+            question: q.question,
+            options: q.options,
+            correct_answer: q.correct_answer,
+            explanation: q.explanation
+        }));
+
+        //Get user answers
+        const [userAnswers] = await db.execute(
+            `
+             SELECT *
+             FROM user_answers
+             WHERE quiz_id = ?
+            `, [quizId]
+        );
+
+        quiz.user_answers = userAnswers;
+
+        return quiz;
+    },
+
+    async deleteQuiz({quizId, userId}) {
+        //Check the quiz if it exist
+        const [quiz] = await db.execute(
+            `
+            SELECT * 
+            FROM quizzes
+            WHERE id = ?
+            AND user_id = ?
+            `,
+            [quizId, userId]
+        );
+
+        if (quiz.length === 0) {
+            return false;
+        }
+
+        //Delete user's answers
+        await db.execute(
+            `DELETE FROM user_answers
+            WHERE quiz_id = ?`,
+            [quizId]
+        );
+
+        //Delete options
+        await db.execute(
+            `
+            DELETE opt
+            FROM options opt
+            JOIN questions q
+                ON opt.question_id = q.id
+            WHERE q.quiz_id = ?
+            `,
+            [quizId]
+        );
+
+        //Delete questions
+        await db.execute(
+            `
+            DELETE FROM questions
+            WHERE quiz_id = ?
+            `,
+            [quizId]
+        );
+
+        //Delte quiz
+        await db.execute(
+            `
+            DELETE FROM quizzes
+            WHERE id = ?
+            `, [quizId]
+        );
+
+        return true;
     }
 }
 
