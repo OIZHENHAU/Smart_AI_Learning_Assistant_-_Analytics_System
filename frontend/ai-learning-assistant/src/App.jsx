@@ -12,11 +12,12 @@ import FlashcardsListPage from './pages/Flashcards/FlashcardsListPage';
 import FlashcardsPage from './pages/Flashcards/FlashcardsPage';
 import QuizTakePage from './pages/Quizzes/QuizTakePage';
 import QuizResultPage from './pages/Quizzes/QuizResultPage';
+import ProgressPage from './pages/Progress/ProgressPage';
+import { useAuth } from "../src/context/AuthContext"
 
 
 const App = () => {
-    const isAuthenticate = false;
-    const loading = false;
+    const { isAuthenticate, loading } = useAuth();
 
     if (loading) {
         return (
@@ -43,6 +44,7 @@ const App = () => {
                     <Route path="/quizzes/:id" element={<QuizTakePage />} />
                     <Route path="/quizzes/:id/results" element={<QuizResultPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path='/progress' element={<ProgressPage />}/>
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />}/>
