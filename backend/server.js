@@ -10,6 +10,7 @@ import aiRoutes from './routes/AIRoute.js';
 import documentRoutes from './routes/DocumentRoute.js';
 import flashcardRoutes from './routes/FlashcardRoute.js';
 import quizRoutes from './routes/QuizesRoute.js';
+import progressRoutes from './routes/ProgressRoute.js';
 
 
 //Import mysql
@@ -33,7 +34,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:3288",
     credentials: true
   })
 );
@@ -52,6 +53,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/progress', progressRoutes);
 
 
 //Handling error
