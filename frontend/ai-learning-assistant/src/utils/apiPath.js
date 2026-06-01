@@ -32,5 +32,8 @@ export const API_PATHS = {
         GET_DASHBOARD: "/api/progress/dashboard",
         GET_START_SESSION: "/api/progress/session/start",
         GET_END_SESSION: (sessionId) => `/api/progress/session/${sessionId}/end`
+    },
+    DASHBOARD: {
+        GET_MAIN_DASHBOARD: "/api/dashboard/main-dashboard"
     }
 }

@@ -82,26 +82,6 @@ export const getDashboard = async (req, res, next) => {
 
         const totalLearningHours = hoursRows[0].totalHours || 0;
 
-        //Geet weekly activity where session count per day this week
-        const [weeklyRows] = await db.execute(
-            `
-            SELECT DAYNAME(started_at) AS day, COUNT(*) AS sessions
-            FROM study_sessions
-            WHERE user_id = ?
-                AND started_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            GROUP BY DAY(started)
-            `
-        );
-
-        //Total learning hours
-        const [hoursRows] = await db.execute(
-            `
-            SELECT ROUND(SUM(duration_minutes) / 60, 1) AS totalHours
-            FROM study_sessions
-            WHERE user_id = ? AND ended_at IS NOT NULL
-            `,
-            [userId]
-        );
 
         //Weekly activity where the session count per day this week
         const [weeklyRows] = await db.execute(

@@ -11,9 +11,8 @@ const login = async (email, password) => {
         return response.data;
 
     } catch (error) {
-        //throw error.response?.data || { message: "An unknown error occurred. " };
         console.error("Fail to login the user due to: " + error);
-        throw error;
+        throw error.response?.data || { message: "An unknown error occurred." };
     }
 };
 
@@ -28,9 +27,8 @@ const register = async (username, email, password) => {
         return response.data;
 
     } catch (error) {
-        //throw error.response?.data || {message: "An unknown error occurred." };
         console.error("Fail to register the user due to: " + error);
-        throw error;
+        throw error.response?.data || { message: "An unknown error occurred." };
     }
 };
 
