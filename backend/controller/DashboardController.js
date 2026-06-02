@@ -35,7 +35,7 @@ export const getMainDashboard = async (req, res, next) => {
         //Get quiz performance list
         const [recentQuizzes] = await db.execute(
             `
-            SELECT id, title, score, total_questions, completed_at, last_accessed
+            SELECT id, title, score, total_questions, completed_at, last_attempt
             FROM quizzes
             WHERE user_id = ? AND completed_at IS NOT NULL
             ORDER BY completed_at DESC
@@ -46,7 +46,7 @@ export const getMainDashboard = async (req, res, next) => {
         //Get all recent document list
         const [recentDocument] = await db.execute(
             `
-            SELECT id, title, file_name, upload_date, last_attempt
+            SELECT id, title, file_name, upload_date, last_accessed
             FROM documents
             WHERE user_id = ?
             ORDER BY upload_date DESC

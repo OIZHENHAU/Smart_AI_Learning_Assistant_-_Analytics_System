@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Spinner from '../../components/common/Spinner';
 import mainDashboardService from '../../services/DashboardService';
 import toast from 'react-hot-toast';
-import { FileText, BookOpen, Brain, Upload, Languages, Trophy, StarIcon, Calendar, BellIcon, ChartLineIcon, TrendingUp, Clock } from 'lucide-react'
+import { GlassesIcon, FileText, BookOpen, Brain, Upload, Languages, Trophy, StarIcon, Calendar, BellIcon, ChartLineIcon, TrendingUp, Clock } from 'lucide-react'
 
 const DashboardPage = () => {
     const [mainDashboardData, setMainDashboardData] = useState(null);
@@ -169,7 +169,7 @@ const DashboardPage = () => {
                     :
                     (<div className='text-center py-12'>
                         <div className='inline-flex items-center justify-center w-16 h-16 rounded-xl bg-slate-400 mb-4'>
-                            <Clock className='w-8 h-8 text-slate-400'/>
+                            <GlassesIcon className='w-8 h-8 text-slate-400'/>
                         </div>
                         <p className='text-sm text-slate-600'>No recent activity yet.</p>
                         <p className='text-xs text-slate-500 mt-1'>Start learning to see your progress here.</p>

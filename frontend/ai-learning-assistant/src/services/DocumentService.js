@@ -4,7 +4,7 @@ import { API_PATHS } from "../utils/apiPath";
 const getAllDocuments = async () => {
     try {
         const response = await axiosInstance.get(API_PATHS.DOCUMENT.GET_ALL_DOCUMENT);
-        return response.data;
+        return response.data.data;
 
     } catch (error) {
         console.error("Fail to fetch all documents at the frontend due to: " + error);
@@ -14,7 +14,7 @@ const getAllDocuments = async () => {
 
 const uploadDocument = async (formData) => {
     try {
-        const response = await axiosInstance.get(API_PATHS.DOCUMENT.UPLOAD, formData, {
+        const response = await axiosInstance.post(API_PATHS.DOCUMENT.UPLOAD, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -30,7 +30,7 @@ const uploadDocument = async (formData) => {
 
 const deleteDocument = async (id) => {
     try {
-        const response = await axiosInstance.get(API_PATHS.DOCUMENT.DELETE_DOCUMENT(id));
+        const response = await axiosInstance.delete(API_PATHS.DOCUMENT.DELETE_DOCUMENT(id));
 
         return response.data;
 
