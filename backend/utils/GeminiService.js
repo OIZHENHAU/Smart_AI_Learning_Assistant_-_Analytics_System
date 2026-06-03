@@ -16,7 +16,7 @@ async function generateText(prompt) {
     const response = await openai.chat.completions.create({
         model: MODEL,
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 1024,
+        max_tokens: 4096,
     });
     return response.choices[0].message.content;
 }

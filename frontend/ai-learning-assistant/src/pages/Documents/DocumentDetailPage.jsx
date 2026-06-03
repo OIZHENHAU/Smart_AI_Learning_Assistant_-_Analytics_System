@@ -8,6 +8,7 @@ import PageHeader from "../../components/common/PageHeader";
 import Tabs from '../../components/common/Tab';
 import AIChatInterface from "../../components/ai-chat/AIChatInterface";
 import AISummary from "../../components/ai-summary/AISummary";
+import QuizManager from "../../components/quizzes/QuizManager";
 
 
 const DocumentDetailPage = () => {
@@ -93,11 +94,11 @@ const DocumentDetailPage = () => {
     };
 
     const renderAIChatSummary = () => {
-        return <AISummary />
+        return <AISummary />;
     };
 
     const renderQuizzesPage = () => {
-        return "renderQuizzesPage";
+        return <QuizManager documentId={id}/>;
     };
 
     const tabs = [

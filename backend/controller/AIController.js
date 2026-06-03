@@ -100,10 +100,10 @@ export const generateQuiz = async (req, res, next) => {
         const questions = await geminiService.generateQuiz(document.extracted_text, parseInt(numOfQuestions));
 
         //Check if th quiz generated successfully or not
-        if (!questions || !Array.isArray(questions)) {
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
             return res.status(500).json({
                 success: false,
-                error: "Gemini AI fail to generate quiz questions."
+                error: "AI failed to generate quiz questions. The response format may not have matched. Please try again."
             });
         }
 
