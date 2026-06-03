@@ -7,6 +7,7 @@ import { ArrowLeft, ExternalLink } from 'lucide-react';
 import PageHeader from "../../components/common/PageHeader";
 import Tabs from '../../components/common/Tab';
 import AIChatInterface from "../../components/ai-chat/AIChatInterface";
+import AISummary from "../../components/ai-summary/AISummary";
 
 
 const DocumentDetailPage = () => {
@@ -92,7 +93,7 @@ const DocumentDetailPage = () => {
     };
 
     const renderAIChatSummary = () => {
-        return "renderAIChatSummary"
+        return <AISummary />
     };
 
     const renderQuizzesPage = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send , MessageSquare, Sparkles } from 'lucide-react';
+import { Send , MessageSquare, Bot } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import aiService from '../../services/AIService';
 import { useAuth } from '../../context/AuthContext';
@@ -92,7 +92,7 @@ const AIChatInterface = () => {
             >
                 {!isUser && (
                     <div className='w-9 h-9 rounded-xl bg-linear-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-500/25 flex items-center justify-center shrink-0'>
-                        <Sparkles className='w-4 h-4 text-white' strokeWidth={2} />
+                        <Bot className='w-4 h-4 text-white' strokeWidth={2} />
                     </div>
                 )}
 
@@ -149,7 +149,7 @@ const AIChatInterface = () => {
                 {loading && (
                     <div className='flex items-center gap-3 my-4'>
                         <div className='w-9 h-9 rounded-xl bg-linear-to-br from-purple-400 to-purple-500 shadow-lg shadow-purple-500/25 flex items-center justify-center shrink-0'>
-                            <Sparkles className='w-4 h-4 text-white' strokeWidth={2} />
+                            <Bot className='w-4 h-4 text-white' strokeWidth={2} />
                         </div>
                         <div className='flex items-center gap-2 px-4 py-3 rounded-2xl rounded-bl-md bg-white border border-slate-200/60'>
                             <div className='flex gap-1'>
