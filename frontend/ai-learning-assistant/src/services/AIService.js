@@ -25,7 +25,7 @@ const generateSummary = async (documentId) => {
     }
 };
 
-const aiChat = async (documentId, mesaage) => {
+const aiChat = async (documentId, message) => {
     try {
         const response = await axiosInstance.post(API_PATHS.AI.AI_CHAT, { documentId, question: message });
         return response.data;
@@ -59,7 +59,7 @@ const getChatHistory = async (documentId) => {
 }
 
 const aiService = {
-    generateQuiz, generateSummary, explainConcept, aiChat, getChatHistory
+    generateQuiz, generateSummary, explainConcept, chat: aiChat, getChatHistory
 };
 
 

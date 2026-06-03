@@ -10,12 +10,13 @@ if (!process.env.OPENROUTER_API_KEY) {
 
 const openai = new OpenAI({baseURL: 'https://openrouter.ai/api/v1', apiKey: process.env.OPENROUTER_API_KEY});
 
-const MODEL = "google/gemini-2.0-flash-001";
+const MODEL = "openrouter/free";
 
 async function generateText(prompt) {
     const response = await openai.chat.completions.create({
         model: MODEL,
         messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1024,
     });
     return response.choices[0].message.content;
 }
