@@ -1,10 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Spinner from '../../components/common/Spinner';
 import mainDashboardService from '../../services/DashboardService';
+import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { GlassesIcon, FileText, BookOpen, Brain, Upload, Languages, Trophy, StarIcon, Calendar, BellIcon, ChartLineIcon, TrendingUp, Clock } from 'lucide-react'
+import { FileText, BookOpen, Upload, Languages, Trophy, Star, Calendar, Bell, TrendingUp, Clock, Award } from 'lucide-react';
+import moment from 'moment';
+
+const features = [
+    {
+        title: 'AI Content Generator',
+        description: 'Upload PDFs to generate summaries, flashcards, and quizzes',
+        icon: Upload,
+        bg: 'bg-blue-500',
+    },
+    {
+        title: 'Multilingual Translation',
+        description: 'Translate learning content into multiple languages',
+        icon: Languages,
+        bg: 'bg-green-500',
+    },
+    {
+        title: 'Unlock Achievements',
+        description: 'Use points to unlock different learning features, badges and so on.',
+        icon: Award,
+        bg: 'bg-purple-600',
+    },
+    {
+        title: 'Quiz Calendar',
+        description: 'Schedule and track your quiz sessions',
+        icon: Calendar,
+        bg: 'bg-slate-400',
+    },
+    {
+        title: 'WhatsApp Reminders',
+        description: 'Get automated quiz reminders via WhatsApp',
+        icon: Bell,
+        bg: 'bg-pink-500',
+    },
+    {
+        title: 'Performance Analytics',
+        description: 'Track scores and study patterns with AI insights',
+        icon: TrendingUp,
+        bg: 'bg-violet-500',
+    },
+];
 
 const DashboardPage = () => {
+    const { user } = useAuth();
     const [mainDashboardData, setMainDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -12,174 +55,163 @@ const DashboardPage = () => {
         const fetchMainDashboardData = async () => {
             try {
                 const data = await mainDashboardService.getMainDashboard();
-                console.log("The data for get main dashboard data", data);
-
                 setMainDashboardData(data);
-
             } catch (error) {
                 toast.error('Fail to fetch the main dashboard data at the page.');
                 console.error(error);
-
             } finally {
                 setLoading(false);
             }
         };
         fetchMainDashboardData();
-
     }, []);
 
     if (loading) {
-        return <Spinner />;
-    }
-
-    if (!mainDashboardData) {
         return (
-            <div className='min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center'>
-                <div className='text-center'>
-                    <div className='inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-100 mb-4'>
-                        <TrendingUp className='w-8 h-8 text-slate-400'/>
-                    </div>
-                    <p className='text-slate-600 text-sm'>No main dashboard data available.</p>
-                </div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Spinner />
             </div>
         );
     }
 
+    const data = mainDashboardData?.data || {};
+    const recentDocuments = mainDashboardData?.recent_document || [];
+    const recentQuizzes = mainDashboardData?.recent_quizzes || [];
+
     const stats = [
         {
-            label: 'Total Documents',
-            value: mainDashboardData.data.total_document,
+            label: 'Uploaded Document',
+            value: data.total_document ?? 0,
             icon: BookOpen,
-            gradient: 'from-blue-400 to-blue-500',
-            shadowColor: 'shadow-blue-600/25'
+            iconBg: 'bg-blue-100',
+            iconColor: 'text-blue-500',
         },
         {
-            label: 'Total Quizzes',
-            value: mainDashboardData.data.total_quiz,
+            label: 'Quiz Taken',
+            value: data.total_quiz ?? 0,
             icon: FileText,
-            gradient: 'from-green-300 to-green-400',
-            shadowColor: 'shadow-green-400/25'
+            iconBg: 'bg-green-100',
+            iconColor: 'text-green-500',
         },
         {
-            label: 'Earn Points',
-            value: "88",
-            icon: StarIcon,
-            gradient: 'from-purple-400 to-purple-500',
-            shadowColor: 'shadow-purple-500/25'
+            label: 'Total points',
+            value: data.total_points ?? 0,
+            icon: Star,
+            iconBg: 'bg-purple-100',
+            iconColor: 'text-purple-500',
         },
         {
-            label: 'place in the leaderboard.',
-            value: "8th",
+            label: 'place in the leaderboard',
+            value: data.leaderboard_rank ? `${data.leaderboard_rank}th` : 'N/A',
             icon: Trophy,
-            gradient: 'from-orange-400 to-orange-500',
-            shadowColor: 'shadow-orange-500/25'
-        }
-    ]
+            iconBg: 'bg-orange-100',
+            iconColor: 'text-orange-500',
+            smallValue: true,
+        },
+    ];
+
+    const activities = [
+        ...recentDocuments.map(doc => ({
+            id: `doc-${doc.id}`,
+            description: `Accessed Document: ${doc.title}`,
+            timestamp: doc.last_accessed,
+            link: `/documents/${doc.id}`,
+        })),
+        ...recentQuizzes.map(quiz => ({
+            id: `quiz-${quiz.id}`,
+            description: `Attempted Quiz: ${quiz.title}`,
+            timestamp: quiz.last_attempt,
+            link: `/quizzes/${quiz.id}/results`,
+        })),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const username = user?.username || user?.name || 'Learner';
+    const initial = username.charAt(0).toUpperCase();
 
     return (
-        <div className='min-h-screen'>
-            <div className='absolute inset-0 bg-[radial-gradient(#e5e7eb_1px, transparent_1px)] bg-sze-[16px_16px] opacity-30 pointer-events-none'/>
-
-            <div className='relative max-w-7xl mx-auto'>
-                {/* Header */}
-                <div className='mb-6 bg-purple-200'>
-                    <h1 className='text-2xl font-medium text-slate-900 tracking-tight mb-2'>
-                        Welcome back, zhenhau! 
-                    </h1>
-                    <p className='text-slate-500 text-sm'>
-                        Continue to explore your learning journey!
-                    </p>
+        <div className="max-w-5xl mx-auto space-y-6">
+            {/* Welcome Header */}
+            <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 text-2xl font-bold border-4 border-white shadow-md">
+                        {initial}
+                    </div>
+                    <div className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-slate-700 text-white text-xs font-bold flex items-center justify-center border-2 border-white">
+                        {data.level ?? 1}
+                    </div>
                 </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Welcome back, {username}!</h1>
+                    <p className="text-sm text-slate-500">{data.xp_to_next_level ?? 0} XP to the next level</p>
+                </div>
+            </div>
 
-                {/* Stats Grid */}
-                <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-5'>
-                    {stats.map((stat, index) => (
-                        <div
-                            key={index}
-                            className='group-relative bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-xl shadow-slate-200/50 p-6 hover:shadow-2xl hover:shadow-slate-300/50 transition-all duration-200 hover:translate-y-1'
-                        >
-                            <div className={`w-11 h-11 rounded-xl bg-linear-to-br ${stat.gradient} shadow-lg ${stat.shadowColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                                    <stat.icon className='w-5 h-5 text-white' strokeWidth={2} />
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {stats.map((stat, i) => (
+                    <div key={i} className="h-27 bg-white border border-slate-200 rounded-2xl flex items-center gap-4 shadow-xl shadow-slate-200/50 p-6 hover:shadow-2xl hover:shadow-slate-300/50 transition-all duration-200 hover:translate-y-1">
+                        <div className={`w-12 h-12 rounded-xl ${stat.iconBg} flex items-center justify-center shrink-0`}>
+                            <stat.icon className={`w-6 h-6 ${stat.iconColor}`} strokeWidth={2} />
+                        </div>
+                        <div>
+                            <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                            <div className="text-xs text-slate-500 leading-tight">{stat.label}</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Features */}
+            <div>
+                <h2 className="text-lg font-bold text-slate-900 mb-4">Features</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {features.map((feature, i) => (
+                        <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200">
+                            <div className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4`}>
+                                <feature.icon className="w-6 h-6 text-white" strokeWidth={2} />
                             </div>
-                            <div className='flex items-center justify-between'>
-                                <span className='text-xs font-semibold text-slate-500 uppercase tracking-wide'>
-                                    {stat.label}
-                                </span>
-                                <div className='text-3xl font-semibold text-slate-900 tracking-tight'>
-                                    {stat.value}
-                                </div>
-                            </div>
+                            <h3 className="text-base font-bold text-slate-900 mb-1">{feature.title}</h3>
+                            <p className="text-sm text-slate-500 leading-relaxed">{feature.description}</p>
                         </div>
                     ))}
                 </div>
+            </div>
 
-                {/* Recent Activity Section */}
-                <div className='bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-xl shadow-slate-200/50 p-1'>
-                    <div className='flex items-center gap-3 mb-6'>
-                        <div className='w-10 h-10 rounded-xl bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center'>
-                            <Clock className='w-5 h-5 text-slate-600' strokeWidth={2}/>
-                        </div>
-                        <h3 className="text-xl font-medium text-slate-900 tracking-tight">
-                            Recent Activity
-                        </h3>
-                    </div>
+            {/* Recent Activity */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-5">
+                    <Clock className="w-5 h-5 text-slate-500" strokeWidth={2} />
+                    <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
+                </div>
 
-                    {(mainDashboardData.recent_document && mainDashboardData.recent_document.length > 0)
-                        && (mainDashboardData.recent_quizzes && mainDashboardData.recent_quizzes.length > 0)
-                    ?
-                    (<div className='space-y-3'>
-                        {[
-                            ...(mainDashboardData.recent_document || []).map(document => ({
-                                id: document.id,
-                                description: document.title,
-                                timestamp: document.last_accessed,
-                                link: `/documents/${document.id}`,
-                                type: 'document'
-                            })),
-                            ...BellIcon(mainDashboardData.recent_quizzes || []).map(quiz => ({
-                                id: quiz.id,
-                                description: quiz.title,
-                                timestamp: quiz.last_attempt,
-                                link: `/quizzes/${quiz.id}`,
-                                type: 'quiz'
-                            }))
-                        ].sort((x, y) => new Date(y.timestamp) - new Date(x.timestamp))
-                            .map((activity, index) => (
-                                <div
-                                    key={activity.id || index}
-                                    className='group flex items-center justify-between p-4 rounded-xl bg-slate-50/50 border border-slate-200/60 hover:bg-white hover:border-slate-300/60 hover:shadow-md transition-all duration-200'
-                                >
-                                    <div className='flex-1 min-w-0'>
-                                        <div className='flex items-center gap-2 mb-1'>
-                                            <div className={`w-2 h-2 rounded-full bg-linear-to-br from-purple-400 to-purple-500`}/>
-                                            <p className='text-sm font-medium text-slate-900 truncate'>
-                                                {activity.type === "document" ? 'Document Accessed' : 'Quiz Attempted'}
-                                                <span className='text-slate-900'>{activity.description}</span>
-                                            </p>
-                                        </div>
-                                        <p className='text-xs text-slate-500 pl-4'>
-                                            {new Date(activity.timestamp).toLocaleString()}
+                {activities.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                        {activities.slice(0, 5).map((activity) => (
+                            <div key={activity.id} className="flex items-center justify-between py-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-slate-900">{activity.description}</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">
+                                            {moment(activity.timestamp).format('Today, HH:mm:ss')}
                                         </p>
                                     </div>
-                                    {activity.link && (<a href={activity.link} className='ml-4 px-4 text-xs font-semibold text-purple-500'>View</a>)}
                                 </div>
-                            ))
-                        }
-                    </div>)
-                    :
-                    (<div className='text-center py-12'>
-                        <div className='inline-flex items-center justify-center w-16 h-16 rounded-xl bg-slate-400 mb-4'>
-                            <GlassesIcon className='w-8 h-8 text-slate-400'/>
-                        </div>
-                        <p className='text-sm text-slate-600'>No recent activity yet.</p>
-                        <p className='text-xs text-slate-500 mt-1'>Start learning to see your progress here.</p>
-
-                    </div>)
-                    }
-                </div>
+                                <Link to={activity.link} className="text-sm font-semibold text-purple-500 hover:text-purple-700 shrink-0 ml-4">
+                                    View
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-10">
+                        <p className="text-sm text-slate-500">No recent activity yet.</p>
+                        <p className="text-xs text-slate-400 mt-1">Start learning to see your progress here.</p>
+                    </div>
+                )}
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default DashboardPage
+export default DashboardPage;
