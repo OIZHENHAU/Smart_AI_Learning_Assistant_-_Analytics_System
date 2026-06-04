@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import quizService from "../../services/QuizService";
 import Spinner from "../../components/common/Spinner";
 import toast from 'react-hot-toast';
-import { CheckCircle2, XCircle, Award, Trophy } from 'lucide-react';
+import { CheckCircle2, XCircle, Trophy, BookOpen } from 'lucide-react';
 
 
 const QuizResultPage = () => {
@@ -52,6 +52,22 @@ const QuizResultPage = () => {
     const correctAnswers = detailedResults.filter(r => r.isCorrect).length;
     const incorrectAnswers = totalQuestions - correctAnswers;
 
+    // Group results by topic for breakdown
+    const topicBreakdown = (() => {
+        const map = {};
+        detailedResults.forEach(r => {
+            const topic = r.topic || "General";
+            if (!map[topic]) map[topic] = { correct: 0, total: 0 };
+            map[topic].total += 1;
+            if (r.isCorrect) map[topic].correct += 1;
+        });
+        return Object.entries(map).map(([topic, data]) => ({
+            topic,
+            ...data,
+            pct: Math.round((data.correct / data.total) * 100)
+        })).sort((a, b) => a.pct - b.pct);
+    })();
+
     const getScoreMessage = (score) => {
         if (score >= 90) return "Outstanding!";
         if (score >= 80) return "Great Job!";
@@ -99,6 +115,42 @@ const QuizResultPage = () => {
                     </span>
                 </div>
             </div>
+
+            {/* Topic Breakdown */}
+            {topicBreakdown.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                        <BookOpen className="w-5 h-5 text-purple-600" />
+                        <h2 className="text-base font-semibold text-slate-800">Topic Breakdown</h2>
+                    </div>
+                    <div className="space-y-3">
+                        {topicBreakdown.map(({ topic, correct, total, pct }) => {
+                            const color = pct >= 70 ? { bar: "#7c3aed", bg: "bg-purple-100", text: "text-purple-700", label: "Mastered" }
+                                : pct >= 50 ? { bar: "#f59e0b", bg: "bg-yellow-100", text: "text-yellow-700", label: "Developing" }
+                                : { bar: "#ef4444", bg: "bg-red-100", text: "text-red-600", label: "Needs Work" };
+                            return (
+                                <div key={topic}>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-sm font-medium text-slate-700">{topic}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-400">{correct}/{total} correct</span>
+                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${color.bg} ${color.text}`}>
+                                                {color.label}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-2">
+                                        <div
+                                            className="h-2 rounded-full transition-all duration-500"
+                                            style={{ width: `${pct}%`, backgroundColor: color.bar }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Question Results */}
             {detailedResults.map((item, index) => (

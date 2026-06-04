@@ -1,10 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Sidebar from './Sidebar';
 import Header from './Header';
+import progressService from "../../services/ProgressService";
 
 const AppLayout = ({children}) => {
     const [isSideBarOpen, setIsSideBarOpen] = useState(false);
-    
+    const sessionIdRef = useRef(null);
+
+    useEffect(() => {
+        const startSession = async () => {
+            try {
+                const data = await progressService.getStartSession();
+                sessionIdRef.current = data?.data?.sessionId || null;
+            } catch {
+                // silently ignore — session tracking is non-critical
+            }
+        };
+
+        const endSession = () => {
+            if (sessionIdRef.current) {
+                progressService.getEndSession(sessionIdRef.current).catch(() => {});
+                sessionIdRef.current = null;
+            }
+        };
+
+        startSession();
+
+        window.addEventListener("beforeunload", endSession);
+        return () => {
+            endSession();
+            window.removeEventListener("beforeunload", endSession);
+        };
+    }, []);
+
     const toggleSidebar = () => {
         setIsSideBarOpen(!isSideBarOpen);
     }

@@ -13,6 +13,17 @@ const getProgressDashboard = async () => {
     }
 };
 
+const getTopicAnalysis = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.PROGRESS.GET_TOPIC_ANALYSIS);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to fetch topic analysis at the frontend due to: " + error);
+        throw error;
+    }
+};
+
 const getStartSession = async () => {
     try {
         const response = await axiosInstance.get(API_PATHS.PROGRESS.GET_START_SESSION);
@@ -37,6 +48,7 @@ const getEndSession = async (sessionId) => {
 
 const progressService = {
     getProgressDashboard,
+    getTopicAnalysis,
     getStartSession,
     getEndSession
 };

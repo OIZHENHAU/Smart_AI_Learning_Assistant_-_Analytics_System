@@ -14,9 +14,9 @@ const Quiz = {
         //Insert Questions
         for (const q of questions) {
             const [questionResult] = await db.execute(
-                `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty)
-                VALUES (?, ?, ?, ?, ?)`,
-                [quizId, q.question, q.correctAnswer, q.explanation || null, q.difficulty || 'medium']
+                `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty, topic)
+                VALUES (?, ?, ?, ?, ?, ?)`,
+                [quizId, q.question, q.correctAnswer, q.explanation || null, q.difficulty || 'medium', q.topic || null]
             );
 
             const questionId = questionResult.insertId;
@@ -53,14 +53,15 @@ const Quiz = {
         }
 
         return {
-            ...quiz[0], 
+            ...quiz[0],
             questions: questions.map(q => ({
                 id: q.id,
                 question: q.question,
                 options: q.options,
                 correct_answer: q.correct_answer,
                 explanation: q.explanation,
-                difficulty: q.difficulty
+                difficulty: q.difficulty,
+                topic: q.topic
             }))
         };
     },
@@ -130,8 +131,8 @@ const Quiz = {
                 options: q.options,
                 correctAnswer: q.correct_answer,
                 explanation: q.explanation,
-                difficulty: q.difficulty
-
+                difficulty: q.difficulty,
+                topic: q.topic
             }));
         }
 
@@ -199,7 +200,8 @@ const Quiz = {
             question: q.question,
             options: q.options,
             correct_answer: q.correct_answer,
-            explanation: q.explanation
+            explanation: q.explanation,
+            topic: q.topic
         }));
 
         //Get user answers

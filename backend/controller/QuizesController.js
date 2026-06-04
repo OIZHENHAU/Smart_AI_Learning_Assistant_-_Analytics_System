@@ -187,7 +187,8 @@ export const getQuizResult = async (req, res, next) => {
                 correctAnswer: question.correct_answer,
                 selectedAnswer: userAnswer?.selected_answer || null,
                 isCorrect: userAnswer?.is_correct || false,
-                explanation: question.explanation
+                explanation: question.explanation,
+                topic: question.topic
             };
         });
         

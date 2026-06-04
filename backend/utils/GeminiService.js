@@ -94,6 +94,7 @@ export const generateQuiz = async (text, numQuestions = 10) => {
     C: [Correct option - exactly as written above]
     E: [Brief explanation]
     D: [Difficulty: easy, medium, or hard]
+    T: [Short topic name this question belongs to, e.g. "React Hooks", "Data Types", "Sorting Algorithms"]
 
     Seperate questions with "---"
 
@@ -116,6 +117,7 @@ export const generateQuiz = async (text, numQuestions = 10) => {
             let options = [];
             let difficulty = "medium";
 
+            let topic = null;
             for (const line of lines) {
                 const line_trim = line.trim();
 
@@ -132,6 +134,8 @@ export const generateQuiz = async (text, numQuestions = 10) => {
                     if (["easy", "medium", "hard"].includes(diff)) {
                         difficulty = diff;
                     }
+                } else if (line_trim.startsWith('T:')) {
+                    topic = line_trim.substring(2).trim();
                 } else if (line_trim.match(/^\d+\./) || line_trim.match(/^[A-D]\)/)) {
                     const optionText = line_trim.replace(/^\d+\./, '').replace(/^[A-D]\)/, '').trim();
                     options.push(optionText);
@@ -147,7 +151,7 @@ export const generateQuiz = async (text, numQuestions = 10) => {
             }
 
             if (question && options.length >= 2 && correctAnswer) {
-                questions.push({ question, options, correctAnswer, explanation, difficulty });
+                questions.push({ question, options, correctAnswer, explanation, difficulty, topic });
             }
         }
 
