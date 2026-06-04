@@ -105,8 +105,11 @@ export const generateQuiz = async (text, numQuestions = 10) => {
         const generateText_result = await generateText(promptQuestion);
 
         if (!generateText_result) {
+            console.error("AI returned empty response for quiz generation.");
             return [];
         }
+
+        console.log("AI raw response (first 500 chars):", generateText_result.substring(0, 500));
 
         const questions = [];
         const questionBlocks = generateText_result.split('---').filter(x => x.trim());

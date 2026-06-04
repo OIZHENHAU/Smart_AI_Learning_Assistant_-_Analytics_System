@@ -101,6 +101,7 @@ export const generateQuiz = async (req, res, next) => {
 
         //Check if th quiz generated successfully or not
         if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            console.error("Quiz generation failed: AI returned 0 questions.");
             return res.status(500).json({
                 success: false,
                 error: "AI failed to generate quiz questions. The response format may not have matched. Please try again."

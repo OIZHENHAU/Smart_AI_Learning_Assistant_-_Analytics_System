@@ -51,13 +51,13 @@ const QuizCard = ({quiz, onDelete}) => {
             {/* Action Button */}
             <div className='mt-2 pt-4 border-t border-slate-100'>
                 {quiz?.completed_at ? (
-                    <Link to={`/quizzes/${quiz.id}/results`}>
+                    <Link to={`/quizzes/${quiz.id}/results`} state={{ from: 'documents' }}>
                         <button className='group/btn relative w-full h-11 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 active:scale-95 overflow-hidden'>
                             View Results
                         </button>
                     </Link>
                     ) : (
-                    <Link to={`/quizzes/${quiz.id}`}>
+                    <Link to={`/quizzes/${quiz.id}`} state={{ from: 'documents' }}>
                         <button className='group/btn relative w-full h-11 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 active:scale-95 overflow-hidden'>
                             <span className='relative z-10 flex items-center justify-center gap-2'>
                                 Start Attempt

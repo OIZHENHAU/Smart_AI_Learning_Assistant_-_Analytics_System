@@ -1,11 +1,21 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, X } from 'lucide-react';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const { logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isActive = (to) => {
+        // When navigating to a quiz page from the Documents context, keep Documents highlighted
+        const fromDocuments = location.state?.from === 'documents';
+        if (fromDocuments && location.pathname.startsWith('/quizzes')) {
+            return to === '/documents';
+        }
+        return location.pathname === to || location.pathname.startsWith(to + '/');
+    };
 
     const handleLogout = () => {
         logout();
@@ -49,30 +59,28 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                 {/* Nvigation bar */}
                 <nav className='flex-1 px-3 py-6 space-y-1.5'>
                     {
-                        navLinks.map((link) => (
-                            <NavLink
-                                key={link.to}
-                                to={link.to}
-                                onClick={toggleSidebar}
-                                className={({isActive}) => `group flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
-                                ${isActive ? "bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
-                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                                }`}
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        <link.icon
-                                            size={18}
-                                            strokeWidth={2.5}
-                                            className={`transition-transform duration-200
-                                                ${isActive ? '' : 'group-hover:scale-110'}
-                                                `}
-                                        />
-                                        {link.text}
-                                    </>
-                                )}
-                            </NavLink>
-                        ))
+                        navLinks.map((link) => {
+                            const active = isActive(link.to);
+                            return (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    onClick={toggleSidebar}
+                                    className={`group flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
+                                        ${active
+                                            ? "bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
+                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <link.icon
+                                        size={18}
+                                        strokeWidth={2.5}
+                                        className={`transition-transform duration-200 ${active ? '' : 'group-hover:scale-110'}`}
+                                    />
+                                    {link.text}
+                                </Link>
+                            );
+                        })
                     }
                 </nav>
         </aside>
