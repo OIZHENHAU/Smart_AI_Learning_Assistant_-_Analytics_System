@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
 import authService from '../../services/AuthService';
-import { BrainCircuit, User, Mail, Lock, Phone, ArrowRight } from "lucide-react";
+import { Brain, User, Mail, Lock, Phone, ArrowRight } from "lucide-react";
 import toast from 'react-hot-toast';
 
 
@@ -49,7 +49,7 @@ const RegisterPage = () => {
                             {/* Header */}
                             <div className="text-center mb-10">
                                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/25 mb-6">
-                                    <BrainCircuit className="w-7 h-7 text-white" strokeWidth={2} />
+                                    <Brain className="w-7 h-7 text-white" strokeWidth={2} />
                                 </div>
                                 <h1 className="text-2xl font-medium text-slate-900 tracking-tight mb-2">
                                     Create An Account
