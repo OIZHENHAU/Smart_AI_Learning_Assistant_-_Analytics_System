@@ -6,7 +6,8 @@ import {
     login,
     viewProfile,
     updateProfile,
-    changePassword
+    changePassword,
+    deleteAccount
 } from "../controller/AuthController.js";
 
 const router = express.Router();
@@ -29,5 +30,6 @@ router.post("/login", loginValidationCheck, login);
 router.get('/profile', protect, viewProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/change-password', protect, changePassword);
+router.delete('/delete-account', protect, deleteAccount);
 
 export default router;

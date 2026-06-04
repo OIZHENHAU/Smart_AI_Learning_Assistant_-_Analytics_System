@@ -45,7 +45,7 @@ const getProfile = async () => {
 
 const updateProfile = async (userData) => {
     try {
-        const response = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, {userData});
+        const response = await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, userData);
 
         return response.data;
 
@@ -57,7 +57,7 @@ const updateProfile = async (userData) => {
 
 const changePassword = async (passwords) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.AUTH.CHANGE_PASSWORD, {passwords});
+        const response = await axiosInstance.post(API_PATHS.AUTH.CHANGE_PASSWORD, passwords);
 
         return response.data;
 
@@ -67,8 +67,18 @@ const changePassword = async (passwords) => {
     }
 };
 
+const deleteAccount = async () => {
+    try {
+        const response = await axiosInstance.delete(API_PATHS.AUTH.DELETE_ACCOUNT);
+        return response.data;
+    } catch (error) {
+        console.error("Fail to delete account at the frontend due to: " + error);
+        throw error;
+    }
+};
+
 const authService = {
-    login, register, getProfile, updateProfile, changePassword
+    login, register, getProfile, updateProfile, changePassword, deleteAccount
 };
 
 export default authService;
