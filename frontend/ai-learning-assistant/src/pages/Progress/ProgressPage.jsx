@@ -206,8 +206,10 @@ const ProgressPage = () => {
             {/* Recent Quizzes */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
-                    <Eye className="w-5 h-5 text-purple-600" />
-                    <h2 className="text-base font-semibold text-slate-800">View Quiz Performance</h2>
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
+                        <Eye className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <h2 className="text-base font-bold text-slate-800">View Quiz Performance</h2>
                 </div>
                 {(dashboard?.recent_quizzes || []).length === 0 ? (
                     <p className="text-sm text-slate-400 text-center py-6">No quizzes completed yet.</p>
