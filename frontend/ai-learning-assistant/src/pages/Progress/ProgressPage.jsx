@@ -54,8 +54,8 @@ const ProgressPage = () => {
     const weeklyData = (() => {
         const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const map = {};
-        (dashboard?.weekly_activity || []).forEach(r => { map[r.day?.slice(0, 3)] = r.sessions; });
-        return days.map(d => ({ day: d, sessions: map[d] || 0 }));
+        (dashboard?.weekly_activity || []).forEach(r => { map[r.day?.slice(0, 3)] = parseFloat(r.hours) || 0; });
+        return days.map(d => ({ day: d, hours: map[d] || 0 }));
     })();
 
     const trendData = (dashboard?.performance_trend || []).map(r => ({
@@ -101,16 +101,16 @@ const ProgressPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                     <h2 className="text-base font-semibold text-slate-800 mb-4">Weekly Activity</h2>
-                    {weeklyData.every(d => d.sessions === 0) ? (
-                        <p className="text-sm text-slate-400 text-center py-10">No session data yet.</p>
+                    {weeklyData.every(d => d.hours === 0) ? (
+                        <p className="text-sm text-slate-400 text-center py-10">No activity data yet.</p>
                     ) : (
                         <ResponsiveContainer width="100%" height={200}>
                             <BarChart data={weeklyData} barSize={28}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: "#f5f3ff" }} contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }} />
-                                <Bar dataKey="sessions" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+                                <YAxis allowDecimals={true} tick={{ fontSize: 12, fill: "#94a3b8" }} axisLine={false} tickLine={false} unit="h" />
+                                <Tooltip cursor={{ fill: "#f5f3ff" }} contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }} formatter={(v) => [`${v}h`, "Study Hours"]} />
+                                <Bar dataKey="hours" fill="#7c3aed" radius={[6, 6, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}

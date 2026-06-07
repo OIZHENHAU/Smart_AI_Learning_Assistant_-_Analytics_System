@@ -43,7 +43,6 @@ export const getDashboard = async (req, res, next) => {
             [userId]
         );
 
-        // --- Study session queries (fail gracefully if table/columns missing) ---
         let totalLearningHours = 0;
         let weeklyRows = [];
         let timePatternRows = [];
@@ -57,9 +56,11 @@ export const getDashboard = async (req, res, next) => {
             totalLearningHours = hoursRows[0].totalHours || 0;
 
             const [weekly] = await db.execute(
-                `SELECT DAYNAME(started_at) AS day, COUNT(*) AS sessions
+                `SELECT DAYNAME(started_at) AS day,
+                        ROUND(SUM(duration_minutes) / 60, 1) AS hours
                  FROM study_sessions
                  WHERE user_id = ? AND started_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                   AND ended_at IS NOT NULL
                  GROUP BY DAY(started_at), DAYNAME(started_at)
                  ORDER BY DAY(started_at) ASC`,
                 [userId]
