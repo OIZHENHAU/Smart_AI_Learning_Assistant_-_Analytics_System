@@ -2,16 +2,16 @@ import db from '../config/MySQL.js';
 //import { updateDocument } from '../controller/DocumentController.js';
 
 const Document = {
-    async createDocument({userId, title, fileName, filePath, fileSize, status}) {
+    async createDocument({userId, title, fileName, filePath, fileSize, status, language = 'en'}) {
         const connection = await db.getConnection();
 
         try {
             await connection.beginTransaction();
 
             const [documentResult] = await connection.execute(
-                `INSERT INTO documents (user_id, title, file_name, file_path, file_size, status)
-                VALUES (?, ?, ?, ?, ?, ?)`,
-                [userId, title, fileName, filePath, fileSize, status]
+                `INSERT INTO documents (user_id, title, file_name, file_path, file_size, status, language)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [userId, title, fileName, filePath, fileSize, status, language]
             );
 
             const documentId = documentResult.insertId;

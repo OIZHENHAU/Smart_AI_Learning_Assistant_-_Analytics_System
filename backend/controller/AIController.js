@@ -34,7 +34,7 @@ export const generateFlashcards = async (req, res, next) => {
         } 
 
         //Generate falshcards using API
-        const cards = await geminiService.generateFlashcards(document.extracted_text, parseInt(count));
+        const cards = await geminiService.generateFlashcards(document.extracted_text, parseInt(count), document.language || 'en');
 
         if (!cards || !Array.isArray(cards)) {
             return res.status(500).json({
@@ -97,7 +97,7 @@ export const generateQuiz = async (req, res, next) => {
         }
 
         //Generate quiz using Gemini AI
-        const questions = await geminiService.generateQuiz(document.extracted_text, parseInt(numOfQuestions));
+        const questions = await geminiService.generateQuiz(document.extracted_text, parseInt(numOfQuestions), document.langugae || 'en');
 
         //Check if th quiz generated successfully or not
         if (!questions || !Array.isArray(questions) || questions.length === 0) {
@@ -153,7 +153,7 @@ export const generateSummary = async (req, res, next) => {
             });
         }
 
-        const summary = await geminiService.generateSummary(document.extracted_text);
+        const summary = await geminiService.generateSummary(document.extracted_text, document.language || 'en');
 
         res.status(200).json({
             success: true,
@@ -202,7 +202,8 @@ export const geminiAIChat = async (req, res, next) => {
 
         const chunkIndices = relevantChunks.map(c => c.chunkIndex).filter(x => x !== undefined);
 
-        const answer = await geminiService.chatWithContext(question, relevantChunks);
+        const language = req.body.language || document.language || 'en';
+        const answer = await geminiService.chatWithContext(question, relevantChunks, language);
 
         const chatId = await ChatHistory.createChatHistory({
             userId: req.user.id,
@@ -267,7 +268,7 @@ export const explainConcept = async (req, res, next) => {
 
         const context = relevantChunks.map(c => c.content).join('\n\n');
 
-        const explanation = await geminiService.explainConcept(concept, context);
+        const explanation = await geminiService.explainConcept(concept, context, document.language || 'en');
 
         res.status(200).json({
             success: true,

@@ -21,14 +21,53 @@ async function generateText(prompt) {
     return response.choices[0].message.content;
 }
 
+const LANGUAGE_NAMES = {
+    en: 'English',
+    ms: 'Bahasa Melayu',
+    zh: 'Chinese (Simplified)',
+    ta: 'Tamil',
+    ar: 'Arabic'
+};
+
+/**
+ * Translate text to a target language
+ * @param {string} text - Text to translate
+ * @param {string} language - Target language code
+ * @returns {Promise<string>}
+ */
+export const translateText = async (text, language) => {
+    const langName = LANGUAGE_NAMES[language] || language;
+    const chunkSize = 12000;
+    const chunks = [];
+
+    for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.substring(i, i + chunkSize));
+    }
+
+    const translatedChunks = [];
+    for (const chunk of chunks) {
+        const prompt = `Translate the following text to ${langName}. Return only the translated text with no extra commentary.
+
+Text:
+${chunk}`;
+        const result = await generateText(prompt);
+        translatedChunks.push(result);
+    }
+
+    return translatedChunks.join('\n');
+};
+
 /**
  * Generate flashcards from text
  * @param {string} text - Document text
  * @param {number} count - Number of flashcards to generate
+ * @param {string} language - Language code for output
  * @returns {Promise<Array<{question: string, answer: string, difficulty: string}>>}
  */
-export const generateFlashcards = async (text, count = 10) => {
+export const generateFlashcards = async (text, count = 10, language = 'en') => {
+    const langInstruction = language !== 'en' ? `All questions and answers MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
     const promptQuestion = `Generate exactly ${count} educational flashcards from the following text.
+    ${langInstruction}
     Format each flashcards as:
     Q: [Clear, specific questions]
     A: [Concise, accurate answer]
@@ -81,10 +120,13 @@ export const generateFlashcards = async (text, count = 10) => {
  * Generate quiz questions
  * @param {string} text - Document text
  * @param {number} numQuestions - Number of questions
+ * @param {string} language - Language code for output
  * @returns {Promise<Array<{question: string, options: Array, correctAnswer: string, explanation: string, difficulty: string}>>}
  */
-export const generateQuiz = async (text, numQuestions = 10) => {
+export const generateQuiz = async (text, numQuestions = 10, language = 'en') => {
+    const langInstruction = language !== 'en' ? `All questions, options, and explanations MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
     const promptQuestion = `Generate exactly ${numQuestions} multiple choice questions from the following text.
+    ${langInstruction}
     Format each queston as:
     Q: [Question]
     Q1: [Option 1]
@@ -169,11 +211,14 @@ export const generateQuiz = async (text, numQuestions = 10) => {
 /**
  * Generate document summary
  * @param {string} text - Document text
+ * @param {string} language - Language code for output
  * @returns {Promise<string>}
  */
-export const generateSummary = async (text) => {
+export const generateSummary = async (text, language = 'en') => {
+    const langInstruction = language !== 'en' ? `Your response MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
     const promptQuestion = `Provide a brief summary of the following text,
     highlighting the key concept, main ideas, and important points. Please keep the summary clear and well structured.
+    ${langInstruction}
 
     Text:
     ${text.substring(0, 20000)}`;
@@ -190,13 +235,16 @@ export const generateSummary = async (text) => {
  * Chat with AI about the document context
  * @param {string} question - Question from the user
  * @param {Array<Object>} chunks - Relevant document chunks
+ * @param {string} language - Language code for output
  * @returns {Promise<string>}
  */
-export const chatWithContext = async (question, chunks) => {
+export const chatWithContext = async (question, chunks, language = 'en') => {
     const context = chunks.map((c, i) => `[Chunk ${i + 1}]\n${c.content}`).join('\n\n');
+    const langInstruction = language !== 'en' ? `Your answer MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
 
     const promptQuestion = `Based on the following context from a document, analyse the context and answer the user's question.
     If the answer is not in the context, say so.
+    ${langInstruction}
 
     Context:
     ${context}
@@ -218,11 +266,14 @@ export const chatWithContext = async (question, chunks) => {
  * Explain the specific concept
  * @param {string} concept - Concept to explain
  * @param {string} context - Relevant context
+ * @param {string} language - Language code for output
  * @returns {Promise<string>}
  */
-export const explainConcept = async (concept, context) => {
+export const explainConcept = async (concept, context, language = 'en') => {
+    const langInstruction = language !== 'en' ? `Your explanation MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
     const promptQuestion = `Explain the concept of ${concept} based on the following context.
     Provide a clear, educational explanation that's easy to make user understand. Include examples if relevant.
+    ${langInstruction}
 
     Context: ${context.substring(0, 10000)}`;
 

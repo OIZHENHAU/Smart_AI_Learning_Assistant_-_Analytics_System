@@ -2,10 +2,10 @@ import Document from "../models/Document.js";
 import Flashcard from "../models/Flashcard.js";
 import Quiz from "../models/Quiz.js";
 import { extractTextFromPDFFile } from '../utils/PdfParse.js';
-//import { extractTextFromPDFFile } from '../utils/PdfParse.js';
 import { extractTextFromWord } from '../utils/WordParser.js';
 import { extractTextFromPPT } from '../utils/PptParser.js';
 import { chunkText } from "../utils/TextChunker.js";
+import { translateText } from "../utils/GeminiService.js";
 import fs from 'fs/promises';
 
 //Upload pdf document: POST /api/document/upload
@@ -31,7 +31,7 @@ export const uploadDocument = async (req, res, next) => {
             });
         }
 
-        const { title } = req.body;
+        const { title, language = 'en' } = req.body;
 
         if (!title) {
             //Delete uplaod file if no title was provided
@@ -55,10 +55,11 @@ export const uploadDocument = async (req, res, next) => {
             fileName: fileName,
             filePath: fileURL,
             fileSize: req.file.size,
-            status: 'processing'
+            status: 'processing',
+            language
         });
 
-        processDocument(currentDocumentId, req.file.path, fileType).catch(err => {
+        processDocument(currentDocumentId, req.file.path, fileType, language).catch(err => {
             console.error('Fail to processing the file due to: ' + err);
 
         });
@@ -187,7 +188,7 @@ export const deleteDocument = async (req, res, next) => {
 }
 
 //Functon to process PDF, Word, PowerPoint file
-async function processDocument(documentId, filePath, fileType) {
+async function processDocument(documentId, filePath, fileType, language = 'en') {
     try {
         let text = "";
 
@@ -207,6 +208,12 @@ async function processDocument(documentId, filePath, fileType) {
         if (!text || text.trim().length === 0) {
             console.warn(`Empty text extracted for document ${documentId}`);
             throw new Error("No text extracted from file");
+        }
+
+        // Translate extracted text if language is not English
+        if (language !== 'en') {
+            console.log(`Translating document ${documentId} to language: ${language}`);
+            text = await translateText(text, language);
         }
 
         //Create chunks

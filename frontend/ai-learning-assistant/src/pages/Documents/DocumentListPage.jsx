@@ -6,6 +6,13 @@ import toast from 'react-hot-toast';
 import documentService from "../../services/DocumentService";
 import Spinner from "../../components/common/Spinner";
 
+const LANGUAGES = [
+    { code: 'en', label: 'English', flag: 'GB' },
+    { code: 'ms', label: 'Bahasa Melayu', flag: 'MY' },
+    { code: 'zh', label: '中文', flag: 'CN' },
+    { code: 'ta', label: 'தமிழ்', flag: 'IN' },
+    { code: 'ar', label: 'العربية', flag: 'SA' },
+];
 
 const DocumentListPage = () => {
     const navigate = useNavigate();
@@ -15,6 +22,7 @@ const DocumentListPage = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [uploadFile, setUploadFile] = useState(null);
     const [uploadTitle, setUploadTitle] = useState("");
+    const [uploadLanguage, setUploadLanguage] = useState("en");
     const [uploading, setUploading] = useState(false);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -60,6 +68,7 @@ const DocumentListPage = () => {
         const formData = new FormData();
         formData.append("file", uploadFile);
         formData.append("title", uploadTitle);
+        formData.append("language", uploadLanguage);
 
         try {
             await documentService.uploadDocument(formData);
@@ -67,6 +76,7 @@ const DocumentListPage = () => {
             setIsUploadModalOpen(false);
             setUploadFile(null);
             setUploadTitle("");
+            setUploadLanguage("en");
             setLoading(true);
             fetchDocuments();
 
@@ -159,9 +169,16 @@ const DocumentListPage = () => {
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
-                        <p className="text-xs text-slate-400 mt-3">
-                            {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ''}
-                        </p>
+                        <div className="flex items-center justify-between mt-3">
+                            <p className="text-xs text-slate-400">
+                                {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ''}
+                            </p>
+                            {doc.language && (
+                                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
+                                    {LANGUAGES.find(l => l.code === doc.language)?.label || doc.language.toUpperCase()}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -214,6 +231,27 @@ const DocumentListPage = () => {
                                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                                     placeholder="Document title"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Content Language</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {LANGUAGES.map((lang) => (
+                                        <button
+                                            key={lang.code}
+                                            type="button"
+                                            onClick={() => setUploadLanguage(lang.code)}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                                                uploadLanguage === lang.code
+                                                    ? 'bg-purple-600 border-purple-600 text-white'
+                                                    : 'border-slate-200 text-slate-600 hover:border-purple-300 hover:text-purple-600'
+                                            }`}
+                                        >
+                                            <span className="text-base leading-none">{lang.flag === 'GB' ? '🇬🇧' : lang.flag === 'MY' ? '🇲🇾' : lang.flag === 'CN' ? '🇨🇳' : lang.flag === 'IN' ? '🇮🇳' : '🇸🇦'}</span>
+                                            {lang.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-slate-400 mt-1.5">AI responses (chat, summary, quiz) will be generate in this language.</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">File</label>
