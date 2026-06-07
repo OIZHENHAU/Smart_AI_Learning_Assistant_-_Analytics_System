@@ -33,7 +33,7 @@ const QuizCard = ({quiz, onDelete}) => {
                         {quiz.title || `Quiz - ${moment(quiz.createdAt).format("MMM D, YYYY")}`}
                     </h3>
                     <p className='text-xs font-medium text-slate-500 uppercase tracking-wide'>
-                        Created {moment(quiz.createdAt).format("MMM D, YYYY")}
+                        Created on {moment(quiz.createdAt).format("MMM D, YYYY")}
                     </p>
                 </div>
 

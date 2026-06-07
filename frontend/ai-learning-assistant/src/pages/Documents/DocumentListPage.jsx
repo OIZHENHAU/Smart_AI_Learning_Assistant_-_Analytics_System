@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Upload, Trash2, FileText, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import moment from 'moment';
 
 import documentService from "../../services/DocumentService";
 import Spinner from "../../components/common/Spinner";
@@ -171,7 +172,7 @@ const DocumentListPage = () => {
                         </div>
                         <div className="flex items-center justify-between mt-3">
                             <p className="text-xs text-slate-400">
-                                {doc.upload_date ? new Date(doc.upload_date).toLocaleDateString() : ''}
+                                Created on {doc.upload_date ? moment(doc.upload_date).format("MMM D, YYYY") : ""}
                             </p>
                             {doc.language && (
                                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100">
