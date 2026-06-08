@@ -138,17 +138,41 @@ const Document = {
         try {
             await connection.beginTransaction();
 
-            //Delete document chunks
-            await connection.execute(
-                `DELETE FROM document_chunks WHERE document_id = ?`,
-                [documentId]
-            );
+            // 1. Delete document chunks
+            await connection.execute(`DELETE FROM document_chunks WHERE document_id = ?`, [documentId]);
 
-            //Delete document
+            // 2. Delete chat messages and relevant_chunks (chat_id FK)
+            const [chatRows] = await connection.execute(`SELECT id FROM chat_histories WHERE document_id = ?`, [documentId]);
+            for (const ch of chatRows) {
+                await connection.execute(`DELETE FROM relevant_chunks WHERE chat_id = ?`, [ch.id]).catch(() => {});
+                await connection.execute(`DELETE FROM messages WHERE chat_id = ?`, [ch.id]).catch(() => {});
+            }
+            await connection.execute(`DELETE FROM chat_histories WHERE document_id = ?`, [documentId]);
+
+            // 3. Delete quiz options, user_answers, questions, then quizzes
+            const [quizRows] = await connection.execute(`SELECT id FROM quizzes WHERE document_id = ?`, [documentId]);
+            for (const q of quizRows) {
+                const [questionRows] = await connection.execute(`SELECT id FROM questions WHERE quiz_id = ?`, [q.id]);
+                for (const qn of questionRows) {
+                    await connection.execute(`DELETE FROM options WHERE question_id = ?`, [qn.id]).catch(() => {});
+                    await connection.execute(`DELETE FROM user_answers WHERE question_id = ?`, [qn.id]).catch(() => {});
+                }
+                await connection.execute(`DELETE FROM user_answers WHERE quiz_id = ?`, [q.id]).catch(() => {});
+                await connection.execute(`DELETE FROM questions WHERE quiz_id = ?`, [q.id]);
+            }
+            await connection.execute(`DELETE FROM quizzes WHERE document_id = ?`, [documentId]);
+
+            // 4. Delete flashcard items then flashcards
+            const [flashcardRows] = await connection.execute(`SELECT id FROM flashcards WHERE document_id = ?`, [documentId]);
+            for (const fc of flashcardRows) {
+                await connection.execute(`DELETE FROM flashcard_items WHERE flashcard_id = ?`, [fc.id]);
+            }
+            await connection.execute(`DELETE FROM flashcards WHERE document_id = ?`, [documentId]);
+
+            // 5. Finally delete the document
             await connection.execute(
-                `DELETE FROM documents
-                 WHERE id = ? AND user_id = ?`,
-                 [documentId, userId]
+                `DELETE FROM documents WHERE id = ? AND user_id = ?`,
+                [documentId, userId]
             );
 
             await connection.commit();

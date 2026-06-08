@@ -11,8 +11,7 @@ const LANGUAGES = [
     { code: 'en', label: 'English', flag: 'GB' },
     { code: 'ms', label: 'Bahasa Melayu', flag: 'MY' },
     { code: 'zh', label: '中文', flag: 'CN' },
-    { code: 'ta', label: 'தமிழ்', flag: 'IN' },
-    { code: 'ar', label: 'العربية', flag: 'SA' },
+    { code: 'ta', label: 'தமிழ்', flag: 'IN' }
 ];
 
 const DocumentListPage = () => {
