@@ -129,7 +129,7 @@ const DashboardPage = () => {
     const initial = username.charAt(0).toUpperCase();
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
             {/* Welcome Header */}
             <div className="flex items-center gap-4">
                 <div className="relative shrink-0">

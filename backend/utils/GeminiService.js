@@ -1,24 +1,23 @@
 import dotenv from 'dotenv';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-if (!process.env.OPENROUTER_API_KEY) {
-    console.error('OPENROUTER_API_KEY was not declared in the environment variables.');
+if (!process.env.GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY was not declared in the environment variables.');
     process.exit(1);
 }
 
-const openai = new OpenAI({baseURL: 'https://openrouter.ai/api/v1', apiKey: process.env.OPENROUTER_API_KEY});
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const MODEL = "openrouter/free";
+const MODEL = "gemini-2.5-flash";
 
 async function generateText(prompt) {
-    const response = await openai.chat.completions.create({
+    const response = await ai.models.generateContent({
         model: MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 4096,
+        contents: prompt
     });
-    return response.choices[0].message.content;
+    return response.text;
 }
 
 const LANGUAGE_NAMES = {
