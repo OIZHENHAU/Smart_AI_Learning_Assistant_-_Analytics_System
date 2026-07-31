@@ -1,8 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-const AuthContext = createContext();
+// createContext() is a React API that creates a "container" for data you want to share 
+// across many components without manually passing the props down through every level.
+const AuthContext = createContext(); 
 
 export const useAuth = () => {
+    //useContext(AuthContext) - it wraps in the custom useAuth() hook.
+    /*
+    Here, instead of every component calling useContext(AuthContext) directly, 
+    that call is placed inside another function — useAuth — and other components call useAuth() 
+    instead. That's what "wrapped" means: useAuth is a thin custom hook whose 
+    body is just useContext(AuthContext) plus one extra step (the safety check).
+    */
     const context = useContext(AuthContext);
 
     if (!context) {
@@ -74,6 +83,13 @@ export const AuthProvider = ({children}) => {
         checkAuthStatus
     };
 
+    //AuthContext.Provider wraps components and supplies the value. Any components inside it can read that value.
+    /*
+    - AuthProvider holds the actual auth state (user, isAuthenticated, login, logout, etc) 
+    and passes it into AuthContext.Provider as a value.
+    - Anywhere else in the app, a component can call useAuth() to get user, login(), 
+    logout(), etc. directly — no need to pass them down as props through every parent component.
+    */
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 
 }
