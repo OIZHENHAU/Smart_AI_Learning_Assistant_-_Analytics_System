@@ -37,5 +37,12 @@ export const API_PATHS = {
     },
     DASHBOARD: {
         GET_MAIN_DASHBOARD: "/api/dashboard/main-dashboard"
+    },
+    ACHIEVEMENT: {
+        GET_ACHIEVEMENT_STATISTICS: "/api/achievements/achievement-page",
+        GET_ALL_BADGES: "/api/achievements/all-badges",
+        GET_ALL_UNLOCK_FEATURES: "/api/achievements/all-unlock-features",
+        GET_ALL_USER_XP: "/api/achievements/all-user-xp",
+        GET_ALL_DAILY_GOALS: "/api/achievements/all-daily-goals"
     }
 }

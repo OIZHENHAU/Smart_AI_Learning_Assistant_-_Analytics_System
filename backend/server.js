@@ -12,6 +12,7 @@ import flashcardRoutes from './routes/FlashcardRoute.js';
 import quizRoutes from './routes/QuizesRoute.js';
 import progressRoutes from './routes/ProgressRoute.js';
 import dashboardRoutes from './routes/DashboardRoute.js';
+import achievementRoutes from './routes/AchievementRoute.js';
 
 
 //Import mysql
@@ -56,6 +57,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/achievements', achievementRoutes);
 
 
 //Handling error
