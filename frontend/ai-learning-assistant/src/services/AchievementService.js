@@ -57,6 +57,17 @@ const getAllDailyGoals = async () => {
     }
 };
 
+const getCurrentLevelAndXP = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_CURRENT_LEVEL_AND_XP);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the current level and XP at the service due to: " + error);
+        throw error;
+    }
+}
+
 const achievementService = {
     getAchievementStatistics,
     getAllBadges,

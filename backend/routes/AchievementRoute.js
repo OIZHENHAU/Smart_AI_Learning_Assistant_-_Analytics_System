@@ -6,7 +6,8 @@ import {
     displayAllBadges,
     displayAllDailyGoals,
     displayAllUnlockFeatures,
-    displayAllUserXP
+    displayAllUserXP,
+    getCurrentLevelAndXP
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -21,5 +22,7 @@ router.get('/all-unlock-features', displayAllUnlockFeatures);
 router.get('/all-user-xp', displayAllUserXP);
 //Display all the daily goals
 router.get('/all-daily-goals', displayAllDailyGoals);
+//Get the current level and XP of the user
+router.get('/current-level-and-xp', getCurrentLevelAndXP);
 
 export default router;

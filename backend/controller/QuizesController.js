@@ -1,4 +1,6 @@
 import Quiz from '../models/Quiz.js';
+import Achievement from '../models/Achievement.js';
+import User from '../models/User.js';
 
 //Get all quiz from the document GET /api/quizzes/:documentId
 export const getQuizzes = async (req, res, next) => {
@@ -76,6 +78,7 @@ export const submitQuiz = async (req, res, next) => {
     try {
         const { answers } = req.body;
         const { quizId } = req.params;
+        const userId = req.user.id;
 
         if (!Array.isArray(answers)) {
             return res.status(400).json({
@@ -106,8 +109,13 @@ export const submitQuiz = async (req, res, next) => {
         }
 
         //Process answer
+        //Total correct answer count
         let correctCount = 0;
+        //Total incorrect answer count
+        let wrongCount = 0;
         const userAnswers = [];
+        //Total earn level XP
+        let totalEarnLevelXP = 0;
 
         for (const answer of answers) {
             const { questionId, selectedAnswer } = answer;
@@ -115,9 +123,15 @@ export const submitQuiz = async (req, res, next) => {
 
             if (question) {
                 const isCorrect = (selectedAnswer === question.correct_answer);
+                const questionXP = question.num_xp || 0;
 
                 if (isCorrect) {
                     correctCount += 1;
+                    totalEarnLevelXP += questionXP;
+
+                } else {
+                    wrongCount += 1;
+                    totalEarnLevelXP -= questionXP;
                 }
 
                 await Quiz.saveAnswer({ quizId, questionId: question.id, selectedAnswer, isCorrect });
@@ -129,11 +143,44 @@ export const submitQuiz = async (req, res, next) => {
             (correctCount / quiz.total_questions) * 100
         );
 
+        //Overall points
+        let totalEarnPoints = ((correctCount - wrongCount) <= 0) ? 0 : correctCount - wrongCount;
+
         //Update quiz result
         await Quiz.submitQuiz({
             quizId,
             score,
             completedAt: new Date()
+        });
+
+        //Update the achievement points
+        await Achievement.updateEarnPoints({
+            userId,
+            earnPoints: totalEarnPoints
+        });
+
+        //Check and update the current level of the user
+        const allLevel = await Achievement.retrieveAllLevelXP();
+        const currentAchievementStatistics = await Achievement.displayAchievementStatistic(userId);
+
+        let newLevelXP = currentAchievementStatistics[0].total_xp + totalEarnLevelXP;
+        let currentLevel = currentAchievementStatistics[0].current_level;
+
+        //Check if the new level XP is greater than the level length, 
+        // then update the current level
+        for (const level of allLevel) {
+            if (newLevelXP >= level.level_length) {
+                currentLevel = level.level_number;
+
+            } else {
+                break;
+            }
+        }
+        //Update the earn level and XP
+        await Achievement.updateLevelAndXP({
+            userId,
+            newLevel: currentLevel,
+            newLevelXP
         });
 
         res.status(200).json({
@@ -144,6 +191,8 @@ export const submitQuiz = async (req, res, next) => {
                 correctCount,
                 totalQuestions: quiz.total_questions,
                 percentage: score,
+                xp_gain: totalEarnLevelXP,
+                total_earn_points: totalEarnPoints,
                 userAnswers
             },
             message: "Quiz submitted successfully.",
@@ -192,6 +241,21 @@ export const getQuizResult = async (req, res, next) => {
             };
         });
         
+        //Get the number of earn XP
+        let totalEarnXP = detailedResults.reduce((total, result) => {
+            const question = quiz.questions.find(q => q.id === result.questionId);
+
+            if (result.isCorrect) {
+                return total + (question ? question.num_xp : 0);
+
+            } else {
+                return total - (question ? question.num_xp : 0);
+            }
+
+            //return total;
+
+        }, 0);
+
         res.status(200).json({
             success: true,
             data: {
@@ -201,7 +265,8 @@ export const getQuizResult = async (req, res, next) => {
                     documentTitle: quiz.document_title,
                     score: quiz.score,
                     totalQuestions: quiz.total_questions,
-                    completedAt: quiz.completed_at
+                    completedAt: quiz.completed_at,
+                    totalEarnXP: totalEarnXP
                 },
                 results: detailedResults
             },

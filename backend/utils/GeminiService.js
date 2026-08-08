@@ -18,6 +18,7 @@ async function generateText(prompt) {
         contents: prompt
     });
     return response.text;
+    //return response.candidates[0].content.parts[0].text;
 }
 
 const LANGUAGE_NAMES = {

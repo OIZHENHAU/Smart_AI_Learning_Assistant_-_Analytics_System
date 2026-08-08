@@ -10,13 +10,35 @@ const User = {
         //Time when the account was created
         const currentTime = new Date();
 
-        const [result] = await db.execute(
-            `INSERT INTO users (username, email, password_hash, phone_number, created_at)
-             VALUES (?, ?, ?, ?, ?)`,
-             [username, email.toLowerCase(), password_hashing, phone_number || null, currentTime]
-        );
+        const connection = await db.getConnection();
 
-        return result.insertId;
+        try {
+            await connection.beginTransaction();
+
+            const [result] = await connection.execute(
+                `INSERT INTO users (username, email, password_hash, phone_number, created_at)
+                VALUES (?, ?, ?, ?, ?)`,
+                [username, email.toLowerCase(), password_hashing, phone_number || null, currentTime]
+            );
+
+            const userId = result.insertId;
+
+            await connection.execute(
+                `INSERT INTO achievements (user_id, current_level, total_points, current_rank, current_steak, total_xp)
+                VALUES (?, 0, 0, 0, 0, 0)`,
+                [userId]
+            );
+
+            return userId;
+
+        } catch (error) {
+            await connection.rollback();
+            console.error("Fail to create the user account at the controller due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     },
 
     async findMatchEmail(email) {

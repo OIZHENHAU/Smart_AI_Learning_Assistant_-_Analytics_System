@@ -45,6 +45,12 @@ const QuizCard = ({quiz, onDelete}) => {
                             {quiz.questions.length === 1 ? "Question" : "Questions"}
                         </span>
                     </div>
+                    <div className='px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg'>
+                        <span className='text-sm font-semibold text-slate-700'>
+                            {quiz.num_xp}{" "}
+                            {"XP"}
+                        </span>
+                    </div>
                 </div>
             </div>
 

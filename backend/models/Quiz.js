@@ -1,22 +1,53 @@
 import db from '../config/MySQL.js';
 
+const gainXPBasedOnDifficulty = {
+    easy: {
+        title: 'easy',
+        level_point: 10
+    },
+    medium: {
+        title: 'medium',
+        level_point: 20
+    },
+    hard: {
+        title: 'hard',
+        level_point: 30
+    }
+};
+
 const Quiz = {
     async createQuiz({userId, documentId, title, questions}) {
         //Insert Quiz
+        let totalXPGain = 0;
+
+        for (const q of questions) {
+            const currentQuestionDifficulty = q.difficulty || 'medium';
+            const difficultyInfo = gainXPBasedOnDifficulty[currentQuestionDifficulty];
+
+            if (difficultyInfo) {
+                totalXPGain += difficultyInfo.level_point;
+            }
+        }
+
         const [quizResult] = await db.execute(
-            `INSERT INTO quizzes (user_id, document_id, title, total_questions)
-             VALUES (?, ?, ?, ?)`,
-             [userId, documentId, title, questions.length]
+            `INSERT INTO quizzes (user_id, document_id, title, total_questions, num_xp)
+             VALUES (?, ?, ?, ?, ?)`,
+             [userId, documentId, title, questions.length, totalXPGain]
         );
 
         const quizId = quizResult.insertId;
 
         //Insert Questions
         for (const q of questions) {
+            const currentQuestionDifficulty = q.difficulty || 'medium';
+            const questionXP = gainXPBasedOnDifficulty[currentQuestionDifficulty].level_point;
+
             const [questionResult] = await db.execute(
-                `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty, topic)
-                VALUES (?, ?, ?, ?, ?, ?)`,
-                [quizId, q.question, q.correctAnswer, q.explanation || null, q.difficulty || 'medium', q.topic || null]
+                `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty, topic, num_xp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [quizId, q.question, q.correctAnswer, q.explanation || null, 
+                    q.difficulty || 'medium', q.topic || null, questionXP
+                ]
             );
 
             const questionId = questionResult.insertId;
@@ -61,7 +92,8 @@ const Quiz = {
                 correct_answer: q.correct_answer,
                 explanation: q.explanation,
                 difficulty: q.difficulty,
-                topic: q.topic
+                topic: q.topic,
+                num_xp: q.num_xp
             }))
         };
     },
@@ -88,7 +120,7 @@ const Quiz = {
     async getQuizzesByDocument({userId, documentId}) {
         const [quizzes] = await db.execute(
             `
-            SELECT q.id, q.title, q.score, q.total_questions, q.completed_at, q.created_at,
+            SELECT q.id, q.title, q.score, q.total_questions, q.completed_at, q.created_at, q.num_xp,
             d.title AS document_title, d.file_name
             FROM quizzes q
             JOIN documents d
@@ -201,7 +233,8 @@ const Quiz = {
             options: q.options,
             correct_answer: q.correct_answer,
             explanation: q.explanation,
-            topic: q.topic
+            topic: q.topic,
+            num_xp: q.num_xp
         }));
 
         //Get user answers
@@ -213,6 +246,7 @@ const Quiz = {
             `, [quizId]
         );
 
+        //Added user answers into the quiz list.
         quiz.user_answers = userAnswers;
 
         return quiz;

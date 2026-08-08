@@ -51,6 +51,8 @@ const QuizResultPage = () => {
     const totalQuestions = detailedResults.length;
     const correctAnswers = detailedResults.filter(r => r.isCorrect).length;
     const incorrectAnswers = totalQuestions - correctAnswers;
+    const totalEarnPoints = ((correctAnswers - incorrectAnswers) <= 0) ? 0 : correctAnswers - incorrectAnswers;
+    const totalEarnXP = quiz.totalEarnXP || 0;
 
     // Group results by topic for breakdown
     const topicBreakdown = (() => {
@@ -111,7 +113,10 @@ const QuizResultPage = () => {
                         {incorrectAnswers} Incorrect
                     </span>
                     <span className="px-4 py-2 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded-xl">
-                        {correctAnswers} Points
+                        {totalEarnPoints} Points
+                    </span>
+                    <span className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-semibold rounded-xl">
+                        {totalEarnXP} XP Earned
                     </span>
                 </div>
             </div>

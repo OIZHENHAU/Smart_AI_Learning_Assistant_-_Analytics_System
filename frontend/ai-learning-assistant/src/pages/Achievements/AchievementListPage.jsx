@@ -41,6 +41,7 @@ const REDEEM_ITEMS = [
 const AchievementListPage = () => {
     const { user } = useAuth();
     const [achievementStatistic, setAchievementStatistic] = useState(null);
+    const [currentUserLevelAndXP, setCurrentUserLevelAndXP] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -70,10 +71,11 @@ const AchievementListPage = () => {
         );
     }
 
-    const level = achievementStatistic?.current_level ?? 1;
+    const level = achievementStatistic?.current_level ?? 0;
     const totalPoints = achievementStatistic?.total_points ?? 0;
     const currentStreak = achievementStatistic?.current_steak ?? 0;
     const totalXp = achievementStatistic?.total_xp ?? 0;
+    const currentRank = achievementStatistic?.current_rank ?? 0;
 
     const currentLevelXp = totalXp % XP_PER_LEVEL;
     const xpToNextLevel = XP_PER_LEVEL - currentLevelXp;
@@ -85,7 +87,7 @@ const AchievementListPage = () => {
         { label: 'Level', value: level, icon: TrendingUp, bg: 'bg-slate-100', iconColor: 'text-slate-500' },
         { label: 'Total Points', value: totalPoints, bg: 'bg-purple-100', icon: Gift, iconColor: 'text-purple-500' },
         { label: 'Current Streak', value: currentStreak, bg: 'bg-red-100', icon: Flame, iconColor: 'text-red-500' },
-        { label: 'Rank', value: '—', icon: Award, bg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
+        { label: 'Rank', value: currentRank, icon: Award, bg: 'bg-yellow-100', iconColor: 'text-yellow-600' },
     ];
 
     return (

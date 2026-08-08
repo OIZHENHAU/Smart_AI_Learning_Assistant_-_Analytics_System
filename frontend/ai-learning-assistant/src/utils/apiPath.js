@@ -43,6 +43,7 @@ export const API_PATHS = {
         GET_ALL_BADGES: "/api/achievements/all-badges",
         GET_ALL_UNLOCK_FEATURES: "/api/achievements/all-unlock-features",
         GET_ALL_USER_XP: "/api/achievements/all-user-xp",
-        GET_ALL_DAILY_GOALS: "/api/achievements/all-daily-goals"
+        GET_ALL_DAILY_GOALS: "/api/achievements/all-daily-goals",
+        GET_CURRENT_LEVEL_AND_XP: "/api/achievements/current-level-and-xp"
     }
 }

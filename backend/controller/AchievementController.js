@@ -88,3 +88,21 @@ export const displayAllDailyGoals = async (req, res, next) => {
         next(error);
     }
 }
+
+//GET the current level and XP od the user GET /api/current-level-and-xp
+export const getCurrentLevelAndXP = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const currentLevelAndXP = await Achievement.getCurrentLevelAndXP(userId);
+
+        res.status(200).json({
+            success: true,
+            data: currentLevelAndXP,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to retrieve the current level and XP at the controller due to: " + error);
+        next(error);
+    }
+}
