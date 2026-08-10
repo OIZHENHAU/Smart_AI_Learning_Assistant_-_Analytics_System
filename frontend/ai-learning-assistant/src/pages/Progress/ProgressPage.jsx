@@ -4,7 +4,7 @@ import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
-import { Clock, BookOpen, Target, TrendingUp, Eye } from "lucide-react";
+import { Clock, BookOpen, Target, TrendingUp, Eye, Activity } from "lucide-react";
 import progressService from "../../services/ProgressService";
 import Spinner from "../../components/common/Spinner";
 import moment from "moment";
@@ -77,9 +77,15 @@ const ProgressPage = () => {
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">View Progress</h1>
-                <p className="text-sm text-slate-500 mt-1">Track your learning performance and improvements</p>
+            {/* Header */}
+            <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center shrink-0">
+                    <Activity className="w-7 h-7 text-purple-600" strokeWidth={2} />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">View Progress</h1>
+                    <p className="text-sm text-slate-500 mt-1">Track your learning performance and improvements</p>
+                </div>
             </div>
 
             {/* Stats */}

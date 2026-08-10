@@ -52,9 +52,14 @@ const Achievement = {
         try {
             const [allPlayers] = await connection.execute(
                 `
-                SELECT u.username, u.total_xp 
+                SELECT
+                    u.id,
+                    u.username,
+                    COALESCE(a.total_xp, 0) AS total_xp,
+                    COALESCE(a.current_level, 0) AS current_level
                 FROM users u
-                ORDER BY u.total_xp ASC
+                LEFT JOIN achievements a ON u.id = a.user_id
+                ORDER BY a.total_xp DESC, u.username ASC
                 `
             );
 

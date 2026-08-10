@@ -73,7 +73,8 @@ const achievementService = {
     getAllBadges,
     getAllPlayers,
     getAllUnlockFeatures,
-    getAllDailyGoals
+    getAllDailyGoals,
+    getCurrentLevelAndXP
 };
 
 export default achievementService;

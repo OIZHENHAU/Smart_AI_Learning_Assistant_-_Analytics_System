@@ -5,10 +5,10 @@ import achievementService from "../../services/AchievementService";
 import { useAuth } from "../../context/AuthContext";
 import {
     Award, Flame, Lock, Medal, Shield, Info, Bot, Gift,
-    Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, Trophy
+    Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, Trophy, BarChart4Icon
 } from 'lucide-react';
 
-const XP_PER_LEVEL = 3500;
+
 const LEVEL_START_TITLE = 'Student Explorer';
 const LEVEL_END_TITLE = 'Knowledge Master';
 
@@ -26,12 +26,6 @@ const DAILY_GOALS = [
     { label: 'Chat with AI assistant 10 times', current: 5, target: 10, icon: Bot },
 ];
 
-const TOP_LEARNERS = [
-    { name: 'Hosico Oi', xp: 600, medal: 'text-yellow-500' },
-    { name: 'Rose Winter', xp: 500, medal: 'text-slate-400' },
-    { name: 'SAmanda', xp: 495, medal: 'text-amber-600' },
-];
-
 const REDEEM_ITEMS = [
     { title: 'AI Hints', progress: '5/10', description: 'Get hints from AI when answering quiz', cost: 500, icon: Bot, color: 'bg-slate-100 text-slate-700' },
     { title: 'Score Shield', progress: '3/10', description: 'Protect your points from losing.', cost: 250, icon: Shield, color: 'bg-purple-100 text-purple-700' },
@@ -42,14 +36,24 @@ const AchievementListPage = () => {
     const { user } = useAuth();
     const [achievementStatistic, setAchievementStatistic] = useState(null);
     const [currentUserLevelAndXP, setCurrentUserLevelAndXP] = useState(null);
+    const [allPlayersXP, setAllPlayersXP] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchStatistics = async () => {
             try {
+                //Get the achievement statistic of the user
                 const response = await achievementService.getAchievementStatistics();
                 const data = Array.isArray(response?.data) ? response.data[0] : response?.data;
                 setAchievementStatistic(data || null);
+
+                //get the current level and the remaining XP of the user for the next level
+                const levelAndXPResponse = await achievementService.getCurrentLevelAndXP();
+                setCurrentUserLevelAndXP(levelAndXPResponse?.data || null);
+
+                // Get XP for all players
+                const allPlayersResponse = await achievementService.getAllPlayers();
+                setAllPlayersXP(Array.isArray(allPlayersResponse?.data) ? allPlayersResponse.data : []);
 
             } catch (error) {
                 toast.error('Fail to load the achievement data.');
@@ -60,7 +64,12 @@ const AchievementListPage = () => {
             }
         };
 
+        // Initial fetch
         fetchStatistics();
+        // Set up polling - refetch every 3 seconds
+        const pollInterval = setInterval(fetchStatistics, 3000);
+        // Cleanup interval when component unmounts
+        return () => clearInterval(pollInterval);
     }, []);
 
     if (loading) {
@@ -71,18 +80,34 @@ const AchievementListPage = () => {
         );
     }
 
+    //Achievemnt Statistics Calculation
     const level = achievementStatistic?.current_level ?? 0;
     const totalPoints = achievementStatistic?.total_points ?? 0;
     const currentStreak = achievementStatistic?.current_steak ?? 0;
     const totalXp = achievementStatistic?.total_xp ?? 0;
     const currentRank = achievementStatistic?.current_rank ?? 0;
 
-    const currentLevelXp = totalXp % XP_PER_LEVEL;
-    const xpToNextLevel = XP_PER_LEVEL - currentLevelXp;
-    const levelProgressPercent = Math.min(100, Math.round((currentLevelXp / XP_PER_LEVEL) * 100));
+    //Level Progress Calculation
+    const currentLevelXP = currentUserLevelAndXP?.level_length ?? 0;
+    const currentUserLevelXp = currentUserLevelAndXP?.total_xp ?? 0;
+    const xpToNextLevel = currentLevelXP - currentUserLevelXp;
+    const levelProgressPercent = 100 - Math.min(100, Math.round((xpToNextLevel / currentLevelXP) * 100));
 
-    const username = user?.username || user?.name || 'Learner';
+    // Get top 3 players with medal colors assigned
+    const medalColors = ['text-yellow-500', 'text-slate-400', 'text-amber-600'];
+    const sortedPlayers = [...allPlayersXP].sort((a, b) => b.total_xp - a.total_xp);
+    const topLearners = sortedPlayers.slice(0, 3).map((learner, index) => ({
+                        ...learner,
+                        medal: medalColors[index]
+    }));
 
+    // Calculate user's position in the leaderboard
+    const currentUserID = user?.id;
+    const currentUsername = user?.username || user?.name || 'Learner';
+    const currentUserPosition = sortedPlayers.findIndex(player => player.id === currentUserID) + 1;
+    const isUserInTopThree = currentUserPosition <= 3;
+
+    //The four stat cards: Level, Total Points, Current Streak, Rank
     const statCards = [
         { label: 'Level', value: level, icon: TrendingUp, bg: 'bg-slate-100', iconColor: 'text-slate-500' },
         { label: 'Total Points', value: totalPoints, bg: 'bg-purple-100', icon: Gift, iconColor: 'text-purple-500' },
@@ -138,36 +163,8 @@ const AchievementListPage = () => {
                             />
                         </div>
                         <div className="flex items-center justify-between text-xs text-slate-500 mt-2">
-                            <span>{currentLevelXp}/{XP_PER_LEVEL} XP</span>
+                            <span>{currentUserLevelXp}/{currentLevelXP} XP</span>
                             <span>{xpToNextLevel} XP to next level</span>
-                        </div>
-                    </div>
-
-                    {/* All Player */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                        <div className="flex items-center justify-between mb-5">
-                            <h2 className="text-lg font-bold text-slate-900">Top Learner</h2>
-                            <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
-                        </div>
-                        <div className="space-y-3">
-                            {TOP_LEARNERS.map((learner, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                    <Medal className={`w-5 h-5 shrink-0 ${learner.medal}`} strokeWidth={2} />
-                                    <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
-                                        {learner.name.charAt(0)}
-                                    </div>
-                                    <span className="flex-1 text-sm font-semibold text-slate-800 truncate">{learner.name}</span>
-                                    <span className="text-sm font-bold text-slate-900">{learner.xp} XP</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-3 mt-4 bg-purple-100 rounded-xl px-3 py-2.5">
-                            <span className="w-5 text-center text-sm font-bold text-purple-700 shrink-0">—</span>
-                            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                {username.charAt(0).toUpperCase()}
-                            </div>
-                            <span className="flex-1 text-sm font-bold text-slate-900 truncate">{username}</span>
-                            <span className="text-sm font-bold text-slate-900">{totalXp} XP</span>
                         </div>
                     </div>
 
@@ -185,6 +182,27 @@ const AchievementListPage = () => {
                                     </div>
                                     <div className="text-sm font-bold text-slate-900">{badge.name}</div>
                                     <div className="text-xs text-slate-500 mt-1 leading-snug">{badge.description}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Redeem Points */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-lg font-bold text-slate-900">Redeem Points</h2>
+                            <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
+                        </div>
+                        <div className="space-y-3">
+                            {REDEEM_ITEMS.map((item, i) => (
+                                <div key={i} className={`rounded-xl p-4 ${item.color}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <item.icon className="w-5 h-5" strokeWidth={2} />
+                                        <span className="text-xs font-semibold opacity-70">{item.progress}</span>
+                                    </div>
+                                    <div className="text-sm font-bold mb-1">{item.title}</div>
+                                    <div className="text-xs opacity-80 leading-snug mb-2">{item.description}</div>
+                                    <div className="text-sm font-bold">{item.cost.toLocaleString()} pts</div>
                                 </div>
                             ))}
                         </div>
@@ -232,25 +250,53 @@ const AchievementListPage = () => {
                         </div>
                     </div>
 
-                    {/* Redeem Points */}
+                    {/* All Player */}
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
-                            <h2 className="text-lg font-bold text-slate-900">Redeem Points</h2>
+                            <h2 className="text-lg font-bold text-slate-900">Top Learner</h2>
                             <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
                         </div>
                         <div className="space-y-3">
-                            {REDEEM_ITEMS.map((item, i) => (
-                                <div key={i} className={`rounded-xl p-4 ${item.color}`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <item.icon className="w-5 h-5" strokeWidth={2} />
-                                        <span className="text-xs font-semibold opacity-70">{item.progress}</span>
+                            {topLearners.map((learner, i) => {
+                                const isCurrentUser = learner.id === currentUserID;
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`flex items-center gap-3 p-2 rounded-xl transition-all ${
+                                            isCurrentUser
+                                                ? 'bg-purple-100 border-2 border-purple-400'
+                                                : ''
+                                        }`}
+                                    >
+                                        <Medal className={`w-5 h-5 shrink-0 ${learner.medal}`} strokeWidth={2} />
+                                        <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 text-xs font-bold shrink-0">
+                                            {learner.username.charAt(0)}
+                                        </div>
+                                        <span className="flex-1 text-sm font-semibold text-slate-800 truncate">{learner.username}</span>
+                                        <span className="text-sm font-bold text-slate-900">{learner.total_xp} XP</span>
                                     </div>
-                                    <div className="text-sm font-bold mb-1">{item.title}</div>
-                                    <div className="text-xs opacity-80 leading-snug mb-2">{item.description}</div>
-                                    <div className="text-sm font-bold">{item.cost.toLocaleString()} pts</div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
+
+                        {/* Divider - 3 dots */}
+                        {!isUserInTopThree && (
+                            <div className="flex justify-center items-center my-1">
+                                <span className="text-2xl text-slate-400 font-bold">•••</span>
+                            </div>
+                        )}
+
+                        {/* User's row - only show if not in top 3 */}
+                        {!isUserInTopThree && (
+                            <div className="flex items-center gap-3 bg-purple-100 rounded-xl px-3 py-2.5">
+                                <span className="w-5 text-center text-sm font-bold text-purple-700 shrink-0">{currentUserPosition}</span>
+                                <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                    {currentUsername.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="flex-1 text-sm font-bold text-slate-900 truncate">{currentUsername}</span>
+                                <span className="text-sm font-bold text-slate-900">{totalXp} XP</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Upload, Trash2, FileText, X } from 'lucide-react';
+import { Plus, Upload, Trash2, FileText, X, Notebook } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import moment from 'moment';
@@ -153,7 +153,7 @@ const DocumentListPage = () => {
                         className="bg-white border border-slate-200 rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all group"
                     >
                         <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex items-center gap-2 min-w-0">
                                 <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
                                     <FileText className="w-5 h-5 text-purple-500" />
                                 </div>
@@ -189,13 +189,14 @@ const DocumentListPage = () => {
         <div className="min-h-screen p-6">
             <div className="relative max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-2xl font-medium text-slate-900 tracking-tight mb-1">
-                            My Documents
-                        </h1>
-                        <p className="text-slate-400 text-sm">
-                            Manage your learning documents.
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center shrink-0">
+                            <Notebook className="w-7 h-7 text-purple-600" strokeWidth={2} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-slate-900">My Documents</h1>
+                            <p className="text-sm text-slate-500">Manage your learning documents.</p>
+                        </div>
                     </div>
                     {documents.length > 0 && (
                         <button
