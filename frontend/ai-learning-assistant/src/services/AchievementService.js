@@ -66,7 +66,18 @@ const getCurrentLevelAndXP = async () => {
         console.error("Fail to get the current level and XP at the service due to: " + error);
         throw error;
     }
-}
+};
+
+const postAllDailyGoals = async () => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.POST_ALL_DAILY_GOALS);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to post all daily goals at the service due to: " + error);
+        throw error;
+    }
+};
 
 const achievementService = {
     getAchievementStatistics,
@@ -74,7 +85,8 @@ const achievementService = {
     getAllPlayers,
     getAllUnlockFeatures,
     getAllDailyGoals,
-    getCurrentLevelAndXP
+    getCurrentLevelAndXP,
+    postAllDailyGoals
 };
 
 export default achievementService;

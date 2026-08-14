@@ -13,8 +13,7 @@ import quizRoutes from './routes/QuizesRoute.js';
 import progressRoutes from './routes/ProgressRoute.js';
 import dashboardRoutes from './routes/DashboardRoute.js';
 import achievementRoutes from './routes/AchievementRoute.js';
-
-
+import Achievement from './models/Achievement.js';
 //Import mysql
 import mysql from 'mysql2';
 import db from './config/MySQL.js';
@@ -73,11 +72,54 @@ app.use((req, res) => {
     })
 });
 
+const getMillisecondsUntilNext8AM = () => {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(8, 0, 0, 0);
+
+    if (now >= next) {
+        next.setDate(next.getDate() + 1);
+    }
+
+    return next - now;
+};
+
+const scheduleDailyGoalReset = () => {
+    const delay = getMillisecondsUntilNext8AM();
+
+    setTimeout(async () => {
+        try {
+            await Achievement.resetDailyGoalsIfDue();
+            console.log('Daily goals reset at 8:00 AM');
+
+        } catch (error) {
+            console.error('Failed to reset daily goals at 8:00 AM:', error);
+
+        } finally {
+            scheduleDailyGoalReset();
+        }
+    }, delay);
+};
+
+const initDailyGoalResetScheduler = async () => {
+    try {
+        await Achievement.resetDailyGoalsIfDue();
+        console.log('Daily goal reset check completed on startup');
+
+    } catch (error) {
+        console.error('Initial daily goal reset check failed:', error);
+    }
+
+    scheduleDailyGoalReset();
+};
+
 //Server Start
 const PORT = process.env.PORT || 5528;
 
 app.listen(PORT, () => {
     console.log(`Server running on the port ${PORT} in ${process.env.NODE_ENV} mode.`);
+    //Initialize the daily goal reset scheduler
+    initDailyGoalResetScheduler();
 });
 
 process.on('unhandleRejection', (err) => {

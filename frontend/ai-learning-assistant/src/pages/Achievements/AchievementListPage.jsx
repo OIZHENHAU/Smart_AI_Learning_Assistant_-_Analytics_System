@@ -5,12 +5,26 @@ import achievementService from "../../services/AchievementService";
 import { useAuth } from "../../context/AuthContext";
 import {
     Award, Flame, Lock, Medal, Shield, Info, Bot, Gift,
-    Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, Trophy, BarChart4Icon
+    Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, 
+    Trophy, BarChart4Icon, BadgeCheckIcon, Upload
 } from 'lucide-react';
+
+
+// Determine a suitable icon component for a daily goal based on its fields
+const getGoalIcon = (goal) => {
+    const key = (goal.main_focus || '').toString().toLowerCase();
+    if (key.includes('study_time') || key.includes('minute') || key.includes('time')) return Calendar;
+    if (key.includes('chat') || key.includes('ai') || key.includes('assistant')) return Bot;
+    if (key.includes('quiz') || key.includes('quizzes')) return CheckSquare;
+    if (key.includes('upload') || key.includes('done')) return Upload;
+    if (key.includes('xp') || key.includes('experience')) return Award;
+    return Star;
+};
 
 
 const LEVEL_START_TITLE = 'Student Explorer';
 const LEVEL_END_TITLE = 'Knowledge Master';
+
 
 const RECENT_BADGES = [
     { name: 'Feeling 22', description: 'Everything will be alright', icon: Star, color: 'bg-red-100 text-red-500' },
@@ -18,12 +32,6 @@ const RECENT_BADGES = [
     { name: 'Breakthrough', description: 'Solve correctly on 20 difficulty questions', icon: Sparkles, color: 'bg-slate-200 text-slate-600' },
     { name: 'AI Explorer', description: 'Using AI assistant frequently', icon: Bot, color: 'bg-slate-900 text-cyan-400' },
     { name: 'Python Expert', description: 'Complete python lesson', icon: Lock, color: 'bg-slate-100 text-slate-400', locked: true },
-];
-
-const DAILY_GOALS = [
-    { label: 'Complete 2 quizzes', current: 2, target: 2, icon: CheckSquare },
-    { label: 'Study for 30 minutes', current: 12, target: 30, icon: Calendar },
-    { label: 'Chat with AI assistant 10 times', current: 5, target: 10, icon: Bot },
 ];
 
 const REDEEM_ITEMS = [
@@ -37,6 +45,7 @@ const AchievementListPage = () => {
     const [achievementStatistic, setAchievementStatistic] = useState(null);
     const [currentUserLevelAndXP, setCurrentUserLevelAndXP] = useState(null);
     const [allPlayersXP, setAllPlayersXP] = useState([]);
+    const [allDailyGoals, setAllDailyGoals] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -55,6 +64,12 @@ const AchievementListPage = () => {
                 const allPlayersResponse = await achievementService.getAllPlayers();
                 setAllPlayersXP(Array.isArray(allPlayersResponse?.data) ? allPlayersResponse.data : []);
 
+                //Get all the daily goals of the user and attach an icon component for each
+                const allDailyGoalsResponse = await achievementService.getAllDailyGoals();
+                const rawDailyGoals = Array.isArray(allDailyGoalsResponse?.data) ? allDailyGoalsResponse.data : [];
+                const goalsWithIcons = rawDailyGoals.map(g => ({ ...g, icon: getGoalIcon(g) }));
+                setAllDailyGoals(goalsWithIcons);
+
             } catch (error) {
                 toast.error('Fail to load the achievement data.');
                 console.error("Fail to load the achievement data at the achievement list page due to: " + error);
@@ -66,10 +81,11 @@ const AchievementListPage = () => {
 
         // Initial fetch
         fetchStatistics();
-        // Set up polling - refetch every 3 seconds
+        // Set up polling and refetch every 3 seconds
         const pollInterval = setInterval(fetchStatistics, 3000);
         // Cleanup interval when component unmounts
         return () => clearInterval(pollInterval);
+
     }, []);
 
     if (loading) {
@@ -97,8 +113,8 @@ const AchievementListPage = () => {
     const medalColors = ['text-yellow-500', 'text-slate-400', 'text-amber-600'];
     const sortedPlayers = [...allPlayersXP].sort((a, b) => b.total_xp - a.total_xp);
     const topLearners = sortedPlayers.slice(0, 3).map((learner, index) => ({
-                        ...learner,
-                        medal: medalColors[index]
+        ...learner,
+        medal: medalColors[index]
     }));
 
     // Calculate user's position in the leaderboard
@@ -107,7 +123,7 @@ const AchievementListPage = () => {
     const currentUserPosition = sortedPlayers.findIndex(player => player.id === currentUserID) + 1;
     const isUserInTopThree = currentUserPosition <= 3;
 
-    //The four stat cards: Level, Total Points, Current Streak, Rank
+    //The four stat cards: Level, Total Points, Current Streak, and Rank
     const statCards = [
         { label: 'Level', value: level, icon: TrendingUp, bg: 'bg-slate-100', iconColor: 'text-slate-500' },
         { label: 'Total Points', value: totalPoints, bg: 'bg-purple-100', icon: Gift, iconColor: 'text-purple-500' },
@@ -218,21 +234,31 @@ const AchievementListPage = () => {
                             <span className="text-xs text-slate-400">Reset in 10:35:52</span>
                         </div>
                         <div className="space-y-4">
-                            {DAILY_GOALS.map((goal, i) => {
-                                const percent = Math.min(100, Math.round((goal.current / goal.target) * 100));
-                                const done = goal.current >= goal.target;
+                            {allDailyGoals.map((goal, i) => {
+                                const numComplete = goal.number_complete ?? 0;
+                                const numAchieve = goal.num_achieve ?? 0;
+                                const percent = numAchieve > 0 ? Math.min(100, Math.round((numComplete / numAchieve) * 100)) : 0;
+                                const done = goal.completed;
+                                const isComplete = numAchieve > 0 && numComplete >= numAchieve;
+                                const Icon = goal.icon || Calendar;
                                 return (
                                     <div key={i} className="flex items-start gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                                            <goal.icon className="w-4.5 h-4.5 text-purple-600" strokeWidth={2} />
+                                            <Icon className="w-4.5 h-4.5 text-purple-600" strokeWidth={2} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-semibold text-slate-800 mb-1.5">{goal.label}</div>
+                                                <div className="text-sm font-semibold text-slate-800 mb-1.5">{goal.goal_description}</div>
                                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                <div className={`h-full rounded-full ${done ? 'bg-green-500' : 'bg-purple-500'}`} style={{ width: `${percent}%` }} />
+                                                <div className={`h-full rounded-full ${done ? 'bg-purple-500' : 'bg-purple-500'}`} style={{ width: `${percent}%` }} />
                                             </div>
                                         </div>
-                                        <span className="text-xs font-semibold text-slate-500 shrink-0 mt-1">{goal.current}/{goal.target}</span>
+                                        <span className={`text-xs font-semibold shrink-0 mt-1 ${isComplete ? 'text-purple-600' : 'text-slate-500'}`}>
+                                            {isComplete ? (
+                                                <BadgeCheckIcon className="w-4 h-4 text-purple-600" strokeWidth={2} />
+                                            ) : (
+                                                `${numComplete}/${numAchieve}`
+                                            )}
+                                        </span>
                                     </div>
                                 );
                             })}
@@ -286,7 +312,7 @@ const AchievementListPage = () => {
                             </div>
                         )}
 
-                        {/* User's row - only show if not in top 3 */}
+                        {/* User's row & only show if not in top 3 */}
                         {!isUserInTopThree && (
                             <div className="flex items-center gap-3 bg-purple-100 rounded-xl px-3 py-2.5">
                                 <span className="w-5 text-center text-sm font-bold text-purple-700 shrink-0">{currentUserPosition}</span>

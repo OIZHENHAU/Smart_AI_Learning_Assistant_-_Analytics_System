@@ -75,7 +75,7 @@ export const displayAllUnlockFeatures = async (req, res, next) => {
 export const displayAllDailyGoals = async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const allDailyGoals = await Achievement.displayDailyGoals(userId);
+        const allDailyGoals = await Achievement.displayAllDailyGoals(userId);
 
         res.status(200).json({
             success: true,
@@ -103,6 +103,24 @@ export const getCurrentLevelAndXP = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to retrieve the current level and XP at the controller due to: " + error);
+        next(error);
+    }
+}
+
+//POST all the daily goals when the user first create the account POST /api/daily-goals
+export const postAllDailyGoals = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const daily_goals = await Achievement.addDailyGoals(userId);
+
+        res.status(200).json({
+            success: true,
+            data: daily_goals,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to post all the daily goals at the controller due to: " + error);
         next(error);
     }
 }

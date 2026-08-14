@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../../services/AuthService';
+import achievementService from '../../services/AchievementService';
 import { Brain, User, Mail, Lock, ArrowRight } from "lucide-react";
 import toast from 'react-hot-toast';
 
@@ -45,7 +46,10 @@ const RegisterPage = () => {
 
         setLoading(true);
         try {
+            //Register new user account.
             await authService.register(username, email, password);
+            //Add daily goals when creating the account.
+            await achievementService.postAllDailyGoals();
             toast.success('Account created! Please log in.');
             navigate('/login');
         } catch (error) {

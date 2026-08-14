@@ -97,7 +97,7 @@ const Achievement = {
         }
     },
 
-    async displayDailyGoals(userId) {
+    async displayAllDailyGoals(userId) {
         const connection = await db.getConnection();
 
         try {
@@ -112,6 +112,31 @@ const Achievement = {
 
         } catch (error) {
             console.error("Fail to display all the daily goals due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async resetDailyGoalsIfDue() {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.execute(
+                `
+                UPDATE daily_goal
+                SET number_complete = 0,
+                    completed = FALSE,
+                    last_reset = NOW()
+                WHERE DATE(last_reset) < CURDATE()
+                `
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to reset the daily goals at the Achievement due to: " + error);
             throw error;
 
         } finally {
@@ -210,6 +235,32 @@ const Achievement = {
             console.error("Fail to retrieve the current level and XP at the Achievement due to: " + error);
             throw error;
             
+        } finally {
+            connection.release();
+        }
+    },
+
+    async addDailyGoals(userId) {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.execute(
+                `
+                INSERT INTO daily_goal (user_id, number_complete, goal_description, main_focus, num_achieve, completed, last_reset)
+                VALUES (?, 0, 'Complete 3 quizzes', 'quiz', 3, FALSE, NOW()),
+                          (?, 0, 'Study for 30 minutes', 'study_time', 30, FALSE, NOW()),
+                          (?, 0, 'Chat with AI assistant 10 times', 'chat', 10, FALSE, NOW()),
+                          (?, 0, 'Gain 100XP', 'xp', 100, FALSE, NOW()),
+                          (?, 0, 'Upload 2 documents', 'upload', 2, FALSE, NOW())
+                `, [userId, userId, userId, userId, userId]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to add daily goals at the Achievement due to: " + error);
+            throw error;
+
         } finally {
             connection.release();
         }

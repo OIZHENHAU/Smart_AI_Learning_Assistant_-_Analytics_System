@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
 import authService from '../../services/AuthService';
+import achievementService from '../../services/AchievementService';
 import { Brain, Mail, Lock, ArrowRight } from "lucide-react";
 import toast from 'react-hot-toast';
 
@@ -42,6 +43,7 @@ const LoginPage = () => {
         try {
             const { token, data } = await authService.login(email, password);
             login(data.user, token);
+            //await achievementService.postAllDailyGoals();
             toast.success('Logged in successfully!');
             navigate('/dashboard');
         } catch (error) {
