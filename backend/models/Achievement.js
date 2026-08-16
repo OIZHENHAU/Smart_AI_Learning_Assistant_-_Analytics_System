@@ -108,7 +108,18 @@ const Achievement = {
                 `, [userId]
             );
 
-            return allDailyGoal;
+            // compute next day at 8:00 AM as the reset time
+            const now = new Date();
+            const nextReset = new Date(now);
+            nextReset.setDate(now.getDate() + 1);
+            nextReset.setHours(8, 0, 0, 0);
+            const resetInSeconds = Math.max(0, Math.floor((nextReset - now) / 1000));
+
+            return {
+                dailyGoals: allDailyGoal,
+                reset_at: nextReset.toISOString(),
+                reset_in_seconds: resetInSeconds
+            };
 
         } catch (error) {
             console.error("Fail to display all the daily goals due to: " + error);

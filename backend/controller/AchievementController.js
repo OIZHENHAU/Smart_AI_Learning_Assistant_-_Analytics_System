@@ -77,11 +77,24 @@ export const displayAllDailyGoals = async (req, res, next) => {
         const userId = req.user.id;
         const allDailyGoals = await Achievement.displayAllDailyGoals(userId);
 
-        res.status(200).json({
-            success: true,
-            data: allDailyGoals,
-            statusCode: 200
-        });
+        // Keep response backward-compatible: put the array in `data` and reset info in `meta`
+        if (allDailyGoals && allDailyGoals.dailyGoals) {
+            res.status(200).json({
+                success: true,
+                data: allDailyGoals.dailyGoals,
+                meta: {
+                    reset_at: allDailyGoals.reset_at,
+                    reset_in_seconds: allDailyGoals.reset_in_seconds
+                },
+                statusCode: 200
+            });
+        } else {
+            res.status(200).json({
+                success: true,
+                data: allDailyGoals,
+                statusCode: 200
+            });
+        }
 
     } catch (error) {
         console.error("Fail to display all the daily goals at the controller due to: " + error);

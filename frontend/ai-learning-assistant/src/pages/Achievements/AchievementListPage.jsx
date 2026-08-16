@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import toast from 'react-hot-toast';
 import Spinner from "../../components/common/Spinner";
 import achievementService from "../../services/AchievementService";
@@ -8,6 +8,7 @@ import {
     Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, 
     Trophy, BarChart4Icon, BadgeCheckIcon, Upload
 } from 'lucide-react';
+import CountdownTimer from "../../components/common/CountdownTimer";
 
 
 // Determine a suitable icon component for a daily goal based on its fields
@@ -47,46 +48,59 @@ const AchievementListPage = () => {
     const [allPlayersXP, setAllPlayersXP] = useState([]);
     const [allDailyGoals, setAllDailyGoals] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [resetTimeInSeconds, setResetTimeInSeconds] = useState(null);
+
+    const fetchStatistics = useCallback(async () => {
+        try {
+            //Get the achievement statistic of the user
+            const response = await achievementService.getAchievementStatistics();
+            const data = Array.isArray(response?.data) ? response.data[0] : response?.data;
+            setAchievementStatistic(data || null);
+
+            //get the current level and the remaining XP of the user for the next level
+            const levelAndXPResponse = await achievementService.getCurrentLevelAndXP();
+            setCurrentUserLevelAndXP(levelAndXPResponse?.data || null);
+
+            // Get XP for all players
+            const allPlayersResponse = await achievementService.getAllPlayers();
+            setAllPlayersXP(Array.isArray(allPlayersResponse?.data) ? allPlayersResponse.data : []);
+
+            //Get all the daily goals of the user and attach an icon component for each
+            const allDailyGoalsResponse = await achievementService.getAllDailyGoals();
+            const rawDailyGoals = Array.isArray(allDailyGoalsResponse?.data) ? allDailyGoalsResponse.data : [];
+            const goalsWithIcons = rawDailyGoals.map(g => ({ ...g, icon: getGoalIcon(g) }));
+            setAllDailyGoals(goalsWithIcons);
+
+            //Get the meta data time for countdown
+            const meta_time = allDailyGoalsResponse.meta || {};
+
+            if (typeof meta_time.reset_in_seconds === "number") {
+                setResetTimeInSeconds(meta_time.reset_in_seconds);
+            } else if (meta_time.reset_at) {
+                const nextTime = new Date(meta_time.reset_at);
+                const remainingSeconds = Math.max(0, Math.floor((nextTime - new Date()) / 1000));
+                setResetTimeInSeconds(remainingSeconds);
+            } else {
+                setResetTimeInSeconds(null);
+            }
+
+        } catch (error) {
+            toast.error('Fail to load the achievement data.');
+            console.error("Fail to load the achievement data at the achievement list page due to: " + error);
+
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const fetchStatistics = async () => {
-            try {
-                //Get the achievement statistic of the user
-                const response = await achievementService.getAchievementStatistics();
-                const data = Array.isArray(response?.data) ? response.data[0] : response?.data;
-                setAchievementStatistic(data || null);
-
-                //get the current level and the remaining XP of the user for the next level
-                const levelAndXPResponse = await achievementService.getCurrentLevelAndXP();
-                setCurrentUserLevelAndXP(levelAndXPResponse?.data || null);
-
-                // Get XP for all players
-                const allPlayersResponse = await achievementService.getAllPlayers();
-                setAllPlayersXP(Array.isArray(allPlayersResponse?.data) ? allPlayersResponse.data : []);
-
-                //Get all the daily goals of the user and attach an icon component for each
-                const allDailyGoalsResponse = await achievementService.getAllDailyGoals();
-                const rawDailyGoals = Array.isArray(allDailyGoalsResponse?.data) ? allDailyGoalsResponse.data : [];
-                const goalsWithIcons = rawDailyGoals.map(g => ({ ...g, icon: getGoalIcon(g) }));
-                setAllDailyGoals(goalsWithIcons);
-
-            } catch (error) {
-                toast.error('Fail to load the achievement data.');
-                console.error("Fail to load the achievement data at the achievement list page due to: " + error);
-
-            } finally {
-                setLoading(false);
-            }
-        };
-
         // Initial fetch
         fetchStatistics();
         // Set up polling and refetch every 3 seconds
         const pollInterval = setInterval(fetchStatistics, 3000);
         // Cleanup interval when component unmounts
         return () => clearInterval(pollInterval);
-
-    }, []);
+    }, [fetchStatistics]);
 
     if (loading) {
         return (
@@ -231,7 +245,14 @@ const AchievementListPage = () => {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold text-slate-900">Daily Goals</h2>
-                            <span className="text-xs text-slate-400">Reset in 10:35:52</span>
+                            <span className="text-xs text-slate-400">
+                                Reset in {' '}
+                                {resetTimeInSeconds != null ? (
+                                    <CountdownTimer resetInSeconds={resetTimeInSeconds} onZero={() => { fetchStatistics(); }} />
+                                ) : (
+                                    "_"
+                                )}
+                            </span>
                         </div>
                         <div className="space-y-4">
                             {allDailyGoals.map((goal, i) => {
