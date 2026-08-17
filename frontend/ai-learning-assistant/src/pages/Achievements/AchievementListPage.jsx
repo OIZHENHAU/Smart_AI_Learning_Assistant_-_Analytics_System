@@ -5,7 +5,7 @@ import achievementService from "../../services/AchievementService";
 import { useAuth } from "../../context/AuthContext";
 import {
     Award, Flame, Lock, Medal, Shield, Info, Bot, Gift,
-    Dumbbell, Sparkles, Star, CheckSquare, Calendar, TrendingUp, 
+    Star, CheckSquare, Calendar, TrendingUp,
     Trophy, BarChart4Icon, BadgeCheckIcon, Upload
 } from 'lucide-react';
 import CountdownTimer from "../../components/common/CountdownTimer";
@@ -27,14 +27,6 @@ const LEVEL_START_TITLE = 'Student Explorer';
 const LEVEL_END_TITLE = 'Knowledge Master';
 
 
-const RECENT_BADGES = [
-    { name: 'Feeling 22', description: 'Everything will be alright', icon: Star, color: 'bg-red-100 text-red-500' },
-    { name: 'Train Expert', description: 'Generate summary for more than 50 times', icon: Dumbbell, color: 'bg-rose-100 text-rose-500' },
-    { name: 'Breakthrough', description: 'Solve correctly on 20 difficulty questions', icon: Sparkles, color: 'bg-slate-200 text-slate-600' },
-    { name: 'AI Explorer', description: 'Using AI assistant frequently', icon: Bot, color: 'bg-slate-900 text-cyan-400' },
-    { name: 'Python Expert', description: 'Complete python lesson', icon: Lock, color: 'bg-slate-100 text-slate-400', locked: true },
-];
-
 const REDEEM_ITEMS = [
     { title: 'AI Hints', progress: '5/10', description: 'Get hints from AI when answering quiz', cost: 500, icon: Bot, color: 'bg-slate-100 text-slate-700' },
     { title: 'Score Shield', progress: '3/10', description: 'Protect your points from losing.', cost: 250, icon: Shield, color: 'bg-purple-100 text-purple-700' },
@@ -49,6 +41,7 @@ const AchievementListPage = () => {
     const [allDailyGoals, setAllDailyGoals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [resetTimeInSeconds, setResetTimeInSeconds] = useState(null);
+    const [allUnlockBadges, setAllUnlockBadges] = useState(null);
 
     const fetchStatistics = useCallback(async () => {
         try {
@@ -85,6 +78,10 @@ const AchievementListPage = () => {
             } else {
                 setResetTimeInSeconds(null);
             }
+
+            //Get all unlock badges based on the user id
+            const allBadgesResponse = await achievementService.getAllBadges();
+            setAllUnlockBadges(allBadgesResponse);
 
         } catch (error) {
             toast.error('Fail to load the achievement data.');
@@ -133,6 +130,9 @@ const AchievementListPage = () => {
         ...learner,
         medal: medalColors[index]
     }));
+
+    // All badges available/unlocked for the user
+    const allBadges = Array.isArray(allUnlockBadges?.data) ? allUnlockBadges.data : [];
 
     // Calculate user's position in the leaderboard
     const currentUserID = user?.id;
@@ -208,15 +208,27 @@ const AchievementListPage = () => {
                             <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                            {RECENT_BADGES.map((badge, i) => (
-                                <div key={i} className="flex flex-col items-center text-center">
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${badge.color} ${badge.locked ? 'opacity-60' : ''}`}>
-                                        <badge.icon className="w-7 h-7" strokeWidth={2} />
+                            {allBadges.length === 0 && (
+                                <p className="col-span-full text-sm text-slate-400 text-center py-4">No badges yet.</p>
+                            )}
+                            {allBadges.slice(0, 5).map((badge) => {
+                                const isLocked = badge.target_value > 0 && (badge.current_value ?? 0) < badge.target_value;
+                                return (
+                                    <div key={badge.id} className="flex flex-col items-center text-center">
+                                        <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-slate-100 overflow-hidden">
+                                            {isLocked ? (
+                                                <Lock className="w-6 h-6 text-slate-400" strokeWidth={2} />
+                                            ) : badge.image_path ? (
+                                                <img src={badge.image_path} alt={badge.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Award className="w-7 h-7 text-slate-400" strokeWidth={2} />
+                                            )}
+                                        </div>
+                                        <div className="text-sm font-bold text-slate-900">{badge.title}</div>
+                                        <div className="text-xs text-slate-500 mt-1 leading-snug">{badge.badge_description}</div>
                                     </div>
-                                    <div className="text-sm font-bold text-slate-900">{badge.name}</div>
-                                    <div className="text-xs text-slate-500 mt-1 leading-snug">{badge.description}</div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 
