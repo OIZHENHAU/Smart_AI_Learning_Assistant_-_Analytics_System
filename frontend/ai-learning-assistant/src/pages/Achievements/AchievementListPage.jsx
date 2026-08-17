@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
     Award, Flame, Lock, Medal, Shield, Info, Bot, Gift,
     Star, CheckSquare, Calendar, TrendingUp,
-    Trophy, BarChart4Icon, BadgeCheckIcon, Upload
+    Trophy, BarChart4Icon, BadgeCheckIcon, Upload, Snowflake
 } from 'lucide-react';
 import CountdownTimer from "../../components/common/CountdownTimer";
 
@@ -28,9 +28,9 @@ const LEVEL_END_TITLE = 'Knowledge Master';
 
 
 const REDEEM_ITEMS = [
-    { title: 'AI Hints', progress: '5/10', description: 'Get hints from AI when answering quiz', cost: 500, icon: Bot, color: 'bg-slate-100 text-slate-700' },
-    { title: 'Score Shield', progress: '3/10', description: 'Protect your points from losing.', cost: 250, icon: Shield, color: 'bg-purple-100 text-purple-700' },
-    { title: 'Extra Attempt', progress: '5/10', description: 'Allow extra attempt of quiz. (max 2 question)', cost: 1000, icon: Info, color: 'bg-yellow-100 text-yellow-700' },
+    { title: 'AI Hints', progress: '5/10', description: 'Get hints from AI when answering quiz', cost: 500, icon: Bot, color: 'bg-slate-100 text-slate-700', iconBg: 'bg-white text-slate-600' },
+    { title: 'Score Shield', progress: '3/10', description: 'Protect your points from losing.', cost: 250, icon: Shield, color: 'bg-purple-100 text-purple-700', iconBg: 'bg-white text-purple-600' },
+    { title: 'Extra Attempt', progress: '5/10', description: 'Allow extra attempt of quiz. (max 2 question)', cost: 1000, icon: Info, color: 'bg-yellow-100 text-yellow-800', iconBg: 'bg-yellow-500 text-white' },
 ];
 
 const AchievementListPage = () => {
@@ -101,6 +101,10 @@ const AchievementListPage = () => {
         return () => clearInterval(pollInterval);
 
     }, [fetchStatistics]);
+
+    const handleRedeem = (item) => {
+        toast.error(`Redeeming "${item.title}" isn't available yet.`);
+    };
 
     if (loading) {
         return (
@@ -238,16 +242,22 @@ const AchievementListPage = () => {
                             <h2 className="text-lg font-bold text-slate-900">Redeem Points</h2>
                             <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
                         </div>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {REDEEM_ITEMS.map((item, i) => (
-                                <div key={i} className={`rounded-xl p-4 ${item.color}`}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <item.icon className="w-5 h-5" strokeWidth={2} />
-                                        <span className="text-xs font-semibold opacity-70">{item.progress}</span>
+                                <div key={i} className={`rounded-2xl border border-black/5 p-5 flex flex-col items-center text-center transition-all duration-200 hover:translate-y-1 ${item.color}`}>
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${item.iconBg}`}>
+                                        <item.icon className="w-6 h-6" strokeWidth={2} />
                                     </div>
-                                    <div className="text-sm font-bold mb-1">{item.title}</div>
-                                    <div className="text-xs opacity-80 leading-snug mb-2">{item.description}</div>
-                                    <div className="text-sm font-bold">{item.cost.toLocaleString()} pts</div>
+                                    <div className="text-base font-bold mb-1">{item.title}</div>
+                                    <div className="text-xs font-semibold opacity-70 mb-3">({item.progress})</div>
+                                    <div className="text-xs opacity-80 leading-snug mb-4">{item.description}</div>
+                                    <div className="text-sm font-bold mb-4 mt-auto">{item.cost.toLocaleString()} pts</div>
+                                    <button
+                                        onClick={() => handleRedeem(item)}
+                                        className="w-full h-9 rounded-lg bg-white/70 hover:bg-white text-sm font-semibold transition-colors mt-auto"
+                                    >
+                                        Redeem
+                                    </button>
                                 </div>
                             ))}
                         </div>
