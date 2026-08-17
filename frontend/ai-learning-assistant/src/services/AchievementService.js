@@ -79,6 +79,17 @@ const postAllDailyGoals = async () => {
     }
 };
 
+const postAllBadges = async () => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.POST_ALL_BADGES);
+        return response.message;
+
+    } catch (error) {
+        console.error("Fail to post all the badges at tthe service when creating an account due to: " + error);
+        throw error;
+    }
+}
+
 const achievementService = {
     getAchievementStatistics,
     getAllBadges,
@@ -86,7 +97,8 @@ const achievementService = {
     getAllUnlockFeatures,
     getAllDailyGoals,
     getCurrentLevelAndXP,
-    postAllDailyGoals
+    postAllDailyGoals,
+    postAllBadges
 };
 
 export default achievementService;

@@ -137,3 +137,40 @@ export const postAllDailyGoals = async (req, res, next) => {
         next(error);
     }
 }
+
+//POST all the achievement badges when the user first create the account POST /api/create-badges
+export const postAllAchievementBadges = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const baseURL = `http://localhost:${process.env.PORT || 5528}`;
+
+        const ALL_BADGES = [
+            { title: 'Feeling 22', badge_description: 'Everything will be alright', image_path: `${baseURL}/uploads/badges/medium_level22.png`, requirement_type: "streak", specific_type: "", target_value: 0, current_value: 0 },
+            { title: 'Train Expert', badge_description: 'Generate summary for more than 50 times', image_path: `${baseURL}/uploads/badges/medium_training.png`, requirement_type: "summary", specifc_type: "", target_value: 50, current_value: 0 },
+            { title: 'Breakthrough', badge_description: 'Solve correctly on 20 difficulty questions', image_path: `${baseURL}/uploads/badges/medium_breakthrough.png`, requirement_type: "quiz", specific_type: "difficult", target_value: 20, current_value: 0 },
+            { title: 'AI Explorer', badge_description: 'Using AI assistant frequently', image_path: `${baseURL}/uploads/badges/chat-ai-bot.png`, requirement_type: 'chat', specific_type: '', target_value: 100, current_value: 0 },
+            { title: 'Python Expert', badge_description: 'Complete 10 python quizzes', image_path: `${baseURL}/uploads/badges/medium_favpng_snake-ball-python-clip-art.png`, requirement_type: "quiz", specific_type: "python", target_value: 10, current_value: 0 },
+            
+        ];
+
+        const createBadges = await Achievement.addAllBadges({ userId, badgesList: ALL_BADGES });
+        
+        if (!createBadges) {
+            return res.status(400).json({
+                success: false,
+                message: "No badges was created.",
+                statusCode: 400
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "The badges was created.",
+            statusCode: 201
+        });
+
+    } catch (error) {
+        console.error("FAil to create all badges at the achievement controllerdue to: " + error);
+        next(error);
+    }
+}

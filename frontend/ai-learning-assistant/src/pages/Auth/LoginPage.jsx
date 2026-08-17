@@ -44,6 +44,7 @@ const LoginPage = () => {
             const { token, data } = await authService.login(email, password);
             login(data.user, token);
             //await achievementService.postAllDailyGoals();
+            //await achievementService.postAllBadges();
             toast.success('Logged in successfully!');
             navigate('/dashboard');
         } catch (error) {

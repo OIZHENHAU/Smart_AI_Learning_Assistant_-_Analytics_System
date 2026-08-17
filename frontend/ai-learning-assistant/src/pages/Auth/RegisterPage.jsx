@@ -47,9 +47,14 @@ const RegisterPage = () => {
         setLoading(true);
         try {
             //Register new user account.
-            await authService.register(username, email, password);
+            const { data } = await authService.register(username, email, password);
+            const { token } = data;
+            //Temporarily store the token so the follow-up achievement calls are authenticated.
+            localStorage.setItem('token', token);
             //Add daily goals when creating the account.
             await achievementService.postAllDailyGoals();
+            //Add all badges when creating an account
+            await achievementService.postAllBadges();
             toast.success('Account created! Please log in.');
             navigate('/login');
         } catch (error) {
@@ -57,6 +62,8 @@ const RegisterPage = () => {
             setError(msg);
             toast.error(msg);
         } finally {
+            //Clear the token again since the user is expected to log in manually.
+            localStorage.removeItem('token');
             setLoading(false);
         }
     };

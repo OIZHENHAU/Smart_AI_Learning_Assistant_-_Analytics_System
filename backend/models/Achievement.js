@@ -30,8 +30,8 @@ const Achievement = {
         try {
             const [allBadges] = await connection.execute(
                 `
-                SELECT * FROM daily_goal dg
-                WHERE dg.user_id = ?
+                SELECT * FROM badges bg
+                WHERE bg.user_id = ? OR bg.user_id IS NULL
                 `, [userId]
             );
 
@@ -274,6 +274,44 @@ const Achievement = {
 
         } finally {
             connection.release();
+        }
+    },
+    
+    async addAllBadges({ userId, badgesList }) {
+        const connection = await db.getConnection();
+
+        try {
+            if (!Array.isArray(badgesList) || badgesList.length === 0) {
+                return false;
+            }
+
+            // build placeholders and params for batch insert
+            const placeholders = badgesList.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+            const params = [];
+            for (const b of badgesList) {
+                const title = b.title || "";
+                const imagePath = b.image_path || "";
+                const badge_description = b.badge_description || "";
+                const requirement_type = b.requirement_type || "";
+                const specific_type = b.specific_type || "";
+                const target_value = b.target_value || 0;
+                const current_value = b.current_value || 0;
+                
+                params.push(title, imagePath, badge_description, requirement_type, specific_type, target_value, current_value, userId ?? null);
+            }
+
+            const sql = `INSERT INTO badges (title, image_path, badge_description, requirement_type, specific_type, target_value, current_value, user_id) VALUES ${placeholders}`;
+            await connection.execute(sql, params);
+
+            return true;
+            
+        } catch (error) {
+            console.error("Fail to create all badges at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+
         }
     }
 }

@@ -29,6 +29,8 @@ const User = {
                 [userId]
             );
 
+            await connection.commit();
+
             return userId;
 
         } catch (error) {
@@ -84,11 +86,102 @@ const User = {
     },
 
     async deleteUserAccount(userId) {
-        const [result] = await db.execute(
-            `DELETE FROM users WHERE id = ?`, [userId]
-        );
+        const connection = await db.getConnection();
 
-        return result;
+        try {
+            await connection.beginTransaction();
+
+            //Quiz-related data (options/user_answers/questions depend on quizzes, quiz_schedules depends on quizzes)
+            await connection.execute(
+                `DELETE o FROM options o
+                 JOIN questions q ON o.question_id = q.id
+                 JOIN quizzes qz ON q.quiz_id = qz.id
+                 WHERE qz.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE ua FROM user_answers ua
+                 JOIN quizzes qz ON ua.quiz_id = qz.id
+                 WHERE qz.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE q FROM questions q
+                 JOIN quizzes qz ON q.quiz_id = qz.id
+                 WHERE qz.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM quiz_schedules WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM quizzes WHERE user_id = ?`, [userId]
+            );
+
+            //Flashcard-related data
+            await connection.execute(
+                `DELETE fi FROM flashcard_items fi
+                 JOIN flashcards f ON fi.flashcard_id = f.id
+                 WHERE f.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM flashcards WHERE user_id = ?`, [userId]
+            );
+
+            //Chat-related data (messages/relevant_chunks depend on chat_histories)
+            await connection.execute(
+                `DELETE m FROM messages m
+                 JOIN chat_histories ch ON m.chat_id = ch.id
+                 WHERE ch.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE rc FROM relevant_chunks rc
+                 JOIN chat_histories ch ON rc.chat_id = ch.id
+                 WHERE ch.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM chat_histories WHERE user_id = ?`, [userId]
+            );
+
+            //Document-related data (document_chunks depends on documents)
+            await connection.execute(
+                `DELETE dc FROM document_chunks dc
+                 JOIN documents d ON dc.document_id = d.id
+                 WHERE d.user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM documents WHERE user_id = ?`, [userId]
+            );
+
+            //Study session and gamification data
+            await connection.execute(
+                `DELETE FROM study_sessions WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM unlocked_features WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM achievements WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM badges WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM daily_goal WHERE user_id = ?`, [userId]
+            );
+
+            //Finally, the user row itself
+            const [result] = await connection.execute(
+                `DELETE FROM users WHERE id = ?`, [userId]
+            );
+
+            await connection.commit();
+            return result;
+
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     }
 };
 

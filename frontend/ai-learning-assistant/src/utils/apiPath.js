@@ -45,6 +45,7 @@ export const API_PATHS = {
         GET_ALL_USER_XP: "/api/achievements/all-user-xp",
         GET_ALL_DAILY_GOALS: "/api/achievements/all-daily-goals",
         GET_CURRENT_LEVEL_AND_XP: "/api/achievements/current-level-and-xp",
-        POST_ALL_DAILY_GOALS: "/api/achievements/daily-goals"
+        POST_ALL_DAILY_GOALS: "/api/achievements/daily-goals",
+        POST_ALL_BADGES: "api/achievements/create-badges"
     }
 }

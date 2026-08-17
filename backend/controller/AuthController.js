@@ -262,7 +262,7 @@ export const deleteAccount = async(req, res, nxt) => {
 
     } catch (error) {
         console.error("Fail to delete account due to: " + error);
-        NotepadText(error);
+        nxt(error);
     }
 }
 

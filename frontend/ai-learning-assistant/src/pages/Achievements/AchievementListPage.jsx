@@ -53,8 +53,8 @@ const AchievementListPage = () => {
     const fetchStatistics = useCallback(async () => {
         try {
             //Get the achievement statistic of the user
-            const response = await achievementService.getAchievementStatistics();
-            const data = Array.isArray(response?.data) ? response.data[0] : response?.data;
+            const statisticResponse = await achievementService.getAchievementStatistics();
+            const data = Array.isArray(statisticResponse?.data) ? statisticResponse.data[0] : statisticResponse?.data;
             setAchievementStatistic(data || null);
 
             //get the current level and the remaining XP of the user for the next level
@@ -76,10 +76,12 @@ const AchievementListPage = () => {
 
             if (typeof meta_time.reset_in_seconds === "number") {
                 setResetTimeInSeconds(meta_time.reset_in_seconds);
+
             } else if (meta_time.reset_at) {
                 const nextTime = new Date(meta_time.reset_at);
                 const remainingSeconds = Math.max(0, Math.floor((nextTime - new Date()) / 1000));
                 setResetTimeInSeconds(remainingSeconds);
+
             } else {
                 setResetTimeInSeconds(null);
             }
@@ -100,6 +102,7 @@ const AchievementListPage = () => {
         const pollInterval = setInterval(fetchStatistics, 3000);
         // Cleanup interval when component unmounts
         return () => clearInterval(pollInterval);
+
     }, [fetchStatistics]);
 
     if (loading) {

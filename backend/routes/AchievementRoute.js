@@ -8,7 +8,8 @@ import {
     displayAllUnlockFeatures,
     displayAllUserXP,
     getCurrentLevelAndXP,
-    postAllDailyGoals
+    postAllDailyGoals, 
+    postAllAchievementBadges
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -27,6 +28,8 @@ router.get('/all-daily-goals', displayAllDailyGoals);
 router.get('/current-level-and-xp', getCurrentLevelAndXP);
 //Put all the daily goals when the user first create the account
 router.post('/daily-goals', postAllDailyGoals);
+//Create all the achievement badges (seed)
+router.post('/create-badges', postAllAchievementBadges);
 
 
 export default router;
