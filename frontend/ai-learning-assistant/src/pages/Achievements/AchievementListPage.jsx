@@ -5,8 +5,9 @@ import achievementService from "../../services/AchievementService";
 import { useAuth } from "../../context/AuthContext";
 import {
     Award, Flame, Lock, Medal, Shield, Info, Bot, Gift,
-    Star, CheckSquare, Calendar, TrendingUp,
-    Trophy, BarChart4Icon, BadgeCheckIcon, Upload, Snowflake
+    Star, CheckSquare, Calendar, TrendingUp, Hand, NotepadText, NotebookPen,
+    Trophy, BarChart4Icon, BadgeCheckIcon, Upload, Snowflake, AlertCircleIcon,
+    AlertTriangleIcon,NotebookPenIcon
 } from 'lucide-react';
 import CountdownTimer from "../../components/common/CountdownTimer";
 
@@ -22,16 +23,21 @@ const getGoalIcon = (goal) => {
     return Star;
 };
 
+//Determine a suitable icon components for the unlock features.
+const getUnlockFeaturesIcon = (uf) => {
+    const key = (uf.specific_type || "").toString().toLowerCase();
+    if (key.includes('hint')) return Bot;
+    if (key.includes('block')) return Shield;
+    if (key.includes('extra attempt')) return AlertTriangleIcon;
+    if (key.includes('stop')) return Snowflake;
+    if (key.includes('flashcards')) return NotepadText;
+    if (key.includes('fill-in-blanks')) return NotebookPenIcon;
+    return Star;
+}
 
 const LEVEL_START_TITLE = 'Student Explorer';
 const LEVEL_END_TITLE = 'Knowledge Master';
 
-
-const REDEEM_ITEMS = [
-    { title: 'AI Hints', progress: '5/10', description: 'Get hints from AI when answering quiz', cost: 500, icon: Bot, color: 'bg-slate-100 text-slate-700', iconBg: 'bg-white text-slate-600' },
-    { title: 'Score Shield', progress: '3/10', description: 'Protect your points from losing.', cost: 250, icon: Shield, color: 'bg-purple-100 text-purple-700', iconBg: 'bg-white text-purple-600' },
-    { title: 'Extra Attempt', progress: '5/10', description: 'Allow extra attempt of quiz. (max 2 question)', cost: 1000, icon: Info, color: 'bg-yellow-100 text-yellow-800', iconBg: 'bg-yellow-500 text-white' },
-];
 
 const AchievementListPage = () => {
     const { user } = useAuth();
@@ -42,6 +48,9 @@ const AchievementListPage = () => {
     const [loading, setLoading] = useState(true);
     const [resetTimeInSeconds, setResetTimeInSeconds] = useState(null);
     const [allUnlockBadges, setAllUnlockBadges] = useState(null);
+    const [allUnlockFeatures, setAllUnlockFeatures] = useState(null);
+    const [confirmFeature, setConfirmFeature] = useState(null);
+    const [redeemingFeature, setRedeemingFeature] = useState(false);
 
     const fetchStatistics = useCallback(async () => {
         try {
@@ -81,7 +90,13 @@ const AchievementListPage = () => {
 
             //Get all unlock badges based on the user id
             const allBadgesResponse = await achievementService.getAllBadges();
-            setAllUnlockBadges(allBadgesResponse);
+            setAllUnlockBadges(allBadgesResponse.data);
+
+            //Get all unlock features baed on the user id
+            const allUnlockFeatures = await achievementService.getAllUnlockFeatures();
+            const rawUnlockFeatures = Array.isArray(allUnlockFeatures?.data) ? allUnlockFeatures.data : [];
+            const unlockFeaturesWithIcons = rawUnlockFeatures.map(g => ({ ...g, icon: getUnlockFeaturesIcon(g) }));
+            setAllUnlockFeatures(unlockFeaturesWithIcons);
 
         } catch (error) {
             toast.error('Fail to load the achievement data.');
@@ -102,8 +117,31 @@ const AchievementListPage = () => {
 
     }, [fetchStatistics]);
 
-    const handleRedeem = (item) => {
-        toast.error(`Redeeming "${item.title}" isn't available yet.`);
+    //Handle the button when the user click any features to redeem
+    const handleRedeemFeature = (item) => {
+        setConfirmFeature(item);
+    };
+
+    //Called when the user confirm inside the modal
+    const confirmRedeemFeature = async () => {
+        if (!confirmFeature) {
+            return;
+        }
+        setRedeemingFeature(true);
+
+        try {
+            const response = await achievementService.redeemFeature(confirmFeature.id);
+
+            toast.success(`"${confirmFeature.feature_name}" redeemed successfully!`);
+
+        } catch (error) {
+            const message = error?.response?.data?.message || `Failed to redeem "${confirmFeature.feature_name}".`;
+            toast.error(message);
+
+        } finally {
+            setRedeemingFeature(false);
+            setConfirmFeature(null);
+        }
     };
 
     if (loading) {
@@ -135,9 +173,6 @@ const AchievementListPage = () => {
         medal: medalColors[index]
     }));
 
-    // All badges available/unlocked for the user
-    const allBadges = Array.isArray(allUnlockBadges?.data) ? allUnlockBadges.data : [];
-
     // Calculate user's position in the leaderboard
     const currentUserID = user?.id;
     const currentUsername = user?.username || user?.name || 'Learner';
@@ -153,6 +188,7 @@ const AchievementListPage = () => {
     ];
 
     return (
+        <>
         <div className="max-w-6xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
@@ -212,10 +248,10 @@ const AchievementListPage = () => {
                             <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                            {allBadges.length === 0 && (
+                            {allUnlockBadges.length === 0 && (
                                 <p className="col-span-full text-sm text-slate-400 text-center py-4">No badges yet.</p>
                             )}
-                            {allBadges.slice(0, 5).map((badge) => {
+                            {allUnlockBadges.slice(0, 5).map((badge) => {
                                 const isLocked = badge.target_value > 0 && (badge.current_value ?? 0) < badge.target_value;
                                 return (
                                     <div key={badge.id} className="flex flex-col items-center text-center">
@@ -243,23 +279,54 @@ const AchievementListPage = () => {
                             <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {REDEEM_ITEMS.map((item, i) => (
-                                <div key={i} className={`rounded-2xl border border-black/5 p-5 flex flex-col items-center text-center transition-all duration-200 hover:translate-y-1 ${item.color}`}>
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${item.iconBg}`}>
-                                        <item.icon className="w-6 h-6" strokeWidth={2} />
+                            {allUnlockFeatures.length === 0 && (
+                                <p className="col-span-full text-sm text-slate-400 text-center py-4">No features yet.</p>
+                            )}
+                            {allUnlockFeatures.slice(0, 3).map((item) => {
+                                const Icon = item.icon || Star;
+                                return <div key={item.id} className="group relative bg-white/80 backdrop-blur-xl border-2 border-slate-200 hover:border-purple-400 rounded-2xl p-4 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/10 flex flex-col justify-between">
+                                    <div className="space-y-4">
+                                        {/* Cost Badge */}
+                                        <div className="inline-flex items-center gap-1.5 py-1 rounded-lg text-xs font-semibold">
+                                            <div className="flex items-center gap-1.5 bg-purple-50 border border-purple-200 rounded-lg px-3 py-1">
+                                                <span className="text-purple-700">{item.point_needed.toLocaleString()} points</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="flex items-center gap-2.5 text-base font-semibold text-slate-900 mb-1 line-clamp-2">
+                                                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-100 shrink-0">
+                                                    <Icon className="w-4 h-4 text-purple-600" strokeWidth={3} />
+                                                </div>
+                                                <div>
+                                                    {item.feature_name}
+                                                    <p className="text-xs font-medium text-slate-500 tracking-wide">{item.num_unlock}/{item.limit_number} available</p>
+                                                </div>
+                                            </h3>
+                                            
+                                        </div>
+
+                                        {/* Description */}
+                                        <div className="pt-2 border-t border-slate-100">
+                                            <div className="h-16 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center">
+                                                <span className="text-xs font-medium text-slate-600 leading-snug line-clamp-2">{item.feature_description}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-base font-bold mb-1">{item.title}</div>
-                                    <div className="text-xs font-semibold opacity-70 mb-3">({item.progress})</div>
-                                    <div className="text-xs opacity-80 leading-snug mb-4">{item.description}</div>
-                                    <div className="text-sm font-bold mb-4 mt-auto">{item.cost.toLocaleString()} pts</div>
-                                    <button
-                                        onClick={() => handleRedeem(item)}
-                                        className="w-full h-9 rounded-lg bg-white/70 hover:bg-white text-sm font-semibold transition-colors mt-auto"
-                                    >
-                                        Redeem
-                                    </button>
+
+                                    {/* Action Button */}
+                                    <div className="mt-2 pt-4 border-t border-slate-100">
+                                        <button
+                                            onClick={() => handleRedeemFeature(item)}
+                                            className="group/btn relative w-full h-11 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 active:scale-95 overflow-hidden"
+                                        >
+                                            <span className="relative z-10 flex items-center justify-center gap-2">Redeem</span>
+                                            <div className="absolute inset-0 bg-linear-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
+                            })}
+                            
                         </div>
                     </div>
                 </div>
@@ -373,6 +440,37 @@ const AchievementListPage = () => {
                 </div>
             </div>
         </div>
+
+        {confirmFeature && (
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Redemption</h3>
+                    <p className="text-sm text-slate-600 mb-5">
+                        Redeem <span className="font-semibold">{confirmFeature.feature_name}</span> for{' '}
+                        <span className="font-semibold text-purple-600">
+                            {confirmFeature.point_needed.toLocaleString()} points
+                        </span>?
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setConfirmFeature(null)}
+                            disabled={redeemingFeature}
+                            className="flex-1 h-10 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmRedeemFeature}
+                            disabled={redeemingFeature}
+                            className="flex-1 h-10 rounded-xl bg-linear-to-r from-purple-500 to-purple-600 text-white font-semibold text-sm hover:from-purple-600 hover:to-purple-700 disabled:opacity-50"
+                        >
+                            {redeemingFeature ? 'Redeeming...' : 'Confirm'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
 

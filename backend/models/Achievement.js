@@ -304,7 +304,7 @@ const Achievement = {
             await connection.execute(sql, params);
 
             return true;
-            
+
         } catch (error) {
             console.error("Fail to create all badges at the Achievement due to: " + error);
             throw error;
@@ -312,6 +312,128 @@ const Achievement = {
         } finally {
             connection.release();
 
+        }
+    },
+
+    async addAllUnlockFeatures({ userId, featureList }) {
+        const connection = await db.getConnection();
+
+        try {
+            if (!Array.isArray(featureList) || featureList.length === 0) {
+                return false;
+            }
+
+            //build a placeholder and parameters for batch insert
+            const placeholders = featureList.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const params = [];
+
+            for (const f of featureList) {
+                const feature_name = f.feature_name || "";
+                const feature_description = f.feature_description || "";
+                const point_needed = f.point_needed || "";
+                const limit_number = f.limit_number || "";
+                const num_unlock = 0;
+
+                params.push(feature_name, feature_description, point_needed, limit_number, num_unlock, userId ?? null);
+            }
+
+            const sql = `INSERT INTO unlocked_features (feature_name, feature_description, point_needed, limit_number, num_unlock, user_id) VALUES ${placeholders}`;
+            await connection.execute(sql, params);
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to create all the unlock features at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async redeemFeature({ userId, featureId }) {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            const [featureRows] = await connection.execute(
+                `
+                SELECT id, point_needed, limit_number, num_unlock
+                FROM unlocked_features
+                WHERE id = ? AND user_id = ?
+                FOR UPDATE
+                `, [featureId, userId]
+            );
+
+            const feature = featureRows[0];
+
+            if (!feature) {
+                await connection.rollback();
+                return {
+                    success: false,
+                    message: "The current feature was not found."
+                };
+            }
+
+            if (feature.num_unlock >= feature.limit_number) {
+                await connection.rollback();
+                return {
+                    success: false,
+                    message: "The redeem point for this feature has reached it's limit."
+                }
+            }
+
+            const [achievementRows] = await connection.execute(
+                `
+                SELECT total_points
+                FROM achievements
+                WHERE user_id = ?
+                FOR UPDATE
+                `, [userId]
+            );
+
+            const achievement = achievementRows[0];
+
+            if (!achievement || achievement.total_points < feature.point_needed) {
+                await connection.rollback();
+                return {
+                    success: false,
+                    message: "Not enough points to redeem this features."
+                }
+            }
+
+            await connection.execute(
+                `
+                UPDATE achievements
+                SET total_points = total_points - ?
+                WHERE user_id = ?
+                `, [feature.point_needed, userId]
+            );
+
+            await connection.execute(
+                `
+                UPDATE unlocked_features
+                SET num_unlock = num_unlock + 1
+                WHERE id = ?
+                `, [featureId]
+            );
+
+            await connection.commit();
+
+            return {
+                success: true,
+                current_feature: feature,
+                num_unlock: feature.num_unlock + 1,
+                remaining_points: achievement.total_points - feature.point_needed
+            };
+
+        } catch (error) {
+            console.error("Fail to redeem the feature with id: " + featureId + " at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
         }
     }
 }

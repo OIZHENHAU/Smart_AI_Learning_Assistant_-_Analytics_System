@@ -85,10 +85,32 @@ const postAllBadges = async () => {
         return response.message;
 
     } catch (error) {
-        console.error("Fail to post all the badges at tthe service when creating an account due to: " + error);
+        console.error("Fail to create all the badges at tthe service when creating an account due to: " + error);
         throw error;
     }
-}
+};
+
+const postAllUnlockFeatures = async () => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.POST_ALL_UNLOCK_FEATURES);
+        return response.message;
+
+    } catch (error) {
+        console.error("Fail to create all the unlock features at the service when creating an account due to: " + error);
+        throw error;
+    }
+};
+
+const redeemFeature = async (id) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.REDEEM_FEATURE(id));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to redeem the feature point at the service due to: " + error);
+        throw error;
+    }
+};
 
 const achievementService = {
     getAchievementStatistics,
@@ -98,7 +120,9 @@ const achievementService = {
     getAllDailyGoals,
     getCurrentLevelAndXP,
     postAllDailyGoals,
-    postAllBadges
+    postAllBadges,
+    postAllUnlockFeatures,
+    redeemFeature
 };
 
 export default achievementService;

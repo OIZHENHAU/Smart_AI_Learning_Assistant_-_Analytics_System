@@ -153,12 +153,12 @@ const DocumentListPage = () => {
                         className="bg-white border border-slate-200 rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all group"
                     >
                         <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-4 min-w-0">
                                 <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
                                     <FileText className="w-5 h-5 text-purple-500" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-sm font-medium text-slate-800 truncate">{doc.title}</p>
+                                    <p className="text-sm font-bold text-slate-800 truncate">{doc.title}</p>
                                     <p className="text-xs text-slate-400 truncate">{doc.file_name}</p>
                                 </div>
                             </div>

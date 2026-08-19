@@ -174,3 +174,74 @@ export const postAllAchievementBadges = async (req, res, next) => {
         next(error);
     }
 }
+
+//POST all the unlock features when the user first create the account POST /api/create-unlock-features
+export const postAllUnlockFeatures = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const baseURL = `http://localhost:${process.env.PORT || 5528 }`;
+
+        const REDEEM_POINTS = [
+            { feature_name: 'AI Hints', feature_description: 'Get hints from AI when answering quiz', point_needed: 5, limit_number: 5, specific_type: "hint", main_type: "quiz", specific_number: 0 },
+            { feature_name: 'Score Shield', feature_description: 'Protect your points from losing.', point_needed: 10, limit_number: 5, specific_type: "block", main_type: "quiz", specific_number: 0 },
+            { feature_name: 'Extra Attempt', feature_description: 'Allow an extra attempt of quiz.', point_needed: 30, limit_number: 3, specific_type: "extra attempt", main_type: "quiz", specific_number: 1 },
+            { feature_name: 'Stop Timer', feature_description: 'Stop the quiz time for 10 seconds.', point_needed: 30, limit_number: 3, specific_type: "stop", main_type: "quiz", specific_number: 10 },
+            { feature_name: 'Flashcards', feature_description: 'Unlock flashcards on any documents.', point_needed: 8, limit_number: 5, specific_type: "flashcards", main_type: "flashcards", specific_number: 0 },
+            { feature_name: 'Fill-In The Blank Question', feature_description: 'Unlock flashcards on any documents.', point_needed: 8, limit_number: 5, specific_type: "fill-in-blank", main_type: "fill-in-blank", specific_number: 0 }
+        ];
+
+        const unlockFeatures = await Achievement.addAllUnlockFeatures({ userId, featureList: REDEEM_POINTS });
+
+        if (!unlockFeatures) {
+            return res.status(400).json({
+                success: false,
+                message: "The unlock features was not created.",
+                statusCode: 400
+            })
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "The unlock features was created.",
+            statusCode: 201
+        });
+
+    } catch (error) {
+        console.error("Fail to create the unlock features at the achievement controleler due to: " + error);
+        next(error);
+    }
+}
+
+//POST redeem a feature POST /api/achievements/redeem-feature/:id
+export const redeemFeature = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const featureId = req.params.id;
+
+        const result = await Achievement.redeemFeature({ userId, featureId });
+
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                message: result.message,
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                current_feature: result.current_feature,
+                num_unlock: result.num_unlock,
+                remaining_points: result.remaining_points
+
+            },
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to redeem the feature at the controller due to: " + error);
+        next(error);
+        
+    }
+}

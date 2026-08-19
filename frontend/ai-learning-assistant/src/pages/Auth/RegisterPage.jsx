@@ -55,8 +55,12 @@ const RegisterPage = () => {
             await achievementService.postAllDailyGoals();
             //Add all badges when creating an account
             await achievementService.postAllBadges();
+            //Add all unlock features when creating an account
+            await achievementService.postAllUnlockFeatures();
+
             toast.success('Account created! Please log in.');
             navigate('/login');
+            
         } catch (error) {
             const msg = error.message || "Failed to register. Please try again.";
             setError(msg);

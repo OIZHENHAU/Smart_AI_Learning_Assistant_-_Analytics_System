@@ -9,11 +9,14 @@ import {
     displayAllUserXP,
     getCurrentLevelAndXP,
     postAllDailyGoals, 
-    postAllAchievementBadges
+    postAllAchievementBadges,
+    postAllUnlockFeatures,
+    redeemFeature
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
 router.use(protect);
+
 //Display the achievement statistics
 router.get('/achievement-page', displayAchievementStatistic);
 //Display all the badges
@@ -30,6 +33,9 @@ router.get('/current-level-and-xp', getCurrentLevelAndXP);
 router.post('/daily-goals', postAllDailyGoals);
 //Create all the achievement badges (seed)
 router.post('/create-badges', postAllAchievementBadges);
-
+//CRreate all the unlock features
+router.post('/create-unlock-features', postAllUnlockFeatures);
+//Redeem features
+router.post('/redeem-feature/:id', redeemFeature);
 
 export default router;

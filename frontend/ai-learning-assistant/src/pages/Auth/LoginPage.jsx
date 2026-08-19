@@ -45,8 +45,10 @@ const LoginPage = () => {
             login(data.user, token);
             //await achievementService.postAllDailyGoals();
             //await achievementService.postAllBadges();
+            //await achievementService.postAllUnlockFeatures();
             toast.success('Logged in successfully!');
             navigate('/dashboard');
+
         } catch (error) {
             const msg = error.error || error.message || "Failed to login. Please check your credentials.";
             setError(msg);
