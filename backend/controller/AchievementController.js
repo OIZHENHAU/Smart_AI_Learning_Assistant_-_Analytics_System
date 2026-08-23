@@ -212,13 +212,13 @@ export const postAllUnlockFeatures = async (req, res, next) => {
     }
 }
 
-//POST redeem a feature POST /api/achievements/redeem-feature/:id
-export const redeemFeature = async (req, res, next) => {
+//POST redeem a feature POST /api/achievements/redeem-unlock-feature/:id
+export const redeemUnlockFeature = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const featureId = req.params.id;
 
-        const result = await Achievement.redeemFeature({ userId, featureId });
+        const result = await Achievement.redeemUnlockFeature({ userId, featureId });
 
         if (!result.success) {
             return res.status(400).json({

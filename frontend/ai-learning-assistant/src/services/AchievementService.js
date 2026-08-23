@@ -101,9 +101,9 @@ const postAllUnlockFeatures = async () => {
     }
 };
 
-const redeemFeature = async (id) => {
+const redeemUnlockFeature = async (id) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.REDEEM_FEATURE(id));
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.REDEEM_UNLOCK_FEATURE(id));
         return response.data;
 
     } catch (error) {
@@ -122,7 +122,7 @@ const achievementService = {
     postAllDailyGoals,
     postAllBadges,
     postAllUnlockFeatures,
-    redeemFeature
+    redeemUnlockFeature
 };
 
 export default achievementService;

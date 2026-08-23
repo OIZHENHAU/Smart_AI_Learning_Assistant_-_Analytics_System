@@ -351,7 +351,7 @@ const Achievement = {
         }
     },
 
-    async redeemFeature({ userId, featureId }) {
+    async redeemUnlockFeature({ userId, featureId }) {
         const connection = await db.getConnection();
 
         try {
@@ -430,6 +430,56 @@ const Achievement = {
 
         } catch (error) {
             console.error("Fail to redeem the feature with id: " + featureId + " at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async updateBadgesProgress({ userId, eventType, specificType, amount }) {
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.execute(
+                `
+                UPDATE badges
+                SET current_value = LEAST(current_value + ?, target_value),
+                    is_unlocked = (current_value + ? >= target_value)
+                WHERE user_id = ? AND requirement_type = ?
+                AND (specific_type = ? OR specific_type = '')
+                AND is_unlocked = FALSE
+                `, [amount, amount, userId, eventType, specificType]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to update the progress of the badges at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async updateDailyGoalProgress({ userId, eventType, amount }) {
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.execute(
+                `
+                UPDATE daily_goal
+                SET number_complete = LEAST(number_complete + ?, num_achieve),
+                    completed = (number_complete + ? >= num_achieve)
+                WHERE user_id = ? AND main_focus = ? AND completed = FALSE
+                `, [amount, amount, userId, eventType]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to update the daily goals progress at the Achievement due to: " + error);
             throw error;
 
         } finally {

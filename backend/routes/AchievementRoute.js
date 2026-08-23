@@ -11,7 +11,7 @@ import {
     postAllDailyGoals, 
     postAllAchievementBadges,
     postAllUnlockFeatures,
-    redeemFeature
+    redeemUnlockFeature
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -36,6 +36,6 @@ router.post('/create-badges', postAllAchievementBadges);
 //CRreate all the unlock features
 router.post('/create-unlock-features', postAllUnlockFeatures);
 //Redeem features
-router.post('/redeem-feature/:id', redeemFeature);
+router.post('/redeem-unlock-feature/:id', redeemUnlockFeature);
 
 export default router;

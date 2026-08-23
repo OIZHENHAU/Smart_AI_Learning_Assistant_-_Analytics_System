@@ -48,6 +48,6 @@ export const API_PATHS = {
         POST_ALL_DAILY_GOALS: "/api/achievements/daily-goals",
         POST_ALL_BADGES: "api/achievements/create-badges",
         POST_ALL_UNLOCK_FEATURES: "api/achievements/create-unlock-features",
-        REDEEM_FEATURE: (id) => `api/achievements/redeem-feature/${id}`
+        REDEEM_UNLOCK_FEATURE: (id) => `api/achievements/redeem-unlock-feature/${id}`
     }
 }

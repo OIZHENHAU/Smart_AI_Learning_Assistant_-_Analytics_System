@@ -110,27 +110,27 @@ const AchievementListPage = () => {
     useEffect(() => {
         // Initial fetch
         fetchStatistics();
-        // Set up polling and refetch every 3 seconds
-        const pollInterval = setInterval(fetchStatistics, 3000);
+        // Set up polling and refetch every 1 seconds
+        const pollInterval = setInterval(fetchStatistics, 1000);
         // Cleanup interval when component unmounts
         return () => clearInterval(pollInterval);
 
     }, [fetchStatistics]);
 
     //Handle the button when the user click any features to redeem
-    const handleRedeemFeature = (item) => {
+    const handleRedeemUnlockFeature = (item) => {
         setConfirmFeature(item);
     };
 
     //Called when the user confirm inside the modal
-    const confirmRedeemFeature = async () => {
+    const confirmRedeemUnlockFeature = async () => {
         if (!confirmFeature) {
             return;
         }
         setRedeemingFeature(true);
 
         try {
-            const response = await achievementService.redeemFeature(confirmFeature.id);
+            const response = await achievementService.redeemUnlockFeature(confirmFeature.id);
 
             toast.success(`"${confirmFeature.feature_name}" redeemed successfully!`);
 
@@ -317,7 +317,7 @@ const AchievementListPage = () => {
                                     {/* Action Button */}
                                     <div className="mt-2 pt-4 border-t border-slate-100">
                                         <button
-                                            onClick={() => handleRedeemFeature(item)}
+                                            onClick={() => handleRedeemUnlockFeature(item)}
                                             className="group/btn relative w-full h-11 bg-linear-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold text-sm rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 active:scale-95 overflow-hidden"
                                         >
                                             <span className="relative z-10 flex items-center justify-center gap-2">Redeem</span>
@@ -460,7 +460,7 @@ const AchievementListPage = () => {
                             Cancel
                         </button>
                         <button
-                            onClick={confirmRedeemFeature}
+                            onClick={confirmRedeemUnlockFeature}
                             disabled={redeemingFeature}
                             className="flex-1 h-10 rounded-xl bg-linear-to-r from-purple-500 to-purple-600 text-white font-semibold text-sm hover:from-purple-600 hover:to-purple-700 disabled:opacity-50"
                         >
