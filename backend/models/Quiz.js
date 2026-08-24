@@ -29,10 +29,13 @@ const Quiz = {
             }
         }
 
+        const TIME_PER_QUESTION_SECONDS = 60;
+        let duration_seconds = questions.length * TIME_PER_QUESTION_SECONDS;
+
         const [quizResult] = await db.execute(
-            `INSERT INTO quizzes (user_id, document_id, title, total_questions, num_xp)
-             VALUES (?, ?, ?, ?, ?)`,
-             [userId, documentId, title, questions.length, totalXPGain]
+            `INSERT INTO quizzes (user_id, document_id, title, total_questions, num_xp, duration_seconds)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+             [userId, documentId, title, questions.length, totalXPGain, duration_seconds]
         );
 
         const quizId = quizResult.insertId;
@@ -43,9 +46,9 @@ const Quiz = {
             const questionXP = gainXPBasedOnDifficulty[currentQuestionDifficulty].level_point;
 
             const [questionResult] = await db.execute(
-                `INSERT INTO questions (quiz_id, question, correct_answer, explanation, difficulty, topic, num_xp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [quizId, q.question, q.correctAnswer, q.explanation || null, 
+                `INSERT INTO questions (quiz_id, question, hints, correct_answer, explanation, difficulty, topic, num_xp)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [quizId, q.question, q.hints, q.correctAnswer, q.explanation || null, 
                     q.difficulty || 'medium', q.topic || null, questionXP
                 ]
             );
@@ -121,7 +124,7 @@ const Quiz = {
         const [quizzes] = await db.execute(
             `
             SELECT q.id, q.title, q.score, q.total_questions, q.completed_at, q.created_at, q.num_xp,
-            d.title AS document_title, d.file_name
+            d.title AS document_title, d.file_name, q.duration_seconds
             FROM quizzes q
             JOIN documents d
                 ON q.document_id = d.id

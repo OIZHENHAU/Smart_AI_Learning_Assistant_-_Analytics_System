@@ -136,6 +136,7 @@ export const generateQuiz = async (text, numQuestions = 10, language = 'en') => 
     C: [Correct option - exactly as written above]
     E: [Brief explanation]
     D: [Difficulty: easy, medium, or hard]
+    H: [Hint - A helpful tip or clue that points the learner in the right direction. The hint should guide thinking without revealing the answer directly. Example hint: "Think about the order of operations" or "Remember that arrays are zero-indexed"]
     T: [Short topic name this question belongs to, e.g. "React Hooks", "Data Types", "Sorting Algorithms"]
 
     Seperate questions with "---"
@@ -158,7 +159,7 @@ export const generateQuiz = async (text, numQuestions = 10, language = 'en') => 
 
         for (const block of questionBlocks) {
             const lines = block.trim().split('\n');
-            let question, explanation, correctAnswer = "";
+            let question, explanation, correctAnswer, hints = "";
             let options = [];
             let difficulty = "medium";
 
@@ -179,6 +180,8 @@ export const generateQuiz = async (text, numQuestions = 10, language = 'en') => 
                     if (["easy", "medium", "hard"].includes(diff)) {
                         difficulty = diff;
                     }
+                } else if (line_trim.startsWith('H:')) {
+                    hints = line_trim.substring(2).trim();
                 } else if (line_trim.startsWith('T:')) {
                     topic = line_trim.substring(2).trim();
                 } else if (line_trim.match(/^\d+\./) || line_trim.match(/^[A-D]\)/)) {
@@ -196,7 +199,7 @@ export const generateQuiz = async (text, numQuestions = 10, language = 'en') => 
             }
 
             if (question && options.length >= 2 && correctAnswer) {
-                questions.push({ question, options, correctAnswer, explanation, difficulty, topic });
+                questions.push({ question, options, correctAnswer, explanation, difficulty, topic, hints });
             }
         }
 

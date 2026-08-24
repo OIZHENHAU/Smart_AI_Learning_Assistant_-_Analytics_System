@@ -1,12 +1,12 @@
 import React, {useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb } from "lucide-react";
 import quizService from "../../services/QuizService";
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
 import Button from "../../components/common/Button";
-
+import CountDownTimer from '../../components/common/CountdownTimer';
 
 const QuizTakePage = () => {
     const { id: quizId } = useParams();
@@ -16,6 +16,8 @@ const QuizTakePage = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    const [totalSeconds, setTotalSeconds] = useState(null);
+    const [timeExpired, setTimeExpired] = useState(false);
 
     useEffect(() => {
         const fetchCurrentQuiz = async () => {
@@ -35,6 +37,12 @@ const QuizTakePage = () => {
         fetchCurrentQuiz();
 
     }, [quizId]);
+
+    useEffect(() => {
+        if (quiz?.questions?.length) {
+            setTotalSeconds(/*quiz.duration_seconds*/18000);
+        }
+    }, [quiz]);
 
     const handleOptionChange = (questionId, optionIndex) => {
         setSelectedAnswers((prev) => ({
@@ -72,7 +80,26 @@ const QuizTakePage = () => {
             setSubmitting(false);
         }
     };
-    
+
+    const handleTimeUp = () => {
+        if (submitting || timeExpired) return;
+        setTimeExpired(true);
+        toast("Time's up! Submitting your answers...");
+        handleSubmitQuizAnswer();
+    };
+
+    const handleFreezeTimer = () => {
+        toast("Freeze Timer coming soon!");
+    };
+
+    const handleScoreShield = () => {
+        toast("Score Shield coming soon!");
+    };
+
+    const handleHint = () => {
+        toast("Hint coming soon!");
+    };
+
     if (loading) {
         return (
             <div className="flex item-center justify-center min-h-[60vh]">
@@ -97,7 +124,13 @@ const QuizTakePage = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <PageHeader title={quiz.title || 'Take quiz'} />
+            <PageHeader title={quiz.title || 'Take quiz'}>
+                {totalSeconds !== null && (
+                    <div className="px-4 py-2 border-2 border-slate-900 rounded-lg text-sm font-semibold text-slate-900">
+                        Reset in: <CountDownTimer resetInSeconds={totalSeconds} onZero={handleTimeUp} />
+                    </div>
+                )}
+            </PageHeader>
 
             {/* Progress Bar */}
             <div className="mb-6">
@@ -165,6 +198,34 @@ const QuizTakePage = () => {
                     <ChevronLeft className="w-4 h-4" />
                     Previous
                 </Button>
+
+                {/* Feature Buttons */}
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleFreezeTimer}
+                        title="Freeze Timer"
+                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                    >
+                        <Snowflake className="w-5 h-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleScoreShield}
+                        title="Score Shield"
+                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                    >
+                        <Shield className="w-5 h-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleHint}
+                        title="Hint"
+                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                    >
+                        <Lightbulb className="w-5 h-5" />
+                    </button>
+                </div>
 
                 {currentQuestionIndex < quiz.questions.length - 1 ? (
                     <Button onClick={handleNextQuestion}>
