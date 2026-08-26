@@ -92,7 +92,7 @@ const Quiz = {
                 id: q.id,
                 question: q.question,
                 options: q.options,
-                /*correct_answer: q.correct_answer,*/
+                correct_answer: q.correct_answer,
                 explanation: q.explanation,
                 difficulty: q.difficulty,
                 topic: q.topic,
