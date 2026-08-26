@@ -97,6 +97,72 @@ const Achievement = {
         }
     },
 
+    async getHintUnlockFeature(userId) {
+        const connection = await db.getConnection();
+
+        try {
+            const [hintFeature] = await connection.execute(
+                `
+                SELECT * FROM unlocked_features uf
+                WHERE uf.user_id = ? AND uf.specific_type = 'hint'
+                `, [userId]
+            );
+
+            return hintFeature[0];
+
+        } catch (error) {
+            console.error("Fail to retrieve the hint unlock feature at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async getFreezeUnlockFeature(userId) {
+        const connection = await db.getConnection();
+
+        try {
+            const [freezeFeature] = await connection.execute(
+                `
+                SELECT * FROM unlock_features uf
+                WHERE uf.user_id = ? AND uf.specific_type = 'stop'
+                `, [userId]
+            );
+
+            return freezeFeature[0];
+
+        } catch (error) {
+            console.error("Fail to get the freeze unlock features at the Achievemnt due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async getShieldUnlockFeature(userId) {
+        const connection = await db.getConnection();
+
+        try {
+            const [shieldFeatures] = await connection.execute(
+                `
+                SELECT * FROM unlock_features uf
+                WHERE uf.user_id = ? AND uf.specific_type = 'block'
+                `, [userId]
+            );
+
+            return shieldFeatures[0];
+
+        } catch (error) {
+            console.error("Fail to get the shield unlock features at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
     async displayAllDailyGoals(userId) {
         const connection = await db.getConnection();
 

@@ -92,13 +92,80 @@ const Quiz = {
                 id: q.id,
                 question: q.question,
                 options: q.options,
-                correct_answer: q.correct_answer,
+                /*correct_answer: q.correct_answer,*/
                 explanation: q.explanation,
                 difficulty: q.difficulty,
                 topic: q.topic,
-                num_xp: q.num_xp
+                num_xp: q.num_xp,
+                /*hints: q.hints*/
+                has_hint: q.has_hint
             }))
         };
+    },
+
+    async getQuizHintByQuestionId({quizId, questionId, userId}) {
+        const connection = await db.getConnection();
+
+        try {
+            const [questionHint] = await connection.execute(
+                `
+                SELECT qs.hints 
+                FROM questions qs
+                JOIN quizzes qz
+                    ON qs.quiz_id = qz.id
+                WHERE qz.user_id = ?
+                AND qz.id = ? AND qs.id = ?
+                `, [userId, quizId, questionId]
+            );
+
+            return questionHint[0];
+
+        } catch (error) {
+            console.error("Fail to get the hint of the particulat question at Quiz due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async setHintOnQuestion({quizId, questionId, userId}) {
+        const connection = await db.getConnection();
+
+        try {
+            const [result] = await connection.execute(
+                `
+                UPDATE questions qs
+                JOIN quizzes qz
+                    ON qs.quiz_id = qz.id
+                SET qs.has_hint = TRUE
+                WHERE qz.user_id = ?
+                AND qz.id = ? AND qs.id = ?
+                `, [userId, quizId, questionId]
+            );
+
+            //Already hinted, or not this user's question
+            if (result.affectedRows === 0) {
+                return false;
+            }
+
+            await connection.execute(
+                `
+                UPDATE unlocked_features uf
+                SET uf.num_unlock = uf.num_unlock - 1
+                WHERE uf.specific_type = 'hint' AND uf.user_id = ? AND uf.num_unlock > 0
+                `, [userId]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Fail to set the has hint on this particular question at Quiz due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     },
 
     async saveAnswer({quizId, questionId, selectedAnswer, isCorrect}) {

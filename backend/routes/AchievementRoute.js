@@ -11,7 +11,10 @@ import {
     postAllDailyGoals, 
     postAllAchievementBadges,
     postAllUnlockFeatures,
-    redeemUnlockFeature
+    redeemUnlockFeature,
+    getHintFeature,
+    getFreezeFeature,
+    getShieldFeature
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -37,5 +40,11 @@ router.post('/create-badges', postAllAchievementBadges);
 router.post('/create-unlock-features', postAllUnlockFeatures);
 //Redeem features
 router.post('/redeem-unlock-feature/:id', redeemUnlockFeature);
+//Get the hint features
+router.get('/get-hint-feature', getHintFeature);
+//Get the freeze features
+router.get('/get-freeze-feature', getFreezeFeature);
+//Get the shield features
+router.get('/get-shield-feature', getShieldFeature);
 
 export default router;

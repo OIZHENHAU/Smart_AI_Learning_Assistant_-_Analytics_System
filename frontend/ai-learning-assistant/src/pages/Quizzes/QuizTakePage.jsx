@@ -1,12 +1,14 @@
 import React, {useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb, Lock } from "lucide-react";
 import quizService from "../../services/QuizService";
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
 import Button from "../../components/common/Button";
 import CountDownTimer from '../../components/common/CountdownTimer';
+import Modal from '../../components/common/Modal';
+import achievementService from "../../services/AchievementService";
 
 const QuizTakePage = () => {
     const { id: quizId } = useParams();
@@ -18,6 +20,11 @@ const QuizTakePage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [totalSeconds, setTotalSeconds] = useState(null);
     const [timeExpired, setTimeExpired] = useState(false);
+    const [isHintModalOpen, setIsHintModalOpen] = useState(false);
+    const [isHintUnavailableModalOpen, setIsHintUnavailableModalOpen] = useState(false);
+    const [currentHintFeature, setHintFeature] = useState(null);
+    const [questionHints, setQuestionHints] = useState({});
+
 
     useEffect(() => {
         const fetchCurrentQuiz = async () => {
@@ -43,6 +50,31 @@ const QuizTakePage = () => {
             setTotalSeconds(/*quiz.duration_seconds*/18000);
         }
     }, [quiz]);
+
+    useEffect(() => {
+        const loadHintIfApplied = async () => {
+            const question = quiz?.questions?.[currentQuestionIndex];
+
+            if (!question) {
+                return;
+            }
+
+            if (question.has_hint && questionHints[question.id] === undefined) {
+                try {
+                    const response = await quizService.getQuizHintByQuestionId(quizId, question.id);
+                    setQuestionHints((prev) => ({
+                        ...prev,
+                        [question.id]: response.data.hints
+                    }));
+
+                } catch (error) {
+                    console.error("Fail to load the hint of this question.", error);
+                }
+            }
+        };
+
+        loadHintIfApplied();
+    }, [currentQuestionIndex, quiz, quizId]);
 
     const handleOptionChange = (questionId, optionIndex) => {
         setSelectedAnswers((prev) => ({
@@ -96,8 +128,55 @@ const QuizTakePage = () => {
         toast("Score Shield coming soon!");
     };
 
-    const handleHint = () => {
-        toast("Hint coming soon!");
+    const handleHint = async () => {
+        if (quiz.questions[currentQuestionIndex].has_hint) {
+            return;
+        }
+
+        try {
+            const response = await achievementService.getHintFeature();
+            const hintFeature = response.data;
+            setHintFeature(hintFeature);
+
+            if (hintFeature.num_unlock > 0) {
+                setIsHintModalOpen(true);
+            } else {
+                setIsHintUnavailableModalOpen(true);
+            }
+
+        } catch (error) {
+            toast.error("Failed to fetch the hint feature.");
+            console.error(error);
+        }
+    };
+
+    const handleConfirmUseHint = async () => {
+        const questionId = quiz.questions[currentQuestionIndex].id;
+
+        try {
+            await quizService.setHintOnQuestion(quizId, questionId);
+            const hintResponse = await quizService.getQuizHintByQuestionId(quizId, questionId);
+
+            setQuestionHints((prev) => ({
+                ...prev,
+                [questionId]: hintResponse.data.hints
+            }));
+
+            setCurrentQuiz((prev) => ({
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === questionId ? { ...q, has_hint: true } : q
+                )
+            }));
+
+            setIsHintModalOpen(false);
+            toast("Hint was applied successfully.");
+
+        } catch (error) {
+            toast.error("Failed to apply the hint on this question.");
+            console.error(error);
+        }
+        
     };
 
     if (loading) {
@@ -188,6 +267,14 @@ const QuizTakePage = () => {
                 </div>
             </div>
 
+            {/* Hint */}
+            {questionHints[currentQuestion.id] && (
+                <div className="flex items-start gap-2 px-5 py-4 mb-6 bg-purple-300/70 border border-purple-300 rounded-xl text-sm text-purple-950">
+                    <span className="font-semibold shrink-0">Hint:</span>
+                    <span>{questionHints[currentQuestion.id] || "No hint available for this question."}</span>
+                </div>
+            )}
+
             {/* Navigation */}
             <div className="flex items-center justify-between">
                 <Button
@@ -220,10 +307,21 @@ const QuizTakePage = () => {
                     <button
                         type="button"
                         onClick={handleHint}
-                        title="Hint"
-                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                        disabled={currentQuestion.has_hint}
+                        title={currentQuestion.has_hint ? "Hint already used for this question" : "Hint"}
+                        className={`w-11 h-11 rounded-full text-white shadow-lg flex items-center justify-center transition-all duration-200 ${
+                            currentQuestion.has_hint
+                                ? 'bg-slate-300 shadow-none cursor-not-allowed'
+                                : questionHints[currentQuestion.id]
+                                    ? 'bg-linear-to-r from-purple-600 to-purple-700 shadow-purple-500/40 active:scale-[0.98]'
+                                    : 'bg-linear-to-r from-purple-400 to-purple-500 shadow-purple-500/25 hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 active:scale-[0.98]'
+                        }`}
                     >
-                        <Lightbulb className="w-5 h-5" />
+                        {currentQuestion.has_hint ? (
+                            <Lock className="w-5 h-5" />
+                        ) : (
+                            <Lightbulb className="w-5 h-5" />
+                        )}
                     </button>
                 </div>
 
@@ -242,7 +340,60 @@ const QuizTakePage = () => {
                     </Button>
                 )}
             </div>
+
+            {/* Confirm Use Hint Modal */}
+            <Modal
+                isOpen={isHintModalOpen}
+                onClose={() => setIsHintModalOpen(false)}
+                title="Use a Hint?"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-600">
+                        You have{' '}
+                        <span className="font-semibold text-purple-600">
+                            {currentHintFeature?.num_unlock}/{currentHintFeature?.limit_number}
+                        </span>{' '}
+                        hints available. Do you want to use one for this question?
+                    </p>
+                    <div className="flex justify-end gap-3 pt-1">
+                        <button
+                            onClick={() => setIsHintModalOpen(false)}
+                            className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleConfirmUseHint}
+                            className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all"
+                        >
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Insufficient Hints Modal */}
+            <Modal
+                isOpen={isHintUnavailableModalOpen}
+                onClose={() => setIsHintUnavailableModalOpen(false)}
+                title="No Hints Available"
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-slate-600">
+                        You don't have enough hints left to use right now. Earn more points to unlock additional hints.
+                    </p>
+                    <div className="flex justify-end pt-1">
+                        <button
+                            onClick={() => setIsHintUnavailableModalOpen(false)}
+                            className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
+
     )
 }
 

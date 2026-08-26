@@ -73,6 +73,71 @@ export const getQuizById = async (req, res, next) => {
     }
 };
 
+//GET quizzes hint by question id GET /api/quizzes/:quizId/hint/:questionId
+export const getQuizHintByQuestionId = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { quizId, questionId } = req.params;
+        
+        if (!quizId || !questionId) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide the valid quiz or question ID.",
+                statusCode: 400
+            });
+        }
+
+        const hint = await Quiz.getQuizHintByQuestionId({ quizId, questionId, userId });
+
+        if (!hint) {
+            return res.status(404).json({
+                success: false,
+                error: "No hint was provided or  not found from the particular question.",
+                statusCode: 404
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: hint,
+            message: "Quiz hint was retreived successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the quiz hint based on the question id at the controller due to: " + error);
+        next(error);
+    }
+};
+
+export const setHintOnQuestion = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { quizId, questionId } = req.params;
+
+        if (!quizId || !questionId) {
+            return res.status(400).json({
+                success: false,
+                message: "Please a valid quiz or question ID.",
+                statusCode: 400
+            });
+        }
+
+        await Quiz.setHintOnQuestion({ quizId, questionId, userId });
+
+        res.status(200).json({
+            success: true,
+            data: true,
+            message: "The hint was set up successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to set the hint on the particular question at the controller due to: " + error);
+        next(error);
+    }
+}
+
 //Submit quiz answer POST /api/quizzes/:quizId/submit
 export const submitQuiz = async (req, res, next) => {
     try {

@@ -245,3 +245,81 @@ export const redeemUnlockFeature = async (req, res, next) => {
         
     }
 }
+
+//GET get the hint unlock features GET /api/achievements/get-hint-features
+export const getHintFeature = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const hintFeature = await Achievement.getHintUnlockFeature(userId);
+
+        if (!hintFeature) {
+            return res.status(400).json({
+                success: false,
+                message: "The hint features was not available or not found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: hintFeature,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the hint features at the controlelr due to: " + error);
+        next(error);
+    }
+}
+
+//GET get the freeze unlock features GET /api/achievements/get-freeze-features
+export const getFreezeFeature = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const freezeFeature = await Achievement.getFreezeUnlockFeature(userId);
+
+        if (!freezeFeature) {
+            return res.status(400).json({
+                success: false,
+                message: "The freeze feature was not available or not found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: freezeFeature,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the freeze features at the controller sue to: " + error);
+        next(error);
+    }
+}
+
+//GET get the shield unlock features GET /api/achievements/get-shield-features
+export const getShieldFeature = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const shieldFeature = await Achievement.getShieldUnlockFeature(userId);
+
+        if (!shieldFeature) {
+            return res.status(400).json({
+                success: false,
+                message: "The shield features was unavailable or not found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: shieldFeature,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the shield features at the controller sue to: " + error);
+        next(error);
+    }
+}

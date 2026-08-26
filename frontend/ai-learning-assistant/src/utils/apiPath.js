@@ -27,7 +27,9 @@ export const API_PATHS = {
         GET_QUIZ_BY_ID: (id) => `/api/quizzes/quiz/${id}`,
         SUBMIT_QUIZ: (id) => `/api/quizzes/${id}/submit`,
         GET_QUIZ_RESULT: (id) => `/api/quizzes/${id}/results`,
-        DELETE_QUIZ: (id) => `/api/quizzes/${id}`
+        DELETE_QUIZ: (id) => `/api/quizzes/${id}`,
+        GET_QUIZ_HINT: (quizId, questionId) => `/api/quizzes/${quizId}/hint/${questionId}`,
+        SET_QUIZ_HINT: (quizId, questionId) => `/api/quizzes/${quizId}/set-hint/${questionId}`
     },
     PROGRESS: {
         GET_DASHBOARD: "/api/progress/dashboard",
@@ -46,8 +48,11 @@ export const API_PATHS = {
         GET_ALL_DAILY_GOALS: "/api/achievements/all-daily-goals",
         GET_CURRENT_LEVEL_AND_XP: "/api/achievements/current-level-and-xp",
         POST_ALL_DAILY_GOALS: "/api/achievements/daily-goals",
-        POST_ALL_BADGES: "api/achievements/create-badges",
-        POST_ALL_UNLOCK_FEATURES: "api/achievements/create-unlock-features",
-        REDEEM_UNLOCK_FEATURE: (id) => `api/achievements/redeem-unlock-feature/${id}`
+        POST_ALL_BADGES: "/api/achievements/create-badges",
+        POST_ALL_UNLOCK_FEATURES: "/api/achievements/create-unlock-features",
+        REDEEM_UNLOCK_FEATURE: (id) => `/api/achievements/redeem-unlock-feature/${id}`,
+        GET_HINT_FEATURE: "/api/achievements/get-hint-feature",
+        GET_FREEZE_FEATURE: "/api/achievements/get-freeze-feature",
+        GET_SHIELD_FEATURE: "/api/achievements/get-shield-feature"
     }
 }

@@ -112,6 +112,39 @@ const redeemUnlockFeature = async (id) => {
     }
 };
 
+const getHintFeature = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_HINT_FEATURE);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the hint features at the service due to: " + error);
+        throw error;
+    }
+};
+
+const getFreezeFeature = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_FREEZE_FEATURE);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the freeze features at the service due to: " + error);
+        throw error;
+    }
+};
+
+const getShieldFeature = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_SHIELD_FEATURE);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the shield features at the service due to: " + error);
+        throw error;
+    }
+}
+
 const achievementService = {
     getAchievementStatistics,
     getAllBadges,
@@ -122,7 +155,10 @@ const achievementService = {
     postAllDailyGoals,
     postAllBadges,
     postAllUnlockFeatures,
-    redeemUnlockFeature
+    redeemUnlockFeature,
+    getHintFeature,
+    getFreezeFeature,
+    getShieldFeature
 };
 
 export default achievementService;

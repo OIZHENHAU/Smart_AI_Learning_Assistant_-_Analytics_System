@@ -58,12 +58,37 @@ const deleteQuiz = async (quizId) => {
     }
 };
 
+const getQuizHintByQuestionId = async (quizId, questionId) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.QUIZZES.GET_QUIZ_HINT(quizId, questionId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the quiz hint based on question id at the service due to: " + error);
+        throw error;
+    }
+};
+
+const setHintOnQuestion = async (quizId, questionId) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.QUIZZES.SET_QUIZ_HINT(quizId, questionId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to set the hint of the particular question at the service due to: " + error);
+        throw error;
+    }
+}
+
+
 const quizService = {
     getQuizzesForDocument,
     getQuizById,
     submitQuiz,
     getQuizResults,
-    deleteQuiz
+    deleteQuiz,
+    getQuizHintByQuestionId,
+    setHintOnQuestion
 };
 
 export default quizService;

@@ -5,7 +5,9 @@ import {
     getQuizById,
     getQuizResult,
     submitQuiz,
-    deleteQuiz
+    deleteQuiz,
+    getQuizHintByQuestionId,
+    setHintOnQuestion
 } from '../controller/QuizesController.js';
 
 const quizRouter = express.Router();
@@ -18,6 +20,8 @@ quizRouter.get('/quiz/:quizId', getQuizById);
 quizRouter.post('/:quizId/submit', submitQuiz);
 quizRouter.get('/:quizId/results', getQuizResult);
 quizRouter.delete('/:quizId', deleteQuiz);
+quizRouter.get('/:quizId/hint/:questionId', getQuizHintByQuestionId)
+quizRouter.post('/:quizId/set-hint/:questionId', setHintOnQuestion);
 
 
 export default quizRouter;
