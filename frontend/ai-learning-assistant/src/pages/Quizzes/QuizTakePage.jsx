@@ -1,7 +1,6 @@
 import React, {useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb, Lock } from "lucide-react";
-import quizService from "../../services/QuizService";
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
@@ -9,6 +8,7 @@ import Button from "../../components/common/Button";
 import CountDownTimer from '../../components/common/CountdownTimer';
 import Modal from '../../components/common/Modal';
 import achievementService from "../../services/AchievementService";
+import quizService from "../../services/QuizService";
 
 const QuizTakePage = () => {
     const { id: quizId } = useParams();
@@ -20,10 +20,22 @@ const QuizTakePage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [totalSeconds, setTotalSeconds] = useState(null);
     const [timeExpired, setTimeExpired] = useState(false);
+    /*
+    const [activeFeatureType, setActiveFeatureType] = useState(null);
+    const [activeFeature, setActiveFeature] = useState(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isUnavailableModalOpen, setUnavailableModalOpen] = useState(false);
+    */
     const [isHintModalOpen, setIsHintModalOpen] = useState(false);
     const [isHintUnavailableModalOpen, setIsHintUnavailableModalOpen] = useState(false);
     const [currentHintFeature, setHintFeature] = useState(null);
     const [questionHints, setQuestionHints] = useState({});
+    
+   /*const FEATURE_FETCHERS = {
+        hint: achievementService.getHintFeature,
+        //freeze: achievementService.getFreezeFeature,
+        shield: achievementService.getShieldFeature
+   };*/
 
 
     useEffect(() => {
@@ -178,6 +190,39 @@ const QuizTakePage = () => {
         }
         
     };
+
+    /*const handleUseFeature = async (type) => {
+        try {
+            const response = await FEATURE_FETCHERS[type]();
+            setActiveFeatureType(type);
+            setActiveFeature(response.data);
+            
+            if (response.data.num_unlock > 0) {
+                setIsConfirmModalOpen(true);
+
+            } else {
+                setIsUnavailableModalOpen(true);
+            }
+
+        } catch (error) {
+            toast.error(`Failed to fetch the ${type} features.`);
+            console.error(error);
+        }
+    }*/
+
+    /*const handleConfirmUseFeature = () => {
+        if (activeFeatureType === 'hint') {
+            setQuestionHints((prev) => ({ ...prev, [quiz.questions[currentQuestionIndex].id]: true}));
+
+        } else if (activeFeatureType === 'freeze') {
+            //freeze-timer effect
+
+        } else if (activeFeatureType === 'shield') {
+            //score-shield effect
+
+        }
+        setIsConfirmModalOpen(false);
+    }*/
 
     if (loading) {
         return (

@@ -7,7 +7,9 @@ import {
     submitQuiz,
     deleteQuiz,
     getQuizHintByQuestionId,
-    setHintOnQuestion
+    setHintOnQuestion,
+    getShieldByQuestionId,
+    setShieldOnQuestion
 } from '../controller/QuizesController.js';
 
 const quizRouter = express.Router();
@@ -22,6 +24,8 @@ quizRouter.get('/:quizId/results', getQuizResult);
 quizRouter.delete('/:quizId', deleteQuiz);
 quizRouter.get('/:quizId/hint/:questionId', getQuizHintByQuestionId)
 quizRouter.post('/:quizId/set-hint/:questionId', setHintOnQuestion);
+quizRouter.get('/:quizId/shield/:questionId', getShieldByQuestionId);
+quizRouter.post('/:quizId/set-shield/:questionId', setShieldOnQuestion);
 
 
 export default quizRouter;

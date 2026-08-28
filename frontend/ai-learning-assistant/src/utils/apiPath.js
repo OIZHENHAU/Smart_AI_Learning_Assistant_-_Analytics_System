@@ -29,7 +29,9 @@ export const API_PATHS = {
         GET_QUIZ_RESULT: (id) => `/api/quizzes/${id}/results`,
         DELETE_QUIZ: (id) => `/api/quizzes/${id}`,
         GET_QUIZ_HINT: (quizId, questionId) => `/api/quizzes/${quizId}/hint/${questionId}`,
-        SET_QUIZ_HINT: (quizId, questionId) => `/api/quizzes/${quizId}/set-hint/${questionId}`
+        SET_QUIZ_HINT: (quizId, questionId) => `/api/quizzes/${quizId}/set-hint/${questionId}`,
+        GET_QUIZ_SHIELD: (quizId, questionId) => `/api/quizzes/${quizId}/shield/${questionId}`,
+        SET_QUIZ_SHIELD: (quizId, questionId) => `/api/quizzes/${quizId}/set-shield/${questionId}`
     },
     PROGRESS: {
         GET_DASHBOARD: "/api/progress/dashboard",

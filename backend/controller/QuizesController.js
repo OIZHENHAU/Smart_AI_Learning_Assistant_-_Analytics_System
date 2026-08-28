@@ -92,7 +92,7 @@ export const getQuizHintByQuestionId = async (req, res, next) => {
         if (!hint) {
             return res.status(404).json({
                 success: false,
-                error: "No hint was provided or  not found from the particular question.",
+                error: "No hint was provided or not found from the particular question.",
                 statusCode: 404
             });
         }
@@ -110,6 +110,44 @@ export const getQuizHintByQuestionId = async (req, res, next) => {
     }
 };
 
+//GET quiz shield by question id GET /api/quizzes/:quizId/shield/:questionId
+export const getShieldByQuestionId = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { quizId, questionId } = req.params;
+
+        if (!quizId || !questionId) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide a valid quiz or question ID.",
+                statusCode: 400
+            });
+        }
+
+        const shield = await Quiz.getShieldByQuestionId({ quizId, questionId, userId });
+        
+        if (!shield) {
+            return res.status(404).json({
+                success: false,
+                error: "No shield was provded or not found from the particualr questions.",
+                statusCode: 404
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: shield,
+            message: "Protective shield was retrieved successfully.",
+            statsuCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the quiz shield bassed on the question id at the controller due to: " + error);
+        next(error);
+    }
+}
+
+//POST Set hint in the particular question POST /api/quizzes/:quizId/set-hint/:questionId
 export const setHintOnQuestion = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -134,6 +172,35 @@ export const setHintOnQuestion = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to set the hint on the particular question at the controller due to: " + error);
+        next(error);
+    }
+}
+
+//POST Set shield on the particular question POST /api/quizzes/:quizId/set-shield/:questionId
+export const setShieldOnQuestion = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { quizId, questionId } = req.params;
+
+        if (!quizId || !questionId) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid quiz or question id.",
+                statusCode: 400
+            });
+        }
+
+        await Quiz.setShieldOnQuestion({ quizId, questionId, userId });
+
+        res.status(200).json({
+            success: true,
+            data: true,
+            message: "Shield was set up successfully.",
+            statsuCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to set the shield on the particular question due to: " + error);
         next(error);
     }
 }

@@ -69,6 +69,17 @@ const getQuizHintByQuestionId = async (quizId, questionId) => {
     }
 };
 
+const getShieldByQuestionId = async (quizId, questionId) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.QUIZZES.GET_QUIZ_SHIELD(quizId, questionId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the quiz shield based on the question id at the service due to: " + error);
+        throw error;
+    }
+};
+
 const setHintOnQuestion = async (quizId, questionId) => {
     try {
         const response = await axiosInstance.post(API_PATHS.QUIZZES.SET_QUIZ_HINT(quizId, questionId));
@@ -76,6 +87,17 @@ const setHintOnQuestion = async (quizId, questionId) => {
 
     } catch (error) {
         console.error("Fail to set the hint of the particular question at the service due to: " + error);
+        throw error;
+    }
+};
+
+const setShieldOnQuestion = async (quizId, questionId) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.QUIZZES.SET_QUIZ_SHIELD(quizId, questionId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to set the shield of the particular question at tthe service due to: " + error);
         throw error;
     }
 }
@@ -88,7 +110,9 @@ const quizService = {
     getQuizResults,
     deleteQuiz,
     getQuizHintByQuestionId,
-    setHintOnQuestion
+    setHintOnQuestion,
+    getShieldByQuestionId,
+    setShieldOnQuestion
 };
 
 export default quizService;

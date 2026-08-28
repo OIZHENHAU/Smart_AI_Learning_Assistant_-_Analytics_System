@@ -168,6 +168,71 @@ const Quiz = {
         }
     },
 
+    async getShieldByQuestionId({ quizId, questionId, userId }) {
+        const connection = db.getConnection();
+
+        try {
+            const [currentQuestionShield] = (await connection).execute(
+                `
+                SELECT qs.has_protected
+                FROM questions qs
+                JOIN quizzes qz
+                    ON qs.quiz_id = qz.id
+                WHERE qz.user_id = ?
+                AND qz.id = ? AND qs.id = ?
+                `, [userId, quizId, questionId]
+            );
+
+            return currentQuestionShield[0];
+
+        } catch (error) {
+            console.error("Fail to get the protective shield on this particular questions due to: " + error);
+            throw error;
+
+        } finally {
+            (await connection).release();
+        }
+    },
+
+    async setShieldOnQuestion({quizId, questionId, userId}) {
+        const connection = await db.getConnection();
+
+        try {
+            const [result] = await connection.execute(
+                `
+                UPDATE questions qs
+                JOIN quizzes qz
+                    ON qs.quiz_id = qz.id
+                SET has_protected = TRUE
+                WHERE qz.user_id = ?
+                AND qz.id = ? AND qs.id = ?
+                `, [userId, quizId, questionId]
+            );
+
+            //Already have protected, or not this user's question
+            if (result.affectedRows === 0) {
+                return false;
+            }
+
+            await connection.execute(
+                `
+                UPDATE unlock_features uf
+                SET uf.num_unlock = uf.num_unlock - 1
+                WHERE uf.specific_type = 'block' AND uf.user_id = ? AND uf.num_unlock > 0
+                `, [userId]
+            );
+
+            return true;
+
+        } catch (error) {
+            console.error("Failed to apply shield on the particular question at Quiz due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
     async saveAnswer({quizId, questionId, selectedAnswer, isCorrect}) {
         await db.execute(
             `INSERT INTO user_answers (quiz_id, question_id, selected_answer, is_correct)
