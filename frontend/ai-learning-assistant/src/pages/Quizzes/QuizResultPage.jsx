@@ -166,7 +166,7 @@ const QuizResultPage = () => {
                             Question {index + 1}
                         </span>
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            item.isCorrect ? 'bg-purple-600' : 'bg-red-500'
+                            item.isCorrect ? 'bg-green-500' : 'bg-red-500'
                         }`}>
                             {item.isCorrect
                                 ? <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
@@ -191,9 +191,9 @@ const QuizResultPage = () => {
                             let textStyle = "text-slate-600";
 
                             if (isSelected && item.isCorrect) {
-                                containerStyle = "border-purple-400 bg-purple-50";
-                                radioStyle = "border-purple-500 bg-purple-500";
-                                textStyle = "text-purple-900 font-semibold";
+                                containerStyle = "border-green-400 bg-green-50";
+                                radioStyle = "border-green-500 bg-green-500";
+                                textStyle = "text-green-900 font-semibold";
                             } else if (isWrongSelection) {
                                 containerStyle = "border-red-300 bg-red-50";
                                 radioStyle = "border-red-400 bg-red-400";
@@ -217,7 +217,7 @@ const QuizResultPage = () => {
 
                                     {isSelected && (
                                         <span className={`px-3 py-1 text-xs font-bold rounded-lg ${
-                                            item.isCorrect ? 'bg-purple-500 text-white' : 'bg-red-500 text-white'
+                                            item.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
                                         }`}>
                                             Your Answer
                                         </span>
@@ -234,9 +234,9 @@ const QuizResultPage = () => {
 
                     {/* Explanation */}
                     {item.explanation && (
-                        <div className="mt-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
-                            <p className="text-xs font-semibold text-blue-700 mb-1">Explanation</p>
-                            <p className="text-sm text-blue-800">{item.explanation}</p>
+                        <div className="mt-4 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl">
+                            <p className="text-xs font-semibold text-purple-700 mb-1">Explanation</p>
+                            <p className="text-sm text-purple-800">{item.explanation}</p>
                         </div>
                     )}
                 </div>
