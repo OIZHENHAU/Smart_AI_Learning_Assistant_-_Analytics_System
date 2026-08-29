@@ -551,6 +551,29 @@ const Achievement = {
         } finally {
             connection.release();
         }
+    },
+
+    async useFreezeUnlockFeature(userId) {
+        const connection = await db.getConnection();
+
+        try {
+            const [result] = await connection.execute(
+                `
+                UPDATE unlocked_features uf
+                SET uf.num_unlock = uf.num_unlock - 1
+                WHERE uf.user_id = ? AND uf.specific_type = 'stop' AND uf.num_unlock > o
+                `, [userId]
+            );
+
+            return result.affectedRows > 0;
+
+        } catch (error) {
+            console.error("Fail to use freeze features on the question at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     }
 }
 

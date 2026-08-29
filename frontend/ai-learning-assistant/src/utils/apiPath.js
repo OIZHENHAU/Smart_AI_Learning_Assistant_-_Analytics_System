@@ -55,6 +55,7 @@ export const API_PATHS = {
         REDEEM_UNLOCK_FEATURE: (id) => `/api/achievements/redeem-unlock-feature/${id}`,
         GET_HINT_FEATURE: "/api/achievements/get-hint-feature",
         GET_FREEZE_FEATURE: "/api/achievements/get-freeze-feature",
-        GET_SHIELD_FEATURE: "/api/achievements/get-shield-feature"
+        GET_SHIELD_FEATURE: "/api/achievements/get-shield-feature",
+        USE_FREEZE_FEATURE: "/api/acheivements/use-freeze-feature"
     }
 }

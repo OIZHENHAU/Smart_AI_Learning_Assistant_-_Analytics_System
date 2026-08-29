@@ -14,7 +14,8 @@ import {
     redeemUnlockFeature,
     getHintFeature,
     getFreezeFeature,
-    getShieldFeature
+    getShieldFeature,
+    useFreezeFeature
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -46,5 +47,7 @@ router.get('/get-hint-feature', getHintFeature);
 router.get('/get-freeze-feature', getFreezeFeature);
 //Get the shield features
 router.get('/get-shield-feature', getShieldFeature);
+//Use freeze timer features
+router.post('/use-freeze-feature', useFreezeFeature);
 
 export default router;

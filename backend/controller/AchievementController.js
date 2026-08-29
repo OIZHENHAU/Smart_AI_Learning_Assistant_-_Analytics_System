@@ -323,3 +323,29 @@ export const getShieldFeature = async (req, res, next) => {
         next(error);
     }
 }
+
+//POST use freeze feature on the quiz question POST api/achievements/use-freeze-feature
+export const useFreezeFeature = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const freezeResult = await Achievement.useFreezeUnlockFeature(userId);
+
+        if (!freezeResult) {
+            return res.status(400).json({
+                success: false,
+                message: "Freeze feature was not available or insufficient points.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "The freeze timer was applied successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to use the freeze features at the controller due to: " + error);
+        next(error);
+    }
+}

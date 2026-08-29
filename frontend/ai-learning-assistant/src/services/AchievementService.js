@@ -143,7 +143,18 @@ const getShieldFeature = async () => {
         console.error("Fail to get the shield features at the service due to: " + error);
         throw error;
     }
-}
+};
+
+const useFreezeTimerFeature = async () => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.USE_FREEZE_FEATURE);
+        return response.data;
+         
+    } catch (error) {
+        console.error("Fail to use the freeze timer features at the service due to: " + error);
+        throw error;
+    }
+};
 
 const achievementService = {
     getAchievementStatistics,
@@ -158,7 +169,8 @@ const achievementService = {
     redeemUnlockFeature,
     getHintFeature,
     getFreezeFeature,
-    getShieldFeature
+    getShieldFeature,
+    useFreezeTimerFeature
 };
 
 export default achievementService;
