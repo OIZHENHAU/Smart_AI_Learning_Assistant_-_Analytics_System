@@ -1,4 +1,4 @@
-import React, {useState, useEffect } from "react";
+import React, {useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb, Lock, ShieldCheck } from "lucide-react";
 import PageHeader from '../../components/common/PageHeader';
@@ -32,6 +32,15 @@ const QuizTakePage = () => {
         freeze: achievementService.getFreezeFeature,
         shield: achievementService.getShieldFeature
     };
+
+    //Use snowflake css style animation
+    const snowflakes = useMemo(() => Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        size: 5 + Math.random() * 10,
+        duration: 2 + Math.random() * 1.5,
+        delay: Math.random() * 2
+    })), []);
 
     useEffect(() => {
         const fetchCurrentQuiz = async () => {
@@ -234,8 +243,29 @@ const QuizTakePage = () => {
         <div className="max-w-4xl mx-auto">
             <PageHeader title={quiz.title || 'Take quiz'}>
                 {totalSeconds !== null && (
-                    <div className="px-4 py-2 border-2 border-slate-900 rounded-lg text-sm font-semibold text-slate-900">
-                        Reset in: <CountDownTimer resetInSeconds={totalSeconds} onZero={handleTimeUp} paused={isTimerFrozen}/>
+                    <div className={`relative overflow-hidden px-4 py-2 border-2 rounded-lg text-sm font-semibold transition-colors duration-300 ${
+                        isTimerFrozen ? 'border-purple-600 text-purple-700' : 'border-slate-900 text-slate-900'
+                    }`}>
+                        {isTimerFrozen && (
+                            <div className="absolute inset-0 pointer-events-none">
+                                {snowflakes.map((flake) => (
+                                    <Snowflake
+                                        key={flake.id}
+                                        className="absolute text-purple-400 animate-snowfall"
+                                        style={{
+                                            left: `${flake.left}%`,
+                                            width: flake.size,
+                                            height: flake.size,
+                                            animationDuration: `${flake.duration}s`,
+                                            animationDelay: `${flake.delay}s`,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        <span className="relative z-10">
+                            Reset in: <CountDownTimer resetInSeconds={totalSeconds} onZero={handleTimeUp} paused={isTimerFrozen}/>
+                        </span>
                     </div>
                 )}
             </PageHeader>
