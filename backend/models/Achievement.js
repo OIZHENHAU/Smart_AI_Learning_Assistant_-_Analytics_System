@@ -125,7 +125,7 @@ const Achievement = {
         try {
             const [freezeFeature] = await connection.execute(
                 `
-                SELECT * FROM unlock_features uf
+                SELECT * FROM unlocked_features uf
                 WHERE uf.user_id = ? AND uf.specific_type = 'stop'
                 `, [userId]
             );
@@ -147,7 +147,7 @@ const Achievement = {
         try {
             const [shieldFeatures] = await connection.execute(
                 `
-                SELECT * FROM unlock_features uf
+                SELECT * FROM unlocked_features uf
                 WHERE uf.user_id = ? AND uf.specific_type = 'block'
                 `, [userId]
             );
@@ -561,7 +561,7 @@ const Achievement = {
                 `
                 UPDATE unlocked_features uf
                 SET uf.num_unlock = uf.num_unlock - 1
-                WHERE uf.user_id = ? AND uf.specific_type = 'stop' AND uf.num_unlock > o
+                WHERE uf.user_id = ? AND uf.specific_type = 'stop' AND uf.num_unlock > 0
                 `, [userId]
             );
 

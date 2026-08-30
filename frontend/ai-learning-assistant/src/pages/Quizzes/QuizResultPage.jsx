@@ -165,13 +165,20 @@ const QuizResultPage = () => {
                         <span className="px-4 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded-xl">
                             Question {index + 1}
                         </span>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            item.isCorrect ? 'bg-green-500' : 'bg-red-500'
-                        }`}>
-                            {item.isCorrect
-                                ? <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
-                                : <XCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
-                            }
+                        <div className="flex items-center gap-2">
+                            {item.selectedAnswer === null && (
+                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-slate-200 text-slate-600">
+                                    Not Answered
+                                </span>
+                            )}
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                item.isCorrect ? 'bg-green-500' : 'bg-red-500'
+                            }`}>
+                                {item.isCorrect
+                                    ? <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
+                                    : <XCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
+                                }
+                            </div>
                         </div>
                     </div>
 

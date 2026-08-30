@@ -1,6 +1,6 @@
 import React, {useState, useEffect } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Snowflake, Shield, Lightbulb, Lock, ShieldCheck } from "lucide-react";
 import PageHeader from '../../components/common/PageHeader';
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
@@ -20,23 +20,18 @@ const QuizTakePage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [totalSeconds, setTotalSeconds] = useState(null);
     const [timeExpired, setTimeExpired] = useState(false);
-    /*
+    const [isTimerFrozen, setIsTimerFrozen] = useState(false);
     const [activeFeatureType, setActiveFeatureType] = useState(null);
     const [activeFeature, setActiveFeature] = useState(null);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [isUnavailableModalOpen, setUnavailableModalOpen] = useState(false);
-    */
-    const [isHintModalOpen, setIsHintModalOpen] = useState(false);
-    const [isHintUnavailableModalOpen, setIsHintUnavailableModalOpen] = useState(false);
-    const [currentHintFeature, setHintFeature] = useState(null);
+    const [isUnavailableModalOpen, setIsUnavailableModalOpen] = useState(false);
     const [questionHints, setQuestionHints] = useState({});
     
-   /*const FEATURE_FETCHERS = {
+    const FEATURE_FETCHERS = {
         hint: achievementService.getHintFeature,
-        //freeze: achievementService.getFreezeFeature,
+        freeze: achievementService.getFreezeFeature,
         shield: achievementService.getShieldFeature
-   };*/
-
+    };
 
     useEffect(() => {
         const fetchCurrentQuiz = async () => {
@@ -59,7 +54,7 @@ const QuizTakePage = () => {
 
     useEffect(() => {
         if (quiz?.questions?.length) {
-            setTotalSeconds(/*quiz.duration_seconds*/18000);
+            setTotalSeconds(quiz.duration_seconds); // Future fix to allow timer based on quiz.
         }
     }, [quiz]);
 
@@ -132,70 +127,22 @@ const QuizTakePage = () => {
         handleSubmitQuizAnswer();
     };
 
-    const handleFreezeTimer = () => {
-        toast("Freeze Timer coming soon!");
-    };
+    const handleUseFeature = async (type) => {
+        const question = quiz.questions[currentQuestionIndex];
 
-    const handleScoreShield = () => {
-        toast("Score Shield coming soon!");
-    };
+        if (type == 'hint' && question.has_hint) {
+            return;
+        }
 
-    const handleHint = async () => {
-        if (quiz.questions[currentQuestionIndex].has_hint) {
+        if (type == 'shield' && question.has_protected) {
             return;
         }
 
         try {
-            const response = await achievementService.getHintFeature();
-            const hintFeature = response.data;
-            setHintFeature(hintFeature);
-
-            if (hintFeature.num_unlock > 0) {
-                setIsHintModalOpen(true);
-            } else {
-                setIsHintUnavailableModalOpen(true);
-            }
-
-        } catch (error) {
-            toast.error("Failed to fetch the hint feature.");
-            console.error(error);
-        }
-    };
-
-    const handleConfirmUseHint = async () => {
-        const questionId = quiz.questions[currentQuestionIndex].id;
-
-        try {
-            await quizService.setHintOnQuestion(quizId, questionId);
-            const hintResponse = await quizService.getQuizHintByQuestionId(quizId, questionId);
-
-            setQuestionHints((prev) => ({
-                ...prev,
-                [questionId]: hintResponse.data.hints
-            }));
-
-            setCurrentQuiz((prev) => ({
-                ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === questionId ? { ...q, has_hint: true } : q
-                )
-            }));
-
-            setIsHintModalOpen(false);
-            toast("Hint was applied successfully.");
-
-        } catch (error) {
-            toast.error("Failed to apply the hint on this question.");
-            console.error(error);
-        }
-        
-    };
-
-    /*const handleUseFeature = async (type) => {
-        try {
             const response = await FEATURE_FETCHERS[type]();
+            const feature = response.data;
             setActiveFeatureType(type);
-            setActiveFeature(response.data);
+            setActiveFeature(feature);
             
             if (response.data.num_unlock > 0) {
                 setIsConfirmModalOpen(true);
@@ -208,21 +155,58 @@ const QuizTakePage = () => {
             toast.error(`Failed to fetch the ${type} features.`);
             console.error(error);
         }
-    }*/
+    }
 
-    /*const handleConfirmUseFeature = () => {
-        if (activeFeatureType === 'hint') {
-            setQuestionHints((prev) => ({ ...prev, [quiz.questions[currentQuestionIndex].id]: true}));
+    const handleConfirmUseFeature = async () => {
+        const question = quiz.questions[currentQuestionIndex];
 
-        } else if (activeFeatureType === 'freeze') {
-            //freeze-timer effect
+        try {
+            if (activeFeatureType === 'hint') {
+                //Apply the hitn effect
+                await quizService.setHintOnQuestion(quizId, question.id);
+                const hintResponse = await quizService.getQuizHintByQuestionId(quizId, question.id);
 
-        } else if (activeFeatureType === 'shield') {
-            //score-shield effect
+                setQuestionHints((prev) => ({ ...prev, [question.id]: hintResponse.data.hints }));
+                setCurrentQuiz((prev) => ({
+                    ...prev,
+                    questions: prev.questions.map((q) => q.id === question.id ? { ...q, has_hint: true } : q)
+                }));
+                toast.success("Hint applied successfully.");
 
+            } else if (activeFeatureType === 'freeze') {
+                //freeze timer effect
+                await achievementService.useFreezeTimerFeature();
+
+                const freezeSeconds = activeFeature?.specific_number || 10;
+                setIsTimerFrozen(true);
+
+                toast.success(`Timer frozen for ${freezeSeconds} seconds.`);
+                setTimeout(() => setIsTimerFrozen(false), freezeSeconds * 1000);
+
+            } else if (activeFeatureType === 'shield') {
+                //score shield effect
+                await quizService.setShieldOnQuestion(quizId, question.id);
+
+                setCurrentQuiz((prev) => ({
+                    ...prev,
+                    questions: prev.questions.map((q) => q.id === question.id ? { ...q, has_protected: true } : q)
+                }));
+                
+                toast.success("Score shield activated for this question.");
+
+            }
+        } catch (error) {
+            toast.error(`Failed to use the ${activeFeatureType} feature.`);
+            console.error(error);
+
+        } finally {
+            setIsConfirmModalOpen(false);
         }
-        setIsConfirmModalOpen(false);
-    }*/
+    };
+
+    const handleFreezeTimer = () => handleUseFeature('freeze');
+    const handleScoreShield = () => handleUseFeature('shield');
+    const handleHint = () => handleUseFeature('hint');
 
     if (loading) {
         return (
@@ -251,7 +235,7 @@ const QuizTakePage = () => {
             <PageHeader title={quiz.title || 'Take quiz'}>
                 {totalSeconds !== null && (
                     <div className="px-4 py-2 border-2 border-slate-900 rounded-lg text-sm font-semibold text-slate-900">
-                        Reset in: <CountDownTimer resetInSeconds={totalSeconds} onZero={handleTimeUp} />
+                        Reset in: <CountDownTimer resetInSeconds={totalSeconds} onZero={handleTimeUp} paused={isTimerFrozen}/>
                     </div>
                 )}
             </PageHeader>
@@ -276,10 +260,21 @@ const QuizTakePage = () => {
 
             {/* Question Card */}
             <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-6 mb-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl mb-6">
-                    <span className="text-sm font-semibold text-purple-700">
-                        Question {currentQuestionIndex + 1}
-                    </span>
+                <div className="flex items-center justify-between mb-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl">
+                        <span className="text-sm font-semibold text-purple-700">
+                            Question {currentQuestionIndex + 1}
+                        </span>
+                    </div>
+
+                    {currentQuestion.has_protected ? (
+                        <div
+                            title="This question is protected by a Score Shield."
+                            className="w-9 h-9 rounded-full bg-linear-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-purple-500/30"
+                        >
+                            <ShieldCheck className="w-5 h-5"/>
+                        </div>
+                    ) : null}
                 </div>
 
                 <h3 className="text-lg font-semibold text-slate-900 mb-6 leading-relaxed">
@@ -336,18 +331,28 @@ const QuizTakePage = () => {
                     <button
                         type="button"
                         onClick={handleFreezeTimer}
-                        title="Freeze Timer"
-                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                        disabled={isTimerFrozen}
+                        title={isTimerFrozen ? "Timer is frozen." : "Freeze Timer"}
+                        className={`w-11 h-11 rounded-full text-white shadow-lg flex items-center justify-center transition-all duration-200 ${
+                            isTimerFrozen
+                                ? 'bg-slate-300 shadow-none cursor-not-allowed'
+                                : 'bg-linear-to-r from-purple-400 to-purple-500 shadow-purple-500/25 hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 active:scale-[0.98]'
+                        }`}
                     >
                         <Snowflake className="w-5 h-5" />
                     </button>
                     <button
                         type="button"
                         onClick={handleScoreShield}
-                        title="Score Shield"
-                        className="w-11 h-11 rounded-full bg-linear-to-r from-purple-400 to-purple-500 text-white shadow-lg shadow-purple-500/25 flex items-center justify-center hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
+                        disabled={currentQuestion.has_protected}
+                        title={currentQuestion.has_protected ? "Shield has already used for this question." : "Score Shield"}
+                        className={`w-11 h-11 rounded-full text-white shadow-lg flex items-center justify-center transition-all duration-200 ${
+                            currentQuestion.has_protected
+                                ? 'bg-slate-300 shadow-none cursor-not-allowed'
+                                : 'bg-linear-to-r from-purple-400 to-purple-500 shadow-purple-500/25 hover:from-purple-500 hover:to-purple-600 hover:shadow-xl hover:shadow-purple-500/30 active:scale-[0.98]'
+                        }`}
                     >
-                        <Shield className="w-5 h-5" />
+                        {currentQuestion.has_protected ? <Lock className="w-5 h-5"/> : <Shield className="w-5 h-5" />}
                     </button>
                     <button
                         type="button"
@@ -388,27 +393,34 @@ const QuizTakePage = () => {
 
             {/* Confirm Use Hint Modal */}
             <Modal
-                isOpen={isHintModalOpen}
-                onClose={() => setIsHintModalOpen(false)}
-                title="Use a Hint?"
+                isOpen={isConfirmModalOpen}
+                onClose={() => setIsConfirmModalOpen(false)}
+                title={
+                    activeFeatureType === 'hint' ? "Use a Hint?" :
+                    activeFeatureType === 'freeze' ? 'Freeze the Timer?' :
+                    'Use a Score Shield?'
+                }
             >
                 <div className="space-y-4">
                     <p className="text-sm text-slate-600">
                         You have{' '}
                         <span className="font-semibold text-purple-600">
-                            {currentHintFeature?.num_unlock}/{currentHintFeature?.limit_number}
+                            {activeFeature?.num_unlock}/{activeFeature?.limit_number}
                         </span>{' '}
-                        hints available. Do you want to use one for this question?
+                        {activeFeatureType}s available. {' '}
+                        {activeFeatureType === 'hint' && 'Do you want to use one for this question?'}
+                        {activeFeatureType === 'freeze' && `Stop the timer for ${activeFeature?.specific_number || 10} seconds?`}
+                        {activeFeatureType === 'shield' && 'Protect your points if you answer to this question wrong?'}
                     </p>
                     <div className="flex justify-end gap-3 pt-1">
                         <button
-                            onClick={() => setIsHintModalOpen(false)}
+                            onClick={() => setIsConfirmModalOpen(false)}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
                         >
                             Cancel
                         </button>
                         <button
-                            onClick={handleConfirmUseHint}
+                            onClick={handleConfirmUseFeature}
                             className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all"
                         >
                             Confirm
@@ -419,17 +431,17 @@ const QuizTakePage = () => {
 
             {/* Insufficient Hints Modal */}
             <Modal
-                isOpen={isHintUnavailableModalOpen}
-                onClose={() => setIsHintUnavailableModalOpen(false)}
-                title="No Hints Available"
+                isOpen={isUnavailableModalOpen}
+                onClose={() => setIsUnavailableModalOpen(false)}
+                title={`No ${activeFeatureType ? activeFeatureType[0].toUpperCase() + activeFeatureType.slice(1) : ''}s Available`}
             >
                 <div className="space-y-4">
                     <p className="text-sm text-slate-600">
-                        You don't have enough hints left to use right now. Earn more points to unlock additional hints.
+                        You don't have any {activeFeatureType} left to use right now. Earn more points to unlock more.
                     </p>
                     <div className="flex justify-end pt-1">
                         <button
-                            onClick={() => setIsHintUnavailableModalOpen(false)}
+                            onClick={() => setIsUnavailableModalOpen(false)}
                             className="px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all"
                         >
                             Got it

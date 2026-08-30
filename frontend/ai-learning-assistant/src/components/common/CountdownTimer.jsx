@@ -8,11 +8,13 @@ function formatHHMMSS(sec) {
 }
 
 
-export default function CountdownTimer({ resetInSeconds = 0, onZero }) {
+export default function CountdownTimer({ resetInSeconds = 0, onZero, paused = false }) {
   const [seconds, setSeconds] = useState(Math.max(0, Math.floor(resetInSeconds)));
   const onZeroRef = useRef(onZero);
+  const pausedRef = useRef(paused);
 
   useEffect(() => { onZeroRef.current = onZero; }, [onZero]);
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
 
   // update when prop changes
   useEffect(() => {
@@ -27,6 +29,10 @@ export default function CountdownTimer({ resetInSeconds = 0, onZero }) {
     }
 
     const id = setInterval(() => {
+      if (pausedRef.current) {
+        return;
+      }
+
       setSeconds((s) => {
         if (s <= 1) {
           clearInterval(id);

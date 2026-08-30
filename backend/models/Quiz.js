@@ -98,7 +98,8 @@ const Quiz = {
                 topic: q.topic,
                 num_xp: q.num_xp,
                 /*hints: q.hints*/
-                has_hint: q.has_hint
+                has_hint: q.has_hint,
+                has_protected: q.has_protected
             }))
         };
     },
@@ -216,7 +217,7 @@ const Quiz = {
 
             await connection.execute(
                 `
-                UPDATE unlock_features uf
+                UPDATE unlocked_features uf
                 SET uf.num_unlock = uf.num_unlock - 1
                 WHERE uf.specific_type = 'block' AND uf.user_id = ? AND uf.num_unlock > 0
                 `, [userId]
