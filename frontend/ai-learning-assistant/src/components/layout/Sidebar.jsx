@@ -30,7 +30,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: '/achievements', icon: Trophy, text: 'Achievements'},
         {to: '/flashcards', icon: ClipboardListIcon, text: 'Flashcards'},
         {to: '/fill-in-the-blank', icon: FileQuestion, text: 'Fill-In Questions'},
-        {to: '/scheduling', icon: CalendarClockIcon, text: "Sceduling"},
+        {to: '/scheduling', icon: CalendarClockIcon, text: "Timetable"},
         {to: '/profile', icon: UserCircle2, text: "Profile"}
     ]
 
