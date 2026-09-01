@@ -16,6 +16,7 @@ import ProgressPage from './pages/Progress/ProgressPage';
 import { useAuth } from "../src/context/AuthContext"
 import AchievementListPage from './pages/Achievements/AchievementListPage';
 import AllBadgesPage from './pages/Achievements/AllBadgesPage';
+import AllFeaturesPage from './pages/Achievements/AllFeaturesPage';
 
 
 const App = () => {
@@ -49,6 +50,7 @@ const App = () => {
                     <Route path='/progress' element={<ProgressPage />}/>
                     <Route path='/achievements' element={<AchievementListPage/>}/>
                     <Route path='/achievements/badges' element={<AllBadgesPage/>}/>
+                    <Route path='/achievements/features' element={<AllFeaturesPage/>}/>
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />}/>

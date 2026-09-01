@@ -284,7 +284,12 @@ const AchievementListPage = () => {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold text-slate-900">Redeem Points</h2>
-                            <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
+                            <button
+                                onClick={() => navigate('/achievements/features')}
+                                className="text-sm font-semibold text-purple-500 hover:text-purple-700"
+                            >
+                                See All
+                            </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             {allUnlockFeatures.length === 0 && (
