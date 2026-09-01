@@ -14,7 +14,8 @@ import QuizTakePage from './pages/Quizzes/QuizTakePage';
 import QuizResultPage from './pages/Quizzes/QuizResultPage';
 import ProgressPage from './pages/Progress/ProgressPage';
 import { useAuth } from "../src/context/AuthContext"
-import AchievementListPage from './pages/Achievements/AchievementListPage'
+import AchievementListPage from './pages/Achievements/AchievementListPage';
+import AllBadgesPage from './pages/Achievements/AllBadgesPage';
 
 
 const App = () => {
@@ -47,6 +48,7 @@ const App = () => {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path='/progress' element={<ProgressPage />}/>
                     <Route path='/achievements' element={<AchievementListPage/>}/>
+                    <Route path='/achievements/badges' element={<AllBadgesPage/>}/>
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />}/>

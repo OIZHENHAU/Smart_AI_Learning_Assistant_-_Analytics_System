@@ -10,6 +10,7 @@ import {
     AlertTriangleIcon,NotebookPenIcon
 } from 'lucide-react';
 import CountdownTimer from "../../components/common/CountdownTimer";
+import { useNavigate } from 'react-router-dom';
 
 
 // Determine a suitable icon component for a daily goal based on its fields
@@ -51,6 +52,8 @@ const AchievementListPage = () => {
     const [allUnlockFeatures, setAllUnlockFeatures] = useState(null);
     const [confirmFeature, setConfirmFeature] = useState(null);
     const [redeemingFeature, setRedeemingFeature] = useState(false);
+    //Navigate used to show the list of achievemnt when click "see all".
+    const navigate = useNavigate();
 
     const fetchStatistics = useCallback(async () => {
         try {
@@ -90,7 +93,7 @@ const AchievementListPage = () => {
 
             //Get all unlock badges based on the user id
             const allBadgesResponse = await achievementService.getAllBadges();
-            setAllUnlockBadges(allBadgesResponse.data);
+            setAllUnlockBadges(Array.isArray(allBadgesResponse?.data) ? allBadgesResponse.data : []);
 
             //Get all unlock features baed on the user id
             const allUnlockFeatures = await achievementService.getAllUnlockFeatures();
@@ -245,7 +248,12 @@ const AchievementListPage = () => {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold text-slate-900">Recent Badges</h2>
-                            <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
+                            <button 
+                                onClick={() => navigate('/achievements/badges')}
+                                className="text-sm font-semibold text-purple-500 hover:text-purple-700"
+                            >
+                                See All
+                            </button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             {allUnlockBadges.length === 0 && (
@@ -440,7 +448,7 @@ const AchievementListPage = () => {
                 </div>
             </div>
         </div>
-
+        
         {confirmFeature && (
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                 <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
