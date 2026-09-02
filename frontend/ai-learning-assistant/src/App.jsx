@@ -18,6 +18,7 @@ import AchievementListPage from './pages/Achievements/AchievementListPage';
 import AllBadgesPage from './pages/Achievements/AllBadgesPage';
 import AllFeaturesPage from './pages/Achievements/AllFeaturesPage';
 import LeaderboardPage from './pages/Achievements/LeaderboardPage';
+import QuizListPage from './pages/Quizzes/QuizListPage';
 
 
 const App = () => {
@@ -45,6 +46,7 @@ const App = () => {
                     <Route path="/documents/:id" element={<DocumentDetailPage />} />
                     <Route path="/flashcards" element={<FlashcardsListPage />} />
                     <Route path="/documents/:id/flashcards" element={<FlashcardsPage />} />
+                    <Route path="/quizzes" element={<QuizListPage />} />
                     <Route path="/quizzes/:id" element={<QuizTakePage />} />
                     <Route path="/quizzes/:id/results" element={<QuizResultPage />} />
                     <Route path="/profile" element={<ProfilePage />} />

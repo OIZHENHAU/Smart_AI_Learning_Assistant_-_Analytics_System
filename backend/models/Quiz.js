@@ -67,6 +67,23 @@ const Quiz = {
         return quizId;
     },
 
+    async getAllQuizzes({userId}) {
+        const [quizzes] = await db.execute(
+            `
+            SELECT q.id, q.title, q.score, q.total_questions, q.completed_at, q.created_at, q.num_xp,
+            d.title AS document_title, d.file_name, q.duration_seconds
+            FROM quizzes q
+            JOIN documents d
+                ON q.document_id = d.id
+            WHERE q.user_id = ?
+            ORDER BY q.created_at DESC
+            `,
+            [userId]
+        );
+
+        return quizzes;
+    },
+    
     async getQuizById({quizId, userId}) {
         const [quiz] = await db.execute(
             `SELECT * FROM quizzes WHERE id = ?`,

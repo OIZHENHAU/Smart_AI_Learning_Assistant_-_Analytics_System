@@ -14,6 +14,17 @@ const getQuizzesForDocument = async (documentId) => {
     }
 };
 
+const getAllQuizzes = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.QUIZZES.GET_ALL_QUIZZES);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get all quizzes at the frontend due to: " + error);
+        throw error;
+    }
+}
+
 const getQuizById = async (quizId) => {
     try {
         const response = await axiosInstance.get(API_PATHS.QUIZZES.GET_QUIZ_BY_ID(quizId));
@@ -105,6 +116,7 @@ const setShieldOnQuestion = async (quizId, questionId) => {
 
 const quizService = {
     getQuizzesForDocument,
+    getAllQuizzes,
     getQuizById,
     submitQuiz,
     getQuizResults,

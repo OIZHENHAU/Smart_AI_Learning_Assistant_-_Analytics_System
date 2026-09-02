@@ -24,15 +24,6 @@ const __dirname = path.dirname(__filename);
 //Initialize express
 const app = express();
 
-// app.use(
-//     cors({
-//         origin: "*",
-//         methods: ["GET", "POST", "PUT", "DELETE"],
-//         allowedHeaders: ["Content-Type", "Authorization"],
-//         credentials: true,
-//     })
-// );
-
 app.use(
   cors({
     origin: "http://localhost:3288",
@@ -57,7 +48,6 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/achievements', achievementRoutes);
-
 
 //Handling error
 app.use(errorHandling);

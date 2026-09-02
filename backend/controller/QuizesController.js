@@ -3,7 +3,7 @@ import Achievement from '../models/Achievement.js';
 import User from '../models/User.js';
 
 //Get all quiz from the document GET /api/quizzes/:documentId
-export const getQuizzes = async (req, res, next) => {
+export const getQuizzesByDocument = async (req, res, next) => {
     try {
         const { documentId } = req.params;
 
@@ -36,6 +36,26 @@ export const getQuizzes = async (req, res, next) => {
 
     }
 };
+
+//GET get all quizzes based on the user id GET /api/quizzes/all-quizzes
+export const getAllQuizzes = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const quizzes = await Quiz.getAllQuizzes({ userId });
+
+        res.status(200).json({
+            success: true,
+            count: quizzes.length,
+            data: quizzes,
+            message: "All quizzes for the user are retrieved successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get all quizzes for the user due to: " + error);
+        next(error);
+    }
+}
 
 //Get quiz based on ID GET /api/quizzes/quiz/:quizId
 export const getQuizById = async (req, res, next) => {
