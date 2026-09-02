@@ -15,7 +15,9 @@ import {
     getHintFeature,
     getFreezeFeature,
     getShieldFeature,
-    useFreezeFeature
+    useFreezeFeature,
+    getLeaderboardByLevel,
+    getLeaderboardByAchievements
 } from "../controller/AchievementController.js";
 
 const router = express.Router();
@@ -49,5 +51,9 @@ router.get('/get-freeze-feature', getFreezeFeature);
 router.get('/get-shield-feature', getShieldFeature);
 //Use freeze timer features
 router.post('/use-freeze-feature', useFreezeFeature);
+//Get the leaderboard of all users based on their level and XP
+router.get('/leaderboard-level', getLeaderboardByLevel);
+//Get the leaderboard of all users based on their number of achievements
+router.get('/leaderboard-achievements', getLeaderboardByAchievements);
 
 export default router;

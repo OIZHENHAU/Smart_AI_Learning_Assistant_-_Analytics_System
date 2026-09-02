@@ -78,7 +78,7 @@ const AllBadgesPage = () => {
                             const target = badge.target_value || 0;
                             const current = badge.current_value ?? 0;
                             const percent = (target > 0) ? Math.min(100, Math.round((current/target) * 100)) : 0;
-                            const isLocked = (target > 0) && (current < target);
+                            const isLocked = !badge.is_unlocked;
 
                             return (
                                 <tr key={badge.id} className="border-b border-slate-100 last:border-0">

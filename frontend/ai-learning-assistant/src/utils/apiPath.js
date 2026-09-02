@@ -56,6 +56,8 @@ export const API_PATHS = {
         GET_HINT_FEATURE: "/api/achievements/get-hint-feature",
         GET_FREEZE_FEATURE: "/api/achievements/get-freeze-feature",
         GET_SHIELD_FEATURE: "/api/achievements/get-shield-feature",
-        USE_FREEZE_FEATURE: "/api/achievements/use-freeze-feature"
+        USE_FREEZE_FEATURE: "/api/achievements/use-freeze-feature",
+        GET_LEADERBOARD_BY_LEVEL: "/api/achievements/leaderboard-level",
+        GET_LEADERBOARD_BY_ACHIEVEMENTS: "/api/achievements/leaderboard-achievements"
     }
 }

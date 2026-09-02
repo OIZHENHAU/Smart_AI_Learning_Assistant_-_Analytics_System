@@ -260,7 +260,7 @@ const AchievementListPage = () => {
                                 <p className="col-span-full text-sm text-slate-400 text-center py-4">No badges yet.</p>
                             )}
                             {allUnlockBadges.slice(0, 5).map((badge) => {
-                                const isLocked = badge.target_value > 0 && (badge.current_value ?? 0) < badge.target_value;
+                                const isLocked = !badge.is_unlocked;
                                 return (
                                     <div key={badge.id} className="flex flex-col items-center text-center">
                                         <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-slate-100 overflow-hidden">
@@ -406,7 +406,12 @@ const AchievementListPage = () => {
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-lg font-bold text-slate-900">Top Learner</h2>
-                            <button className="text-sm font-semibold text-purple-500 hover:text-purple-700">See All</button>
+                            <button 
+                            onClick={() => navigate('/achievements/leaderboard')}
+                                className="text-sm font-semibold text-purple-500 hover:text-purple-700"
+                            >
+                                See All
+                            </button>
                         </div>
                         <div className="space-y-3">
                             {topLearners.map((learner, i) => {

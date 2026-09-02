@@ -156,6 +156,28 @@ const useFreezeTimerFeature = async () => {
     }
 };
 
+const getLeaderboardByLevel = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_LEADERBOARD_BY_LEVEL);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the leaderboard of all useers based on their level and XP at the service due to: " + error);
+        throw error;
+    }
+};
+
+const getLeaderboardByAchievements = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.ACHIEVEMENT.GET_LEADERBOARD_BY_ACHIEVEMENTS);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the leaderboard of all users based on their number of achievements at the service due to: " + error);
+        throw error;
+    }
+}
+
 const achievementService = {
     getAchievementStatistics,
     getAllBadges,
@@ -170,7 +192,9 @@ const achievementService = {
     getHintFeature,
     getFreezeFeature,
     getShieldFeature,
-    useFreezeTimerFeature
+    useFreezeTimerFeature,
+    getLeaderboardByLevel,
+    getLeaderboardByAchievements
 };
 
 export default achievementService;

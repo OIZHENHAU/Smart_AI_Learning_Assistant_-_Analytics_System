@@ -574,6 +574,83 @@ const Achievement = {
         } finally {
             connection.release();
         }
+    },
+
+    async getLeaderboardByLevel() {
+        const connection = await db.getConnection();
+
+        try {
+            const [allUserLevel] = await connection.execute(
+                `
+                SELECT u.username, a.current_level, a.total_xp
+                FROM achievements a
+                    JOIN users u ON u.id = a.user_id
+                ORDER BY a.total_xp DESC
+                `
+            );
+
+            return allUserLevel;
+
+        } catch (error) {
+            console.error("Fail to get the leaderboard by level at the Achievement due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+
+        }
+    },
+
+    async getLeaderboardByNumOfBadges() {
+        const connection = await db.getConnection();
+
+        try {
+            const [allUserNumAchievement] = await connection.execute(
+                `
+                SELECT u.id AS user_id, u.username, bg.id AS badge_id, 
+                        bg.title, bg.image_path
+                FROM users u
+                LEFT JOIN badges bg
+                    ON bg.user_id = u.id AND bg.is_unlocked = TRUE
+                ORDER BY u.username ASC
+                `
+            );
+
+            //Group the flat rows into the one entry per user, each carry their unlock badges
+            const leaderboardMap = new Map();
+
+            for (const row of allUserNumAchievement) {
+                if (!leaderboardMap.has(row.user_id)) {
+                    leaderboardMap.set(row.user_id, {
+                        userId: row.user_id,
+                        username: row.username,
+                        badges: []
+                    });
+                }
+
+                //bg.id is null when the LEFT JOIN found no unlock badges for this user
+                if (row.badge_id) {
+                    leaderboardMap.get(row.user_id).badges.push({
+                        id: row.badge_id,
+                        title: row.title,
+                        image_path: row.image_path
+                    });
+                }
+            }
+
+            //Rank by number of unlocked badges in DESC order
+            const leaderboard = Array.from(leaderboardMap.values()).sort((a, b) => b.badges.length - a.badges.length);
+
+            return leaderboard;
+
+        } catch (error) {
+            console.error("Fail to get the leaderboard by number of achievements at the Achievements due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+
+        }
     }
 }
 

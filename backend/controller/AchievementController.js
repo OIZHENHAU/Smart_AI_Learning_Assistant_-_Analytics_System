@@ -349,3 +349,55 @@ export const useFreezeFeature = async (req, res, next) => {
         next(error);
     }
 }
+
+//GET get the leaderbaord list by level GET /api/achievements/leaderboard-level
+export const getLeaderboardByLevel = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const leaderboardByLevel = await Achievement.getLeaderboardByLevel();
+
+        if (!leaderboardByLevel) {
+            return res.status(400).json({
+                success: false,
+                message: "The leaderboard was not available or not found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: leaderboardByLevel,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the leaderboard by level at the controller due to: " + error);
+        next(error);
+    }
+}
+
+//GET get the leaderboard list by number of achievements GET /api/achievements/leaderboard-achievements
+export const getLeaderboardByAchievements = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const leaderboardByNumAchievements = await Achievement.getLeaderboardByNumOfBadges();
+
+        if (!leaderboardByNumAchievements) {
+            return res.status(400).json({
+                success: false,
+                message: "The leaderboard by number of achievements was not available or not found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: leaderboardByNumAchievements,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the leaderboard by number of achievements at the controller due to: " + error);
+        next(error);
+    }
+}
