@@ -41,8 +41,8 @@ const QuizCard = ({quiz, onDelete}) => {
                 <div className='flex items-center gap-3 pt-2 border-t border-slate-100'>
                     <div className='px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg'>
                         <span className='text-sm font-semibold text-slate-700'>
-                            {quiz.questions.length}{" "}
-                            {quiz.questions.length === 1 ? "Question" : "Questions"}
+                            {quiz.total_questions}{" "}
+                            {quiz.total_questions === 1 ? "Question" : "Questions"}
                         </span>
                     </div>
                     <div className='px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg'>
