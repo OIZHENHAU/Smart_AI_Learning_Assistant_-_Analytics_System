@@ -111,12 +111,26 @@ const AchievementListPage = () => {
     }, []);
 
     useEffect(() => {
-        // Initial fetch
-        fetchStatistics();
-        // Set up polling and refetch every 1 seconds
-        const pollInterval = setInterval(fetchStatistics, 1000);
-        // Cleanup interval when component unmounts
-        return () => clearInterval(pollInterval);
+        let cancelled = false;
+        let timeoutId;
+
+        // Poll only after the previous fetch has actually settled, so overlapping
+        // in-flight requests can't resolve out of order and clobber fresher state.
+        const poll = async () => {
+            await fetchStatistics();
+            
+            if (!cancelled) {
+                timeoutId = setTimeout(poll, 1000);
+            }
+        };
+
+        poll();
+
+        // Cleanup when component unmounts
+        return () => {
+            cancelled = true;
+            clearTimeout(timeoutId);
+        };
 
     }, [fetchStatistics]);
 

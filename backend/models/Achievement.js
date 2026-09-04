@@ -537,9 +537,9 @@ const Achievement = {
                 `
                 UPDATE daily_goal
                 SET number_complete = LEAST(number_complete + ?, num_achieve),
-                    completed = (number_complete + ? >= num_achieve)
+                    completed = (number_complete >= num_achieve)
                 WHERE user_id = ? AND main_focus = ? AND number_complete < num_achieve
-                `, [amount, amount, userId, eventType]
+                `, [amount, userId, eventType]
             );
 
             return true;
