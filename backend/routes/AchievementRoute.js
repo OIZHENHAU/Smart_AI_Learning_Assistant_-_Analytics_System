@@ -16,6 +16,7 @@ import {
     getFreezeFeature,
     getShieldFeature,
     useFreezeFeature,
+    updateDailyGoalProgress,
     getLeaderboardByLevel,
     getLeaderboardByAchievements
 } from "../controller/AchievementController.js";
@@ -55,5 +56,7 @@ router.post('/use-freeze-feature', useFreezeFeature);
 router.get('/leaderboard-level', getLeaderboardByLevel);
 //Get the leaderboard of all users based on their number of achievements
 router.get('/leaderboard-achievements', getLeaderboardByAchievements);
+//Update the daily goals progress of the user
+router.post('/update-daily-goals', updateDailyGoalProgress);
 
 export default router;

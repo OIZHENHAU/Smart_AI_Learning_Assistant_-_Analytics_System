@@ -311,6 +311,10 @@ export const submitQuiz = async (req, res, next) => {
             earnPoints: totalEarnPoints
         });
 
+        //Upsdate the daily goals progress for completed quiz and earn XP
+        await Achievement.updateDailyGoalProgress({ userId, eventType: 'quiz', amount: 1 });
+        await Achievement.updateDailyGoalProgress({ userId, eventType: 'xp', amount: Math.max(totalEarnLevelXP, 0) });
+
         //Check and update the current level of the user
         const allLevel = await Achievement.retrieveAllLevelXP();
         const currentAchievementStatistics = await Achievement.displayAchievementStatistic(userId);

@@ -176,6 +176,17 @@ const getLeaderboardByAchievements = async () => {
         console.error("Fail to get the leaderboard of all users based on their number of achievements at the service due to: " + error);
         throw error;
     }
+};
+
+const updateDailyGoalProgress = async (eventType, amount) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.ACHIEVEMENT.UPDATE_DAILY_GOALS_PROGRESS, { eventType, amount });
+        return response.data;
+        
+    } catch (error) {
+        console.error("Fail to update the daily goals progress at the service due to: " + error);
+        throw error;
+    }
 }
 
 const achievementService = {
@@ -194,7 +205,8 @@ const achievementService = {
     getShieldFeature,
     useFreezeTimerFeature,
     getLeaderboardByLevel,
-    getLeaderboardByAchievements
+    getLeaderboardByAchievements,
+    updateDailyGoalProgress
 };
 
 export default achievementService;

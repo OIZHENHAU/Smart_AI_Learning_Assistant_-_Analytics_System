@@ -1,6 +1,7 @@
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
+import Achievement from '../models/Achievement.js';
 import db from '../config/MySQL.js';
 
 //Get user's learning statistics GET /api/progress/dashboard
@@ -182,6 +183,20 @@ export const endSession = async (req, res, next) => {
             [sessionId, userId]
         );
 
+        const [rows] = await db.execute(
+            `
+            SELECT duration_minutes FROM study_sessions WHERE id = ? AND user_id = ?
+            `,
+            [sessionId, userId]
+        );
+
+        const minutesStudied = rows[0]?.duration_minutes || 0;
+        
+        // Update the user's daily goal progress based on the study session duration
+        if (minutesStudied > 0) {
+            await Achievement.updateDailyGoalProgress({ userId, eventType: 'study_time', amount: minutesStudied });
+        }
+
         res.status(200).json({
             success: true,
             message: "Study session ended successfully.",
@@ -190,6 +205,6 @@ export const endSession = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to end the study session due to: " + error);
-        next(errror);
+        next(error);
     }
 }

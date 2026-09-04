@@ -1,5 +1,6 @@
 import Document from "../models/Document.js";
 import Flashcard from "../models/Flashcard.js";
+import Achievement from "../models/Achievement.js";
 import Quiz from "../models/Quiz.js";
 import { extractTextFromPDFFile } from '../utils/PdfParse.js';
 import { extractTextFromWord } from '../utils/WordParser.js';
@@ -58,6 +59,9 @@ export const uploadDocument = async (req, res, next) => {
             status: 'processing',
             language
         });
+
+        //Update the daily goal progress for the user after uploading a document.
+        await Achievement.updateDailyGoalProgress({ userId: req.user.id, eventType: 'upload', amount: 1 });
 
         processDocument(currentDocumentId, req.file.path, fileType, language).catch(err => {
             console.error('Fail to processing the file due to: ' + err);

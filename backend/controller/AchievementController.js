@@ -401,3 +401,31 @@ export const getLeaderboardByAchievements = async (req, res, next) => {
         next(error);
     }
 }
+
+//POST update the daily goal progress when the user complete a specific event POST /api/achievements/update-daily-goal
+export const updateDailyGoalProgress = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { eventType, amount } = req.body;
+
+        const updateResult = await Achievement.updateDailyGoalProgress({ userId, eventType, amount });
+
+        if (!updateResult) {
+            return res.status(400).json({
+                success: false,
+                message: "Failed to update the daily goal progress.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Daily goal progress updated successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to update the daily goal progress at the controller due to: " + error);
+        next(error);
+    }
+}

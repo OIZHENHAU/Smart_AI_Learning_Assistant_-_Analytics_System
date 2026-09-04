@@ -3,6 +3,7 @@ import db from '../config/MySQL.js';
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
+import Achievement from '../models/Achievement.js';
 import ChatHistory from '../models/ChatHistory.js';
 import * as geminiService from '../utils/GeminiService.js';
 import { chunkText, findRelevantChunks } from '../utils/TextChunker.js';
@@ -213,6 +214,9 @@ export const geminiAIChat = async (req, res, next) => {
             ],
             relevantChunks: chunkIndices
         });
+
+        //Update the daily goal progress for chat event
+        await Achievement.updateDailyGoalProgress({ userId: req.user.id, eventType: 'chat', amount: 1 });
 
         res.status(200).json({
             success: true,
