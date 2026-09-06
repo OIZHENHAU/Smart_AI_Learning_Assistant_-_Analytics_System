@@ -19,6 +19,7 @@ import AllBadgesPage from './pages/Achievements/AllBadgesPage';
 import AllFeaturesPage from './pages/Achievements/AllFeaturesPage';
 import LeaderboardPage from './pages/Achievements/LeaderboardPage';
 import QuizListPage from './pages/Quizzes/QuizListPage';
+import SchedulingPage from './pages/Scheduling/SchedulingPage';
 
 
 const App = () => {
@@ -55,6 +56,7 @@ const App = () => {
                     <Route path='/achievements/badges' element={<AllBadgesPage/>}/>
                     <Route path='/achievements/features' element={<AllFeaturesPage/>}/>
                     <Route path='/achievements/leaderboard' element={<LeaderboardPage/>}/>
+                    <Route path='/scheduling' element={<SchedulingPage/>}/>
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />}/>

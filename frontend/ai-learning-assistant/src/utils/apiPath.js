@@ -61,5 +61,11 @@ export const API_PATHS = {
         GET_LEADERBOARD_BY_LEVEL: "/api/achievements/leaderboard-level",
         GET_LEADERBOARD_BY_ACHIEVEMENTS: "/api/achievements/leaderboard-achievements",
         UPDATE_DAILY_GOALS_PROGRESS: "/api/achievements/update-daily-goals"
+    },
+    CALENDAR_EVENTS: {
+        GET_ALL_EVENTS: "/api/calendar-events",
+        CREATE_EVENT: "/api/calendar-events",
+        UPDATE_EVENT: (id) => `/api/calendar-events/${id}`,
+        DELETE_EVENT: (id) => `/api/calendar-events/${id}`
     }
 }

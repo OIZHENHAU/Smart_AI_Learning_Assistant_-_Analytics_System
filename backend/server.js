@@ -13,6 +13,7 @@ import quizRoutes from './routes/QuizesRoute.js';
 import progressRoutes from './routes/ProgressRoute.js';
 import dashboardRoutes from './routes/DashboardRoute.js';
 import achievementRoutes from './routes/AchievementRoute.js';
+import calendarEventRoutes from './routes/CalendarEventRoute.js';
 import Achievement from './models/Achievement.js';
 //Import mysql
 import mysql from 'mysql2';
@@ -48,6 +49,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/achievements', achievementRoutes);
+app.use('/api/calendar-events', calendarEventRoutes);
 
 //Handling error
 app.use(errorHandling);

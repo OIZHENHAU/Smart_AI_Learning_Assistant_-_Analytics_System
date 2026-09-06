@@ -511,11 +511,11 @@ const Achievement = {
                 `
                 UPDATE badges
                 SET current_value = LEAST(current_value + ?, target_value),
-                    is_unlocked = (current_value + ? >= target_value)
+                    is_unlocked = (current_value >= target_value)
                 WHERE user_id = ? AND requirement_type = ?
                 AND (specific_type = ? OR specific_type = '')
                 AND is_unlocked = FALSE
-                `, [amount, amount, userId, eventType, specificType]
+                `, [amount, userId, eventType, specificType]
             );
 
             return true;
