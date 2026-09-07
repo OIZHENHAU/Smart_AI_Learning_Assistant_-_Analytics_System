@@ -1,13 +1,13 @@
 import db from '../config/MySQL.js';
 
 const CalendarEvent = {
-    async createEvent({ userId, title, description, startTime, endTime, color }) {
+    async createEvent({ userId, title, description, startTime, endTime, color, documentId, quizId }) {
         const [result] = await db.execute(
             `
-            INSERT INTO calendar_events (user_id, title, description, start_time, end_time, color)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO calendar_events (user_id, title, description, start_time, end_time, color, document_id, quiz_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `,
-            [userId, title, description || null, startTime, endTime, color || '#7c3aed']
+            [userId, title, description || null, startTime, endTime, color || '#7c3aed', documentId || null, quizId || null]
         );
 
         return result.insertId;
@@ -16,10 +16,13 @@ const CalendarEvent = {
     async getAllEvents(userId) {
         const [events] = await db.execute(
             `
-            SELECT id, title, description, start_time, end_time, color, created_at
-            FROM calendar_events
-            WHERE user_id = ?
-            ORDER BY start_time ASC
+            SELECT ce.id, ce.title, ce.description, ce.start_time, ce.end_time, ce.color, ce.created_at,
+                    ce.document_id, ce.quiz_id, d.title AS document_title, q.title AS quiz_title
+            FROM calendar_events ce
+            LEFT JOIN documents d ON ce.document_id = d.id
+            LEFT JOIN quizzes q ON ce.quiz_id = q.id
+            WHERE ce.user_id = ?
+            ORDER BY ce.start_time ASC
             `,
             [userId]
         );
@@ -30,9 +33,12 @@ const CalendarEvent = {
     async getEventById({ eventId, userId }) {
         const [events] = await db.execute(
             `
-            SELECT id, title, description, start_time, end_time, color, created_at
-            FROM calendar_events
-            WHERE id = ? AND user_id = ?
+            SELECT ce.id, ce.title, ce.description, ce.start_time, ce.end_time, ce.color, ce.created_at,
+                    ce.document_id, ce.quiz_id, d.title AS document_title, q.title AS quiz_title
+            FROM calendar_events ce
+            LEFT JOIN documents d ON ce.document_id = d.id
+            LEFT JOIN quizzes q ON ce.quiz_id = q.id
+            WHERE ce.id = ? AND ce.user_id = ?
             `,
             [eventId, userId]
         );
@@ -40,14 +46,14 @@ const CalendarEvent = {
         return events[0];
     },
 
-    async updateEvent({ eventId, userId, title, description, startTime, endTime, color }) {
+    async updateEvent({ eventId, userId, title, description, startTime, endTime, color, documentId, quizId }) {
         const [result] = await db.execute(
             `
             UPDATE calendar_events
-            SET title = ?, description = ?, start_time = ?, end_time = ?, color = ?
+            SET title = ?, description = ?, start_time = ?, end_time = ?, color = ?, document_id = ?, quiz_id = ?
             WHERE id = ? AND user_id = ?
             `,
-            [title, description || null, startTime, endTime, color || '#7c3aed', eventId, userId]
+            [title, description || null, startTime, endTime, color || '#7c3aed', documentId || null, quizId || null, eventId, userId]
         );
 
         return result.affectedRows > 0;

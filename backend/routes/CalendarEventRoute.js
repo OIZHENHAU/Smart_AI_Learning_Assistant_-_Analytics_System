@@ -4,7 +4,8 @@ import {
     createEvent,
     getAllEvents,
     updateEvent,
-    deleteEvent
+    deleteEvent,
+    getEventById
 } from '../controller/CalendarEventController.js';
 
 const router = express.Router();
@@ -12,7 +13,8 @@ router.use(protect);
 
 router.get('/', getAllEvents);
 router.post('/', createEvent);
-router.put('/:id', updateEvent);
-router.delete('/:id', deleteEvent);
+router.get('/get/:id', getEventById);
+router.put('/update/:id', updateEvent);
+router.delete('/delete/:id', deleteEvent);
 
 export default router;

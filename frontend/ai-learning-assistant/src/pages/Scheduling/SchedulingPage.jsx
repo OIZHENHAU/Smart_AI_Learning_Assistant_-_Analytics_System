@@ -6,10 +6,13 @@ import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import toast from 'react-hot-toast';
 import moment from 'moment';
-import { CalendarClockIcon, Plus, Trash2 } from 'lucide-react';
+import { CalendarClockIcon, Plus, Trash2, BookOpen, FileText } from 'lucide-react';
 import calendarEventService from '../../services/CalendarEventService';
 import Modal from '../../components/common/Modal';
 import Spinner from '../../components/common/Spinner';
+import { useNavigate } from 'react-router-dom';
+import documentService from '../../services/DocumentService';
+import quizService from '../../services/QuizService';
 
 const COLOR_OPTIONS = [
     { name: 'Purple', value: '#7c3aed' },
@@ -25,19 +28,24 @@ const EMPTY_FORM = {
     description: '',
     startTime: '',
     endTime: '',
-    color: COLOR_OPTIONS[0].value
+    color: COLOR_OPTIONS[0].value,
+    documentId: '',
+    quizId: ''
 };
 
 // Format a Date/ISO string into the "YYYY-MM-DDTHH:mm" shape <input type="datetime-local"> expects
 const toDatetimeLocal = (value) => moment(value).format('YYYY-MM-DDTHH:mm');
 
 const SchedulingPage = () => {
+    const navigate = useNavigate();
     const calendarRef = useRef(null);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState(EMPTY_FORM);
+    const [documents, setDocuments] = useState([]);
+    const [quizzes, setQuizzes] = useState([]);
 
     const fetchEvents = async () => {
         try {
@@ -51,7 +59,13 @@ const SchedulingPage = () => {
                 end: e.end_time,
                 backgroundColor: e.color,
                 borderColor: e.color,
-                extendedProps: { description: e.description }
+                extendedProps: { 
+                    description: e.description,
+                    documentId: e.document_id,
+                    documentTitle: e.document_title,
+                    quizId: e.quiz_id,
+                    quizTitle: e.quiz_title
+                }
             })));
 
         } catch (error) {
@@ -65,6 +79,15 @@ const SchedulingPage = () => {
 
     useEffect(() => {
         fetchEvents();
+
+        documentService.getAllDocuments()
+        .then((res) => setDocuments(res || []))
+        .catch((err) => console.error("Failed to fetch documents fo linking to events: ", err));
+
+        quizService.getAllQuizzes()
+        .then((res) => setQuizzes(res?.data || []))
+        .catch((err) => console.error("Failed to fetch quizzes for linking to events: ", err));
+
     }, []);
 
     const openCreateModal = (start, end) => {
@@ -83,7 +106,9 @@ const SchedulingPage = () => {
             description: event.extendedProps?.description || '',
             startTime: toDatetimeLocal(event.start),
             endTime: toDatetimeLocal(event.end || event.start),
-            color: event.backgroundColor || COLOR_OPTIONS[0].value
+            color: event.backgroundColor || COLOR_OPTIONS[0].value,
+            documentId: event.extendedProps?.documentId || '',
+            quizId: event.extendedProps?.quizId || ''
         });
         setIsModalOpen(true);
     };
@@ -124,7 +149,9 @@ const SchedulingPage = () => {
                 description: form.description,
                 startTime: moment(form.startTime).format('YYYY-MM-DD HH:mm:ss'),
                 endTime: moment(form.endTime).format('YYYY-MM-DD HH:mm:ss'),
-                color: form.color
+                color: form.color,
+                documentId: form.documentId || null,
+                quizId: form.quizId || null
             };
 
             if (form.id) {
@@ -177,7 +204,9 @@ const SchedulingPage = () => {
                 description: event.extendedProps?.description || '',
                 startTime: moment(event.start).format('YYYY-MM-DD HH:mm:ss'),
                 endTime: moment(event.end || event.start).format('YYYY-MM-DD HH:mm:ss'),
-                color: event.backgroundColor
+                color: event.backgroundColor,
+                documentId: event.extendedProps?.documentId || null,
+                quizId: event.extendedProps?.quizId || null
             });
             toast.success("Event rescheduled.");
 
@@ -195,6 +224,10 @@ const SchedulingPage = () => {
             </div>
         );
     }
+
+    // Only offer quizzes that haven't been completed yet, but keep the currently
+    // linked quiz visible even if it got completed after being linked to this event.
+    const availableQuizzes = quizzes.filter((quiz) => !quiz.completed_at || quiz.id === form.quizId);
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
@@ -234,6 +267,35 @@ const SchedulingPage = () => {
                     selectMirror={true}
                     editable={true}
                     events={events}
+                    eventContent={(arg) => {
+                        const { quizId, quizTitle, documentId, documentTitle } = arg.event.extendedProps;
+                        const isMonthView = arg.view.type === 'dayGridMonth';
+                        return (
+                            <div className="px-1 py-0.5 overflow-hidden">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    {isMonthView && (
+                                        <span
+                                            className="w-2 h-2 rounded-full shrink-0"
+                                            style={{ backgroundColor: arg.event.backgroundColor }}
+                                        />
+                                    )}
+                                    <span className="text-xs font-semibold truncate">{arg.event.title}</span>
+                                </div>
+                                {quizId && (
+                                    <div className="text-[10px] flex items-center gap-1 truncate opacity-90">
+                                        <BookOpen className="w-3 h-3 shrink-0" />
+                                        <span className="truncate">{quizTitle || 'Quiz'}</span>
+                                    </div>
+                                )}
+                                {documentId && (
+                                    <div className="text-[10px] flex items-center gap-1 truncate opacity-90">
+                                        <FileText className="w-3 h-3 shrink-0" />
+                                        <span className="truncate">{documentTitle || 'Document'}</span>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }}
                     select={handleDateSelect}
                     eventClick={handleEventClick}
                     eventDrop={handleEventChange}
@@ -306,6 +368,43 @@ const SchedulingPage = () => {
                                 />
                             ))}
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Link to (optional)</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <select
+                                value={form.documentId}
+                                onChange={(e) => handleFormChange('documentId', e.target.value ? Number(e.target.value) : '')}
+                                disabled={!!form.quizId}
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-50 disabled:text-slate-400"
+                            >
+                                <option value="">No document</option>
+                                {documents.map((doc) => (
+                                    <option key={doc.id} value={doc.id}>{doc.title}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={form.quizId}
+                                onChange={(e) => handleFormChange('quizId', e.target.value ? Number(e.target.value) : '')}
+                                disabled={!!form.documentId}
+                                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-slate-50 disabled:text-slate-400"
+                            >
+                                <option value="">No quiz</option>
+                                {availableQuizzes.map((quiz) => (
+                                    <option key={quiz.id} value={quiz.id}>{quiz.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {(form.documentId || form.quizId) && (
+                            <button
+                                type="button"
+                                onClick={() => navigate(form.documentId ? `/documents/${form.documentId}` : `/quizzes/${form.quizId}`)}
+                                className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-700 underline"
+                            >
+                                Open {form.documentId ? 'document' : 'quiz'} &rarr;
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex gap-3 pt-1">

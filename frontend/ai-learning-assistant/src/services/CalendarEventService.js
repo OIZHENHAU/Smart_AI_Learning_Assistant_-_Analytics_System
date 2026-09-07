@@ -12,6 +12,17 @@ const getAllEvents = async () => {
     }
 };
 
+const getEventById = async (id) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.CALENDAR_EVENTS.GET_EVENT_BY_ID(id));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the calendar event by ID at the service due to: " + error);
+        throw error;
+    }
+};
+
 const createEvent = async (event) => {
     try {
         const response = await axiosInstance.post(API_PATHS.CALENDAR_EVENTS.CREATE_EVENT, event);
@@ -49,7 +60,8 @@ const calendarEventService = {
     getAllEvents,
     createEvent,
     updateEvent,
-    deleteEvent
+    deleteEvent,
+    getEventById
 };
 
 export default calendarEventService;
