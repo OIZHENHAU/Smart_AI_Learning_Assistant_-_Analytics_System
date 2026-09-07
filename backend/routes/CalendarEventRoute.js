@@ -5,8 +5,11 @@ import {
     getAllEvents,
     updateEvent,
     deleteEvent,
-    getEventById
+    getEventById,
+    setReminder,
+    cancelReminder
 } from '../controller/CalendarEventController.js';
+
 
 const router = express.Router();
 router.use(protect);
@@ -16,5 +19,7 @@ router.post('/', createEvent);
 router.get('/get/:id', getEventById);
 router.put('/update/:id', updateEvent);
 router.delete('/delete/:id', deleteEvent);
+router.post('/:id/remind', setReminder);
+router.delete('/:id/remind', cancelReminder);
 
 export default router;

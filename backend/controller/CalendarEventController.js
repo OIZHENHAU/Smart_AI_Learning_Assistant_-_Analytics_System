@@ -1,4 +1,5 @@
 import CalendarEvent from '../models/CalendarEvent.js';
+import ReminderService from '../utils/ReminderService.js';
 
 //Create a new calendar event POST /api/calendar-events
 export const createEvent = async (req, res, next) => {
@@ -142,3 +143,78 @@ export const deleteEvent = async (req, res, next) => {
         next(error);
     }
 };
+
+export const setReminder = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { id: eventId } = req.params;
+
+        if (!req.user.phone_number) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide a phone number to your profile first.",
+                statusCode: 400
+            });
+        }
+
+        const event = await CalendarEvent.getEventById({ eventId, userId });
+
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                error: "Such event was not found.",
+                statusCode: 404
+            });
+        }
+
+        const remindAt = new Date(new Date(event.start_time).getTime() - 30 * 60 * 1000);
+
+        if (remindAt <= new Date()) {
+            return res.status(400).json({
+                success: false,
+                error: "This event starts in less than 30 minutes or has already started."
+            })
+        }
+
+        await ReminderService.scheduleReminder({ eventId, userId, remindAt });
+
+        res.status(200).json({
+            success: true,
+            message: "SMS reminder was scheduled.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to schedule the SMS reminder due to: " + error);
+        next(error);
+    }
+}
+
+export const cancelReminder = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { id: eventId } = req.params;
+
+        const event = await CalendarEvent.getEventById({ eventId, userId });
+
+        if (!event) {
+            return res.status(404).json({
+                success: false,
+                error: "Such event was not found.",
+                statusCode: 404
+            });
+        }
+
+        await ReminderService.cancelReminder({ eventId, userId });
+
+        res.status(200).json({
+            success: true,
+            message: "SMS reminder was cancelled.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to cancel the SMS reminder due to: " + error);
+        next(error);
+    }
+}

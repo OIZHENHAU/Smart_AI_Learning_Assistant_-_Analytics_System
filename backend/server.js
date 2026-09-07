@@ -18,6 +18,8 @@ import Achievement from './models/Achievement.js';
 //Import mysql
 import mysql from 'mysql2';
 import db from './config/MySQL.js';
+import cron from 'node-cron';
+import ReminderService from './utils/ReminderService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,6 +65,10 @@ app.use((req, res) => {
         statusCode: 404
     })
 });
+
+cron.schedule('* * * * *', () => {
+    ReminderService.processDueReminders().catch((err) => console.error('Rminder cron failed due to: ', err));
+})
 
 const getMillisecondsUntilNext8AM = () => {
     const now = new Date();

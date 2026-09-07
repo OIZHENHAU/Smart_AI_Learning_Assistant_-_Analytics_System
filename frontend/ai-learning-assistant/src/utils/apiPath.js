@@ -67,6 +67,8 @@ export const API_PATHS = {
         CREATE_EVENT: "/api/calendar-events",
         GET_EVENT_BY_ID: (id) => `/api/calendar-events/get/${id}`,
         UPDATE_EVENT: (id) => `/api/calendar-events/update/${id}`,
-        DELETE_EVENT: (id) => `/api/calendar-events/delete/${id}`
+        DELETE_EVENT: (id) => `/api/calendar-events/delete/${id}`,
+        SET_REMINDER: (id) => `/api/calendar-events/${id}/remind`,
+        CANCEL_REMINDER: (id) => `/api/calendar-events/${id}/remind`
     }
 }

@@ -6,7 +6,7 @@ import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import toast from 'react-hot-toast';
 import moment from 'moment';
-import { CalendarClockIcon, Plus, Trash2, BookOpen, FileText } from 'lucide-react';
+import { CalendarClockIcon, Plus, Trash2, BookOpen, FileText, Bell } from 'lucide-react';
 import calendarEventService from '../../services/CalendarEventService';
 import Modal from '../../components/common/Modal';
 import Spinner from '../../components/common/Spinner';
@@ -30,7 +30,8 @@ const EMPTY_FORM = {
     endTime: '',
     color: COLOR_OPTIONS[0].value,
     documentId: '',
-    quizId: ''
+    quizId: '',
+    hasReminder: false
 };
 
 // Format a Date/ISO string into the "YYYY-MM-DDTHH:mm" shape <input type="datetime-local"> expects
@@ -59,12 +60,13 @@ const SchedulingPage = () => {
                 end: e.end_time,
                 backgroundColor: e.color,
                 borderColor: e.color,
-                extendedProps: { 
+                extendedProps: {
                     description: e.description,
                     documentId: e.document_id,
                     documentTitle: e.document_title,
                     quizId: e.quiz_id,
-                    quizTitle: e.quiz_title
+                    quizTitle: e.quiz_title,
+                    hasReminder: !!e.has_reminder
                 }
             })));
 
@@ -108,7 +110,8 @@ const SchedulingPage = () => {
             endTime: toDatetimeLocal(event.end || event.start),
             color: event.backgroundColor || COLOR_OPTIONS[0].value,
             documentId: event.extendedProps?.documentId || '',
-            quizId: event.extendedProps?.quizId || ''
+            quizId: event.extendedProps?.quizId || '',
+            hasReminder: event.extendedProps?.hasReminder || false
         });
         setIsModalOpen(true);
     };
@@ -191,6 +194,27 @@ const SchedulingPage = () => {
 
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleToggleReminder = async () => {
+        try {
+            if (form.hasReminder) {
+                await calendarEventService.cancelReminder(form.id);
+                setForm((prev) => ({ ...prev, hasReminder: false }));
+                toast.success("Reminder cancelled.");
+
+            } else {
+                await calendarEventService.setReminder(form.id);
+                setForm((prev) => ({ ...prev, hasReminder: true }));
+                toast.success("We'll text you 30 minutes before this event.");
+            }
+
+            fetchEvents();
+
+        } catch (error) {
+            toast.error(form.hasReminder ? "Failed to cancel the reminder." : "Failed to schedule the SMS reminder.");
+            console.error(error);
         }
     };
 
@@ -309,6 +333,20 @@ const SchedulingPage = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={form.id ? "Edit Event" : "Create Event"}
+                headerActions={form.id && (
+                    <button
+                        type="button"
+                        onClick={handleToggleReminder}
+                        title={form.hasReminder ? "Cancel SMS reminder" : "Remind me by SMS 30 minutes before"}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                            form.hasReminder
+                                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                : 'text-purple-500 hover:text-purple-700 hover:bg-purple-50'
+                        }`}
+                    >
+                        <Bell className="w-4 h-4" fill={form.hasReminder ? 'currentColor' : 'none'} />
+                    </button>
+                )}
             >
                 <form onSubmit={handleSaveEvent} className="space-y-4">
                     <div>
