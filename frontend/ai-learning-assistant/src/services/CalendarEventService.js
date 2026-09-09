@@ -56,9 +56,9 @@ const deleteEvent = async (id) => {
     }
 };
 
-const setReminder = async (id) => {
+const setReminder = async (id, minutesBefore) => {
     try {
-        const response = await axiosInstance.post(API_PATHS.CALENDAR_EVENTS.SET_REMINDER(id));
+        const response = await axiosInstance.post(API_PATHS.CALENDAR_EVENTS.SET_REMINDER(id), { minutesBefore });
         return response.data;
 
     } catch (error) {

@@ -4,10 +4,10 @@ import db from '../config/MySQL.js';
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const ReminderService = {
-    async scheduleReminder({ eventId, userId, remindAt }) {
+    async scheduleReminder({ eventId, userId, remindAt, minutesBefore }) {
         await db.execute(
-            `INSERT INTO event_reminders (event_id, user_id, remind_at) VALUES (?, ?, ?)`,
-            [eventId, userId, remindAt]
+            `INSERT INTO event_reminders (event_id, user_id, remind_at, minutes_before) VALUES (?, ?, ?, ?)`,
+            [eventId, userId, remindAt, minutesBefore]
         );
     },
 
@@ -24,7 +24,7 @@ const ReminderService = {
     async processDueReminders() {
         const [dueReminders] = await db.execute(
             `
-            SELECT er.id, ce.title, u.phone_number
+            SELECT er.id, er.minutes_before, ce.title, u.phone_number
             FROM event_reminders er
             JOIN calendar_events ce ON ce.id = er.event_id
             JOIN users u ON u.id = er.user_id
@@ -39,7 +39,7 @@ const ReminderService = {
 
             try {
                 await client.messages.create({
-                    body: `Reminder: "${reminder.title}" will be starts in 30 minutes.`,
+                    body: `Reminder: "${reminder.title}" will be starts in ${reminder.minutes_before} minutes.`,
                     from: process.env.TWILIO_PHONE_NUMBER,
                     to: reminder.phone_number
                 });

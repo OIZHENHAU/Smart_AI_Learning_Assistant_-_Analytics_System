@@ -148,11 +148,20 @@ export const setReminder = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const { id: eventId } = req.params;
+        const minutesBefore = Number(req.body.minutesBefore) || 30;
 
         if (!req.user.phone_number) {
             return res.status(400).json({
                 success: false,
                 error: "Please provide a phone number to your profile first.",
+                statusCode: 400
+            });
+        }
+
+        if (minutesBefore <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: "Please provide a valid reminder time.",
                 statusCode: 400
             });
         }
@@ -167,16 +176,18 @@ export const setReminder = async (req, res, next) => {
             });
         }
 
-        const remindAt = new Date(new Date(event.start_time).getTime() - 30 * 60 * 1000);
+        const remindAt = new Date(new Date(event.start_time).getTime() - minutesBefore * 60 * 1000);
 
         if (remindAt <= new Date()) {
             return res.status(400).json({
                 success: false,
-                error: "This event starts in less than 30 minutes or has already started."
+                error: `This event starts in less than ${minutesBefore} minutes or has already started.`,
+                statusCode: 400
             })
         }
 
-        await ReminderService.scheduleReminder({ eventId, userId, remindAt });
+        await ReminderService.cancelReminder({ eventId, userId });
+        await ReminderService.scheduleReminder({ eventId, userId, remindAt, minutesBefore });
 
         res.status(200).json({
             success: true,

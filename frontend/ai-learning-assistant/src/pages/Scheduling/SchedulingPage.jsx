@@ -22,6 +22,13 @@ const COLOR_OPTIONS = [
     { name: 'Blue', value: '#3b82f6' },
 ];
 
+const REMINDER_UNIT_MINUTES = {
+    minutes: 1,
+    hours: 60,
+    days: 1440,
+    weeks: 10080
+};
+
 const EMPTY_FORM = {
     id: null,
     title: '',
@@ -31,10 +38,12 @@ const EMPTY_FORM = {
     color: COLOR_OPTIONS[0].value,
     documentId: '',
     quizId: '',
-    hasReminder: false
+    reminderEnabled: false,
+    reminderValue: 30,
+    reminderUnit: 'minutes'
 };
 
-// Format a Date/ISO string into the "YYYY-MM-DDTHH:mm" shape <input type="datetime-local"> expects
+// Format a Date/ISO string into the "YYYY-MM-DDTHH:mm"
 const toDatetimeLocal = (value) => moment(value).format('YYYY-MM-DDTHH:mm');
 
 const SchedulingPage = () => {
@@ -66,7 +75,7 @@ const SchedulingPage = () => {
                     documentTitle: e.document_title,
                     quizId: e.quiz_id,
                     quizTitle: e.quiz_title,
-                    hasReminder: !!e.has_reminder
+                    reminderMinutesBefore: e.reminder_minutes_before
                 }
             })));
 
@@ -102,6 +111,18 @@ const SchedulingPage = () => {
     };
 
     const openEditModal = (event) => {
+        const minutesBefore = event.extendedProps?.reminderMinutesBefore;
+        let reminderUnit = 'minutes';
+        let reminderValue = 30;
+
+        if (minutesBefore) {
+            // Pick the largest unit that divides the stored minutes evenly.
+            // 10080 shows as "1 / weeks" instead of "10080 / minutes"
+            reminderUnit = ['weeks', 'days', 'hours', 'minutes']
+                .find((unit) => minutesBefore % REMINDER_UNIT_MINUTES[unit] === 0);
+            reminderValue = minutesBefore / REMINDER_UNIT_MINUTES[reminderUnit];
+        }
+
         setForm({
             id: event.id,
             title: event.title,
@@ -111,7 +132,9 @@ const SchedulingPage = () => {
             color: event.backgroundColor || COLOR_OPTIONS[0].value,
             documentId: event.extendedProps?.documentId || '',
             quizId: event.extendedProps?.quizId || '',
-            hasReminder: event.extendedProps?.hasReminder || false
+            reminderEnabled: !!minutesBefore,
+            reminderValue,
+            reminderUnit
         });
         setIsModalOpen(true);
     };
@@ -157,13 +180,32 @@ const SchedulingPage = () => {
                 quizId: form.quizId || null
             };
 
+            let eventId = form.id;
+
             if (form.id) {
                 await calendarEventService.updateEvent(form.id, payload);
-                toast.success("Event updated successfully.");
 
             } else {
-                await calendarEventService.createEvent(payload);
-                toast.success("Event created successfully.");
+                const response = await calendarEventService.createEvent(payload);
+                eventId = response?.data?.id;
+            }
+
+            toast.success(form.id ? "Event updated successfully." : "Event created successfully.");
+
+            // Apply the notification choice only now, as part of the same save — not as the user picks it
+            try {
+                if (form.reminderEnabled) {
+                    const minutesBefore = form.reminderValue * REMINDER_UNIT_MINUTES[form.reminderUnit];
+                    await calendarEventService.setReminder(eventId, minutesBefore);
+
+                } else {
+                    await calendarEventService.cancelReminder(eventId);
+                }
+
+            } catch (reminderError) {
+                const reminderMessage = reminderError.response?.data?.error || "Event saved, but the reminder couldn't be updated.";
+                toast.error(reminderMessage);
+                console.error(reminderError);
             }
 
             setIsModalOpen(false);
@@ -194,27 +236,6 @@ const SchedulingPage = () => {
 
         } finally {
             setSaving(false);
-        }
-    };
-
-    const handleToggleReminder = async () => {
-        try {
-            if (form.hasReminder) {
-                await calendarEventService.cancelReminder(form.id);
-                setForm((prev) => ({ ...prev, hasReminder: false }));
-                toast.success("Reminder cancelled.");
-
-            } else {
-                await calendarEventService.setReminder(form.id);
-                setForm((prev) => ({ ...prev, hasReminder: true }));
-                toast.success("We'll text you 30 minutes before this event.");
-            }
-
-            fetchEvents();
-
-        } catch (error) {
-            toast.error(form.hasReminder ? "Failed to cancel the reminder." : "Failed to schedule the SMS reminder.");
-            console.error(error);
         }
     };
 
@@ -249,8 +270,7 @@ const SchedulingPage = () => {
         );
     }
 
-    // Only offer quizzes that haven't been completed yet, but keep the currently
-    // linked quiz visible even if it got completed after being linked to this event.
+    // Only offer quizzes that haven't completed yet.
     const availableQuizzes = quizzes.filter((quiz) => !quiz.completed_at || quiz.id === form.quizId);
 
     return (
@@ -333,20 +353,6 @@ const SchedulingPage = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title={form.id ? "Edit Event" : "Create Event"}
-                headerActions={form.id && (
-                    <button
-                        type="button"
-                        onClick={handleToggleReminder}
-                        title={form.hasReminder ? "Cancel SMS reminder" : "Remind me by SMS 30 minutes before"}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                            form.hasReminder
-                                ? 'bg-purple-600 text-white hover:bg-purple-700'
-                                : 'text-purple-500 hover:text-purple-700 hover:bg-purple-50'
-                        }`}
-                    >
-                        <Bell className="w-4 h-4" fill={form.hasReminder ? 'currentColor' : 'none'} />
-                    </button>
-                )}
             >
                 <form onSubmit={handleSaveEvent} className="space-y-4">
                     <div>
@@ -389,6 +395,42 @@ const SchedulingPage = () => {
                                 onChange={(e) => handleFormChange('endTime', e.target.value)}
                                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Notification</label>
+                        <div className="flex items-center gap-2">
+                            <Bell className={`w-4 h-4 shrink-0 ${form.reminderEnabled ? 'text-purple-600' : 'text-slate-400'}`} />
+                            <select
+                                value={form.reminderEnabled ? 'notification' : 'none'}
+                                onChange={(e) => handleFormChange('reminderEnabled', e.target.value === 'notification')}
+                                className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            >
+                                <option value="none">No reminder</option>
+                                <option value="notification">Notification</option>
+                            </select>
+                            {form.reminderEnabled && (
+                                <>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={form.reminderValue}
+                                        onChange={(e) => handleFormChange('reminderValue', Number(e.target.value) || 1)}
+                                        className="w-16 border border-slate-200 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    />
+                                    <select
+                                        value={form.reminderUnit}
+                                        onChange={(e) => handleFormChange('reminderUnit', e.target.value)}
+                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                    >
+                                        <option value="minutes">minutes</option>
+                                        <option value="hours">hours</option>
+                                        <option value="days">days</option>
+                                        <option value="weeks">weeks</option>
+                                    </select>
+                                </>
+                            )}
                         </div>
                     </div>
 
