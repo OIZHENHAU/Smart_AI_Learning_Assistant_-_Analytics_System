@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, Trash2, Play, ClipboardListIcon } from 'lucide-react';
+import { Trash2, Play, ClipboardList } from 'lucide-react';
 import moment from 'moment';
 
 const FlashcardSetCard = ({ set, onDelete, onStudy }) => {
@@ -7,7 +7,7 @@ const FlashcardSetCard = ({ set, onDelete, onStudy }) => {
     const cardCount = set.cards?.length ?? set.card_count ?? 0;
 
     return (
-        <div className='group relative flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-5 transition-all duration-200 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/10'>
+        <div className='group relative flex flex-col justify-between rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/10'>
             <button
                 type='button'
                 onClick={(e) => {
@@ -20,26 +20,28 @@ const FlashcardSetCard = ({ set, onDelete, onStudy }) => {
                 <Trash2 className='h-4 w-4' />
             </button>
 
-            <div>
-                <div className='mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100'>
-                    <ClipboardListIcon className='h-6 w-6 text-purple-600' />
+            <div className='space-y-4'>
+                <div>
+                    <span className='inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700'>
+                        <ClipboardList className='h-4 w-4 text-purple-600' strokeWidth={3} />
+                        {cardCount} {cardCount === 1 ? 'card' : 'cards'}
+                    </span>
                 </div>
 
-                <h4 className='text-base font-semibold text-slate-900 line-clamp-2' title={title}>
-                    {title}
-                </h4>
-                <p className='mt-1 text-xs font-medium uppercase tracking-wide text-slate-500'>
-                    Created {moment(set.created_at).format('MMM D, YYYY')}
-                </p>
-
-                <div className='mt-4 border-t border-slate-100 pt-4'>
-                    <span className='inline-flex rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-semibold text-purple-700'>
-                        {cardCount} cards
-                    </span>
+                <div>
+                    <h4
+                        className='text-base font-semibold leading-snug text-slate-900 line-clamp-2'
+                        title={title}
+                    >
+                        {title}
+                    </h4>
+                    <p className='mt-1 text-xs font-medium uppercase tracking-wide text-slate-500'>
+                        Created {moment(set.created_at).format('MMM D, YYYY')}
+                    </p>
                 </div>
             </div>
 
-            <div className='mt-4 border-t border-slate-100 pt-4'>
+            <div className='mt-6 border-t border-slate-100 pt-5'>
                 <button
                     type='button'
                     onClick={() => onStudy?.(set)}
