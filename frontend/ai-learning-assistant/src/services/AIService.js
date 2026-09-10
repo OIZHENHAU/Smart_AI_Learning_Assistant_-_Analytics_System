@@ -56,10 +56,21 @@ const getChatHistory = async (documentId) => {
         console.error("fail to get the chat hisotry at the frontend due to: " + error);
         throw error;
     }
+};
+
+const generateFlashcard = async (documentId, options = {}) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AI.GENERATE_FLASHCARD, { documentId, ...options });
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to generate the flashcards at the frontend due to: " + error);
+        throw error;
+    }
 }
 
 const aiService = {
-    generateQuiz, generateSummary, explainConcept, chat: aiChat, getChatHistory
+    generateQuiz, generateSummary, explainConcept, chat: aiChat, getChatHistory, generateFlashcard
 };
 
 

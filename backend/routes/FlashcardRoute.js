@@ -21,6 +21,6 @@ router.post('/:cardId/review', reviewFlashcard);
 //Star the flAshcards
 router.put('/:cardId/star', toggleStarFlashcard);
 //Delete a particular falshcards
-router.delete('/:id', deleteFlashcardsSet);
+router.delete('/:cardId', deleteFlashcardsSet);
 
 export default router;

@@ -1,5 +1,4 @@
 import db from '../config/MySQL.js';
-
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
@@ -9,7 +8,7 @@ import * as geminiService from '../utils/GeminiService.js';
 import { chunkText, findRelevantChunks } from '../utils/TextChunker.js';
 
 
-//Generate flashcards from the document POST /api/ai/generate-flashcards
+//Generate flashcards from the document POST /api/ai/generate-flashcard
 export const generateFlashcards = async (req, res, next) => {
     try {
         const { documentId, count = 10 } = req.body;

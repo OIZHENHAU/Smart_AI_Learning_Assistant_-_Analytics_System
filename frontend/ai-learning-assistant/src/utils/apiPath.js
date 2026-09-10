@@ -20,7 +20,8 @@ export const API_PATHS = {
         GENERATE_SUMMARY: "/api/ai/generate-summary",
         AI_CHAT: "/api/ai/ai-chat",
         EXPLAIN_CONCEPT: "/api/ai/explain-concept",
-        GET_CHAT_HISTORY: (documentId) => `/api/ai/chat-history/${documentId}`
+        GET_CHAT_HISTORY: (documentId) => `/api/ai/chat-history/${documentId}`,
+        GENERATE_FLASHCARD: "/api/ai/generate-flashcard"
     },
     QUIZZES: {
         GET_QUIZZES_FOR_DOCUMENT: (documentId) => `/api/quizzes/${documentId}`,
@@ -70,5 +71,12 @@ export const API_PATHS = {
         DELETE_EVENT: (id) => `/api/calendar-events/delete/${id}`,
         SET_REMINDER: (id) => `/api/calendar-events/${id}/remind`,
         CANCEL_REMINDER: (id) => `/api/calendar-events/${id}/remind`
+    },
+    FLASHCARD: {
+        GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",
+        GET_FLASHCARD_BY_DOCUMENT: (documentId) => `/api/flashcards/${documentId}`,
+        REVIEW_FLASHCARD: (cardId) => `/api/flashcards/${cardId}/review`,
+        TOGGLE_STAR_ON_FLASHCARD: (cardId) => `/api/flashcards/${cardId}/star`,
+        DELETE_FLASHCARD: (flashcardId) => `/api/flashcards/${flashcardId}`
     }
 }

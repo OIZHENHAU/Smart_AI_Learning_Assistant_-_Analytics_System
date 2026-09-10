@@ -21,6 +21,36 @@ export const getFlashcardsDocument = async (req, res, next) => {
     }
 };
 
+//GET get particular flashcards based on ID GET /api/flashcards/:flashcardId
+export const getParticularFlashcard = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const flashcardId = req.params.cardId;
+
+        const data = await Flashcard.getParticularFlashcards(flashcardId, userId);
+
+        if (!data) {
+            return res.status(400).json({
+                success: false,
+                message: "No such particular flashcards was found.",
+                statusCode: 400
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "The particular flashcard was retrieved successfully.",
+            data: data,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the particular flashcards due to: " + error);
+        next(error);
+    }
+}
+
+//GET get all flashcards list GET /api/flashcards/all-flashcard
 export const getAllFlashcards = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -47,10 +77,11 @@ export const getAllFlashcards = async (req, res, next) => {
     }
 };
 
+//POST review the flashcard daetails POST /api/flashcards/:cardId/review
 export const reviewFlashcard = async (req, res, next) => {
+    const cardId = req.params.cardId;
     try {
         const userId = req.user.id;
-        const cardId = req.params.cardId;
 
         const data = await Flashcard.reviewFlashcard(cardId, userId);
 
@@ -74,22 +105,23 @@ export const reviewFlashcard = async (req, res, next) => {
     }
 };
 
+//PUT Toggle a star to the flashcard PUT /api/flashcards/:cardId/star 
 export const toggleStarFlashcard = async (req, res, next) => {
+    const cardId = req.params.cardId;
     try {
         const userId = req.user.id;
-        const cardId = req.params.cardId;
 
         const data = await Flashcard.getFlashCardItem(userId, cardId);
 
         if (data.length === 0) {
             return res.status(404).json({
                 success: false,
-                error: `Flashcard with card id: ${crardId} not found.`,
+                error: `Flashcard with card id: ${cardId} not found.`,
                 statusCode: 404
             });
         }
 
-        const newStarValue = !rows[0].is_started;
+        const newStarValue = !data[0].is_started;
 
         await Flashcard.toggleStarFlashcard(cardId, newStarValue);
 
@@ -105,10 +137,11 @@ export const toggleStarFlashcard = async (req, res, next) => {
     }
 };
 
+//DELETE delete the particular flashcards DELETE /api/flashcards/:id
 export const deleteFlashcardsSet = async (req, res, next) => {
+    const flashcardId = req.params.cardId;
     try {
         const userId = req.user.id;
-        const flashcardId = req.params.cardId;
 
         const result = await Flashcard.getParticularFlashcards(flashcardId, userId);
 

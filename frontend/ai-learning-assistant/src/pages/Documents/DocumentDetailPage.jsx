@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import documentService from "../../services/DocumentService";
 import Spinner from '../../components/common/Spinner';
 import toast from 'react-hot-toast';
@@ -9,13 +9,15 @@ import Tabs from '../../components/common/Tab';
 import AIChatInterface from "../../components/ai-chat/AIChatInterface";
 import AISummary from "../../components/ai-summary/AISummary";
 import QuizManager from "../../components/quizzes/QuizManager";
+import FlashcardManager from "../../components/flashcards/FlashcardManager";
 
 
 const DocumentDetailPage = () => {
     const { id } = useParams();
+    const location = useLocation();
     const [document, setCurrentDocument] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('Content');
+    const [activeTab, setActiveTab] = useState(location.state?.tab || 'Content');
 
     useEffect(() => {
         const fetchParticularDocumentDetails = async () => {
@@ -101,10 +103,15 @@ const DocumentDetailPage = () => {
         return <QuizManager documentId={id}/>;
     };
 
+    const renderFlashcardsTab = () => {
+        return <FlashcardManager documentId={id} initialSetId={location.state?.flashcardSetId} />;
+    }
+
     const tabs = [
         { name: 'Content', label:'Content', content: renderContent() },
         { name: 'Chat', label: 'Chat', content: renderAIChatAssistant() },
         { name: 'Summary', label: 'Summary', content: renderAIChatSummary() },
+        { name: 'Flashcard', label: 'Flashcard', content: renderFlashcardsTab() },
         { name: 'Quizzes', label: 'Quizzes', content: renderQuizzesPage() }
     ];
 

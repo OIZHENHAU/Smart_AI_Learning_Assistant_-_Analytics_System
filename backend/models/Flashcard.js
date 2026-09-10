@@ -1,33 +1,50 @@
 import db from '../config/MySQL.js';
-import { toggleStarFlashcard, reviewFlashcard } from '../controller/FlashcardController.js';
 
 const Flashcard = {
     async createFlashcards({userId, documentId, cards}) {
-        //Insert Flashcard Set
-        const [result] = await db.execute(
-            `INSERT INTO flashcards (user_id, document_id)
-             VALUES (?, ?)`,
-             [userId, documentId]
-        );
+        const connection = await db.getConnection();
 
-        const flashcardId = result.insertId;
+        try {
+            await connection.beginTransaction();
 
-        //Insert card
-        for (const card of cards) {
-            await db.execute(
-                `INSERT INTO flashcard_items (flashcard_id, question, answer, difficulty, last_reviewed, review_count, is_started)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                 [flashcardId, card.question, card.answer, card.difficulty || "medium", 
-                    card.lastReviewed || null, card.reviewCount || 0, card.isStarted ? 1 : 0]
+            //Insert Flashcard Set
+            const [result] = await connection.execute(
+                `INSERT INTO flashcards (user_id, document_id)
+                 VALUES (?, ?)`,
+                 [userId, documentId]
             );
+
+            const flashcardId = result.insertId;
+
+            //Insert card
+            for (const card of cards) {
+                await connection.execute(
+                    `INSERT INTO flashcard_items (flashcard_id, question, answer, difficulty, last_reviewed, review_count, is_started)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                     [flashcardId, card.question, card.answer, card.difficulty || "medium",
+                        card.lastReviewed || null, card.reviewCount || 0, card.isStarted ? 1 : 0]
+                );
+            }
+
+            await connection.commit();
+            return flashcardId;
+
+        } catch (error) {
+            await connection.rollback();
+            console.error("Fail to create the flashcard set due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
         }
-        return flashcardId;
     },
 
     async getFlashcardsDocument(userId, documentId) {
         const [flashcards] = await db.execute(
-            `SELECT * FROM flashcards
-             WHERE user_id = ? AND document_id = ?`,
+            `SELECT f.*, d.title
+             FROM flashcards f
+             JOIN documents d ON f.document_id = d.id
+             WHERE f.user_id = ? AND f.document_id = ?`,
              [userId, documentId]
         );
 
@@ -84,6 +101,11 @@ const Flashcard = {
              [cardId, userId]
         );
 
+        //Only update once we know the card exists and belongs to the user
+        if (rows.length === 0) {
+            return rows;
+        }
+
         await db.execute(
             `UPDATE flashcard_items
              SET last_reviewed = NOW(),
@@ -129,17 +151,32 @@ const Flashcard = {
     },
 
     async deleteFlashcard(flashcardId) {
-        //Delete all card item related to flashcard id
-        await db.execute(
-            `DELETE FROM flashcard_items WHERE flashcard_id = ?`, [flashcardId]
-        );
+        const connection = await db.getConnection();
 
-        //Delete the falshcard based on id
-        await db.execute(
-            `DELETE FROM flashcards WHERE id = ?`, [flashcardId]
-        );
+        try {
+            await connection.beginTransaction();
 
-        return flashcardId;
+            //Delete all card item related to flashcard id
+            await connection.execute(
+                `DELETE FROM flashcard_items WHERE flashcard_id = ?`, [flashcardId]
+            );
+
+            //Delete the falshcard based on id
+            await connection.execute(
+                `DELETE FROM flashcards WHERE id = ?`, [flashcardId]
+            );
+
+            await connection.commit();
+            return flashcardId;
+
+        } catch (error) {
+            await connection.rollback();
+            console.error(`Fail to delete flashcard set with id: ${flashcardId} due to: ` + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
     },
 
     async countDocumentFlashcard(documentId, userId) {
