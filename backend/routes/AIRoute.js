@@ -2,6 +2,7 @@ import express from 'express';
 import {
     generateFlashcards,
     generateQuiz,
+    generateFillInBlank,
     generateSummary,
     geminiAIChat,
     explainConcept,
@@ -15,6 +16,7 @@ router.use(protect);
 
 router.post('/generate-flashcard', generateFlashcards);
 router.post('/generate-quiz', generateQuiz);
+router.post('/generate-fill-in-blank', generateFillInBlank);
 router.post('/generate-summary', generateSummary);
 router.post('/ai-chat', geminiAIChat);
 router.post('/explain-concept', explainConcept);

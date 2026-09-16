@@ -69,8 +69,19 @@ const generateFlashcard = async (documentId, options = {}) => {
     }
 }
 
+const generateFillInBlank = async (documentId, options = {}) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AI.GENERATE_FILL_IN_BLANK, { documentId, ...options });
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to generate the fill-in-the-blank set at the frontend due to: " + error);
+        throw error;
+    }
+}
+
 const aiService = {
-    generateQuiz, generateSummary, explainConcept, chat: aiChat, getChatHistory, generateFlashcard
+    generateQuiz, generateSummary, explainConcept, chat: aiChat, getChatHistory, generateFlashcard, generateFillInBlank
 };
 
 

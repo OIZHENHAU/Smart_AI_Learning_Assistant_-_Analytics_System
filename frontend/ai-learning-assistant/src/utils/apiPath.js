@@ -21,7 +21,20 @@ export const API_PATHS = {
         AI_CHAT: "/api/ai/ai-chat",
         EXPLAIN_CONCEPT: "/api/ai/explain-concept",
         GET_CHAT_HISTORY: (documentId) => `/api/ai/chat-history/${documentId}`,
-        GENERATE_FLASHCARD: "/api/ai/generate-flashcard"
+        GENERATE_FLASHCARD: "/api/ai/generate-flashcard",
+        GENERATE_FILL_IN_BLANK: "/api/ai/generate-fill-in-blank"
+    },
+    FILL_IN_BLANK: {
+        GET_SETS_FOR_DOCUMENT: (documentId) => `/api/fill-in-blank/${documentId}`,
+        GET_ALL_SETS: "/api/fill-in-blank/all-sets",
+        GET_SET_BY_ID: (id) => `/api/fill-in-blank/set/${id}`,
+        SUBMIT_SET: (id) => `/api/fill-in-blank/${id}/submit`,
+        GET_SET_RESULT: (id) => `/api/fill-in-blank/${id}/results`,
+        DELETE_SET: (id) => `/api/fill-in-blank/${id}`,
+        GET_SET_HINT: (setId, questionId) => `/api/fill-in-blank/${setId}/hint/${questionId}`,
+        SET_SET_HINT: (setId, questionId) => `/api/fill-in-blank/${setId}/set-hint/${questionId}`,
+        GET_SET_SHIELD: (setId, questionId) => `/api/fill-in-blank/${setId}/shield/${questionId}`,
+        SET_SET_SHIELD: (setId, questionId) => `/api/fill-in-blank/${setId}/set-shield/${questionId}`
     },
     QUIZZES: {
         GET_QUIZZES_FOR_DOCUMENT: (documentId) => `/api/quizzes/${documentId}`,

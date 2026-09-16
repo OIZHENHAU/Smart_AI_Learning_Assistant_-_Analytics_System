@@ -19,6 +19,9 @@ import AllBadgesPage from './pages/Achievements/AllBadgesPage';
 import AllFeaturesPage from './pages/Achievements/AllFeaturesPage';
 import LeaderboardPage from './pages/Achievements/LeaderboardPage';
 import QuizListPage from './pages/Quizzes/QuizListPage';
+import FillInBlankListPage from './pages/FillInBlank/FillInBlankListPage';
+import FillInBlankTakePage from './pages/FillInBlank/FillInBlankTakePage';
+import FillInBlankResultPage from './pages/FillInBlank/FillInBlankResultPage';
 import SchedulingPage from './pages/Scheduling/SchedulingPage';
 
 
@@ -50,6 +53,9 @@ const App = () => {
                     <Route path="/quizzes" element={<QuizListPage />} />
                     <Route path="/quizzes/:id" element={<QuizTakePage />} />
                     <Route path="/quizzes/:id/results" element={<QuizResultPage />} />
+                    <Route path="/fill-in-the-blank" element={<FillInBlankListPage />} />
+                    <Route path="/fill-in-the-blank/:id" element={<FillInBlankTakePage />} />
+                    <Route path="/fill-in-the-blank/:id/results" element={<FillInBlankResultPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path='/progress' element={<ProgressPage />}/>
                     <Route path='/achievements' element={<AchievementListPage/>}/>

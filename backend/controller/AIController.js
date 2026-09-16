@@ -2,6 +2,7 @@ import db from '../config/MySQL.js';
 import Document from '../models/Document.js';
 import Flashcard from '../models/Flashcard.js';
 import Quiz from '../models/Quiz.js';
+import FillInBlank from '../models/FillInBlank.js';
 import Achievement from '../models/Achievement.js';
 import ChatHistory from '../models/ChatHistory.js';
 import * as geminiService from '../utils/GeminiService.js';
@@ -126,6 +127,64 @@ export const generateQuiz = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to generate quizes by AI due to: " + error);
+        next(error);
+    }
+}
+
+//Generate fill-in-the-blank set from document POST /api/ai/generate-fill-in-blank
+export const generateFillInBlank = async (req, res, next) => {
+    try {
+        const {documentId, numOfQuestions = 5, title} = req.body;
+
+        //Validate if document is ever exist
+        if (!documentId) {
+            return res.status(404).json({
+                success: false,
+                error: "Please provide a valid document ID.",
+                statusCode: 404
+            });
+        }
+
+        //Get document based on ID
+        const document = await Document.getParticularDocument(documentId);
+
+        if (!document || document.user_id !== req.user.id || document.status !== "ready") {
+            return res.status(404).json({
+                success: false,
+                error: "Document does not exist or not ready yet.",
+                statusCode: 404
+            });
+        }
+
+        //Generate fill-in-the-blank questions using Gemini AI
+        const questions = await geminiService.generateFillInBlank(document.extracted_text, parseInt(numOfQuestions), document.language || 'en');
+
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            console.error("Fill-in-the-blank generation failed: AI returned 0 questions.");
+            return res.status(500).json({
+                success: false,
+                error: "AI failed to generate fill-in-the-blank questions. The response format may not have matched. Please try again.",
+                statusCode: 500
+            });
+        }
+
+        //Create set and store into MySQL
+        const setId = await FillInBlank.createSet({
+            userId: req.user.id,
+            documentId: document.id,
+            title: title || `Fill in the Blank - ${document.title}`,
+            questions
+        });
+
+        res.status(201).json({
+            success: true,
+            data: { setId },
+            message: "Fill-in-the-blank set generated successfully!",
+            statusCode: 201
+        })
+
+    } catch (error) {
+        console.error("Fail to generate fill-in-the-blank set by AI due to: " + error);
         next(error);
     }
 }

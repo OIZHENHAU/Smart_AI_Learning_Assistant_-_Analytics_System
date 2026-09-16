@@ -212,6 +212,95 @@ export const generateQuiz = async (text, numQuestions = 10, language = 'en') => 
 };
 
 /**
+ * Generate fill-in-the-blank (word bank cloze) questions
+ * @param {string} text - Document text
+ * @param {number} numQuestions - Number of questions
+ * @param {string} language - Language code for output
+ * @returns {Promise<Array<{questionText: string, blanks: Array<string>, distractors: Array<string>, explanation: string, difficulty: string, topic: string, hints: string}>>}
+ */
+export const generateFillInBlank = async (text, numQuestions = 5, language = 'en') => {
+    const langInstruction = language !== 'en' ? `All question text, words, and explanations MUST be written in ${LANGUAGE_NAMES[language] || language}.` : '';
+    const promptQuestion = `Generate exactly ${numQuestions} fill-in-the-blank paragraph questions from the following text.
+    Each question should be 2-4 sentences long and contain 2 to 4 blanks.
+    ${langInstruction}
+    Format each question as:
+    P: [Paragraph text with each blank written inline as {{1}}, {{2}}, {{3}}... in the order they appear]
+    B1: [The exact word/phrase that correctly fills blank {{1}}]
+    B2: [The exact word/phrase that correctly fills blank {{2}}]
+    B3: [The exact word/phrase that correctly fills blank {{3}} - only include as many B lines as there are blanks]
+    X: [3 to 5 distractor words/phrases, comma separated, that are plausible but WRONG for every blank in this question]
+    E: [Brief explanation]
+    D: [Difficulty: easy, medium, or hard]
+    H: [Hint - A helpful tip that points the learner in the right direction without revealing the answer]
+    T: [Short topic name this question belongs to, e.g. "React Hooks", "Data Types", "Sorting Algorithms"]
+
+    Seperate questions with "---"
+
+    Text:
+    ${text.substring(0, 15000)}`;
+
+    try {
+        const generateText_result = await generateText(promptQuestion);
+
+        if (!generateText_result) {
+            console.error("AI returned empty response for fill-in-the-blank generation.");
+            return [];
+        }
+
+        const questions = [];
+        const questionBlocks = generateText_result.split('---').filter(x => x.trim());
+
+        for (const block of questionBlocks) {
+            const lines = block.trim().split('\n');
+            let questionText, explanation, hints = "";
+            let difficulty = "medium";
+            let topic = null;
+            const blanksByOrder = {};
+            let distractors = [];
+
+            for (const line of lines) {
+                const line_trim = line.trim();
+
+                if (line_trim.startsWith('P:')) {
+                    questionText = line_trim.substring(2).trim();
+                } else if (line_trim.match(/^B(\d+):/)) {
+                    const match = line_trim.match(/^B(\d+):(.*)$/);
+                    blanksByOrder[parseInt(match[1])] = match[2].trim();
+                } else if (line_trim.startsWith('X:')) {
+                    distractors = line_trim.substring(2).split(',').map(w => w.trim()).filter(Boolean);
+                } else if (line_trim.startsWith('E:')) {
+                    explanation = line_trim.substring(2).trim();
+                } else if (line_trim.startsWith('D:')) {
+                    const diff = line_trim.substring(2).trim().toLowerCase();
+                    if (["easy", "medium", "hard"].includes(diff)) {
+                        difficulty = diff;
+                    }
+                } else if (line_trim.startsWith('H:')) {
+                    hints = line_trim.substring(2).trim();
+                } else if (line_trim.startsWith('T:')) {
+                    topic = line_trim.substring(2).trim();
+                }
+            }
+
+            //Order the blanks by their {{n}} index so blanks[i] lines up with {{i+1}} in the text
+            const blanks = Object.keys(blanksByOrder)
+                .sort((a, b) => parseInt(a) - parseInt(b))
+                .map(order => blanksByOrder[order]);
+
+            if (questionText && blanks.length >= 1) {
+                questions.push({ questionText, blanks, distractors, explanation, difficulty, topic, hints });
+            }
+        }
+
+        return questions;
+
+    } catch (error) {
+        console.error("Fail to generate fill-in-the-blank questions by AI due to: " + error);
+        throw error;
+    }
+};
+
+/**
  * Generate document summary
  * @param {string} text - Document text
  * @param {string} language - Language code for output

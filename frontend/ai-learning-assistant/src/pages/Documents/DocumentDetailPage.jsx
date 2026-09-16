@@ -10,6 +10,7 @@ import AIChatInterface from "../../components/ai-chat/AIChatInterface";
 import AISummary from "../../components/ai-summary/AISummary";
 import QuizManager from "../../components/quizzes/QuizManager";
 import FlashcardManager from "../../components/flashcards/FlashcardManager";
+import FillInBlankManager from "../../components/fillInBlank/FillInBlankManager";
 
 
 const DocumentDetailPage = () => {
@@ -107,12 +108,17 @@ const DocumentDetailPage = () => {
         return <FlashcardManager documentId={id} initialSetId={location.state?.flashcardSetId} />;
     }
 
+    const renderFillInBlankTab = () => {
+        return <FillInBlankManager documentId={id} />;
+    }
+
     const tabs = [
         { name: 'Content', label:'Content', content: renderContent() },
         { name: 'Chat', label: 'Chat', content: renderAIChatAssistant() },
         { name: 'Summary', label: 'Summary', content: renderAIChatSummary() },
         { name: 'Flashcard', label: 'Flashcard', content: renderFlashcardsTab() },
-        { name: 'Quizzes', label: 'Quizzes', content: renderQuizzesPage() }
+        { name: 'Quizzes', label: 'Quizzes', content: renderQuizzesPage() },
+        { name: 'Fill-In Questions', label: 'Fill-In Questions', content: renderFillInBlankTab() }
     ];
 
     if (loading) {
