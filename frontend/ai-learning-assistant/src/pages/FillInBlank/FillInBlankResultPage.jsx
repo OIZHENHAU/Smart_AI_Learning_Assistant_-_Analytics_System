@@ -6,6 +6,59 @@ import toast from 'react-hot-toast';
 import { CheckCircle2, XCircle, Trophy, BookOpen } from 'lucide-react';
 
 
+const parseQuestionText = (text) => {
+    const parts = [];
+    const regex = /\{\{(\d+)\}\}/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+        }
+        parts.push({ type: 'blank', order: parseInt(match[1]) });
+        lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < text.length) {
+        parts.push({ type: 'text', value: text.slice(lastIndex) });
+    }
+    return parts;
+};
+
+
+const buildWordBankReview = (item) => {
+    const entries = [];
+    const usedWords = new Set();
+
+    item.blanks.forEach((blank) => {
+        entries.push({
+            key: `correct-${blank.blankOrder}`,
+            label: `(${blank.blankOrder}) ${blank.correctWord}`,
+            state: 'correct'
+        });
+        usedWords.add(blank.correctWord);
+
+        if (!blank.isCorrect && blank.selectedWord) {
+            entries.push({
+                key: `wrong-${blank.blankOrder}`,
+                label: `(${blank.blankOrder}) ${blank.selectedWord}`,
+                state: 'incorrect'
+            });
+            usedWords.add(blank.selectedWord);
+        }
+    });
+
+    (item.wordBank || []).forEach((word) => {
+        if (!usedWords.has(word)) {
+            entries.push({ key: `distractor-${word}`, label: word, state: 'distractor' });
+            usedWords.add(word);
+        }
+    });
+
+    return entries;
+};
+
+
 const FillInBlankResultPage = () => {
     const { id: setId } = useParams();
     const navigate = useNavigate();
@@ -161,50 +214,66 @@ const FillInBlankResultPage = () => {
             {detailedResults.map((item, index) => (
                 <div key={item.questionId} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                     {/* Question Header */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-6">
                         <span className="px-4 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded-xl">
                             Question {index + 1}
                         </span>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            item.isCorrect ? 'bg-green-500' : 'bg-red-500'
-                        }`}>
-                            {item.isCorrect
-                                ? <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
-                                : <XCircle className="w-5 h-5 text-white" strokeWidth={2.5} />
-                            }
-                        </div>
                     </div>
 
-                    {/* Question Text */}
-                    <h3 className="text-base font-bold text-slate-900 mb-4">{item.question}</h3>
+                    {/* Question Text with inline blanks */}
+                    <p className="text-base text-slate-900 leading-loose mb-5">
+                        {parseQuestionText(item.question).map((part, i) => {
+                            if (part.type === 'text') {
+                                return <span key={i}>{part.value}</span>;
+                            }
 
-                    {/* Per-blank breakdown */}
-                    <div className="space-y-2.5">
-                        {item.blanks.map((blank) => {
-                            const isWrongSelection = !blank.isCorrect;
+                            const blank = item.blanks.find(b => b.blankOrder === part.order);
+                            const filled = blank?.selectedWord || blank?.correctWord || '___';
+
                             return (
-                                <div
-                                    key={blank.blankOrder}
-                                    className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 ${
-                                        blank.isCorrect ? 'border-green-400 bg-green-50' : 'border-red-300 bg-red-50'
+                                <span
+                                    key={i}
+                                    className={`inline-block mx-1 px-3 py-1 rounded-lg font-semibold text-white align-middle border-b-2 border-white/50 ${
+                                        blank?.isCorrect ? 'bg-green-500' : 'bg-red-500'
                                     }`}
                                 >
-                                    <div className="flex flex-col gap-0.5">
-                                        <span className="text-xs font-semibold text-slate-500">Blank {blank.blankOrder}</span>
-                                        <span className={`text-sm font-semibold ${blank.isCorrect ? 'text-green-900' : 'text-red-700'}`}>
-                                            {blank.selectedWord || <em className="font-normal text-slate-400">Not answered</em>}
-                                        </span>
-                                        {isWrongSelection && (
-                                            <span className="text-xs text-green-700">
-                                                Correct answer: <span className="font-semibold">{blank.correctWord}</span>
-                                            </span>
-                                        )}
+                                    {filled}
+                                </span>
+                            );
+                        })}
+                    </p>
+
+                    {/* Word Bank Review */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+                        {buildWordBankReview(item).map((entry) => {
+                            if (entry.state === 'distractor') {
+                                return (
+                                    <div
+                                        key={entry.key}
+                                        className="px-3 py-2.5 rounded-lg border-2 border-slate-200 text-sm font-medium text-slate-300 line-through text-center"
+                                    >
+                                        {entry.label}
                                     </div>
-                                    <span className={`px-3 py-1 text-xs font-bold rounded-lg ${
-                                        blank.isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                                );
+                            }
+
+                            const isCorrect = entry.state === 'correct';
+                            return (
+                                <div
+                                    key={entry.key}
+                                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 text-sm font-semibold ${
+                                        isCorrect ? 'border-green-500 text-green-700' : 'border-red-500 text-red-700'
+                                    }`}
+                                >
+                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                                        isCorrect ? 'bg-green-500' : 'bg-red-500'
                                     }`}>
-                                        {blank.isCorrect ? 'Correct' : 'Incorrect'}
-                                    </span>
+                                        {isCorrect
+                                            ? <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                                            : <XCircle className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                                        }
+                                    </div>
+                                    {entry.label}
                                 </div>
                             );
                         })}

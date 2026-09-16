@@ -391,6 +391,7 @@ export const getSetResult = async (req, res, next) => {
                 questionId: question.id,
                 question: question.questionText,
                 blanks: blankResults,
+                wordBank: question.wordBank,
                 isCorrect: blankResults.every(b => b.isCorrect),
                 explanation: question.explanation,
                 topic: question.topic

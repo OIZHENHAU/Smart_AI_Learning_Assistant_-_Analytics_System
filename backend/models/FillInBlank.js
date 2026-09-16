@@ -316,17 +316,18 @@ const FillInBlank = {
         );
 
         for (const question of questions) {
+            //Full word bank (correct words + distractors) so the result page can show every word, not just the correct ones
             const [words] = await db.execute(
-                `
-                SELECT word_text, correct_blank_order
-                FROM fill_blank_words
-                WHERE question_id = ? AND correct_blank_order IS NOT NULL
-                ORDER BY correct_blank_order ASC
-                `,
+                `SELECT word_text, correct_blank_order FROM fill_blank_words WHERE question_id = ?`,
                 [question.id]
             );
 
-            question.correctWords = words.map(w => w.word_text);
+            question.correctWords = words
+                .filter(w => w.correct_blank_order !== null)
+                .sort((a, b) => a.correct_blank_order - b.correct_blank_order)
+                .map(w => w.word_text);
+
+            question.wordBank = words.map(w => w.word_text);
         }
 
         set.questions = questions.map(q => ({
@@ -334,6 +335,7 @@ const FillInBlank = {
             questionText: q.question_text,
             numBlanks: q.num_blanks,
             correctWords: q.correctWords,
+            wordBank: q.wordBank,
             explanation: q.explanation,
             topic: q.topic,
             num_xp: q.num_xp
