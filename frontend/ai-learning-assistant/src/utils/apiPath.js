@@ -7,7 +7,11 @@ export const API_PATHS = {
         GET_PROFILE: "/api/auth/profile",
         UPDATE_PROFILE: "/api/auth/profile",
         CHANGE_PASSWORD: "/api/auth/change-password",
-        DELETE_ACCOUNT: "/api/auth/delete-account"
+        DELETE_ACCOUNT: "/api/auth/delete-account",
+        ADMIN_GET_USERS: "/api/auth/admin/users",
+        ADMIN_APPROVE_USER: (id) => `/api/auth/admin/users/${id}/approve`,
+        ADMIN_DEACTIVATE_USER: (id) => `/api/auth/admin/users/${id}/deactivate`,
+        ADMIN_DELETE_USER: (id) => `/api/auth/admin/users/${id}`
     },
     DOCUMENT: {
         UPLOAD: "/api/documents/upload",

@@ -23,6 +23,7 @@ import FillInBlankListPage from './pages/FillInBlank/FillInBlankListPage';
 import FillInBlankTakePage from './pages/FillInBlank/FillInBlankTakePage';
 import FillInBlankResultPage from './pages/FillInBlank/FillInBlankResultPage';
 import SchedulingPage from './pages/Scheduling/SchedulingPage';
+import UserManagementPage from './pages/Admin/UserManagementPage';
 
 
 const App = () => {
@@ -63,6 +64,7 @@ const App = () => {
                     <Route path='/achievements/features' element={<AllFeaturesPage/>}/>
                     <Route path='/achievements/leaderboard' element={<LeaderboardPage/>}/>
                     <Route path='/scheduling' element={<SchedulingPage/>}/>
+                    <Route path='/admin/users' element={<UserManagementPage/>}/>
                 </Route>
 
                 <Route path="*" element={<NotFoundPage />}/>

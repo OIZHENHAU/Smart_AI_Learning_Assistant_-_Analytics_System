@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+const ALLOWED_ROLES = ['student', 'lecturer', 'parents', 'admin'];
+
 function generateUserToken(id) {
     return jwt.sign({id}, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || "1d"
@@ -9,8 +11,7 @@ function generateUserToken(id) {
 
 export const register = async(req, res, nxt) => {
     try {
-        const {username, email, password, phoneNumber} = req.body;
-
+        const {username, email, password, phoneNumber, role} = req.body;
         const userExists = await User.findMatchEmail(email);
 
         //If user already exist in the database
@@ -23,7 +24,9 @@ export const register = async(req, res, nxt) => {
         }
 
         //Else create user
-        const userId = await User.create({username, email, password, phone_number: phoneNumber});
+        const safeRole = ALLOWED_ROLES.includes(role) ? role : 'student';
+        const userId = await User.create({username, email, password, phone_number: phoneNumber, role: safeRole});
+        const createdUser = await User.findAcountById(userId);
 
         //Generate token
         const token = generateUserToken(userId);
@@ -35,11 +38,15 @@ export const register = async(req, res, nxt) => {
                     id: userId,
                     username: username,
                     email: email,
-                    phonenumber: phoneNumber
+                    phonenumber: phoneNumber,
+                    role: safeRole,
+                    status: createdUser.status
                 },
                 token,
             },
-            message: "User registered successfully!"
+            message: createdUser.status === 'pending'
+                ? "Account created. Waiting for the admin approval."
+                : "User registered successfully."
         });
 
     } catch (error) {
@@ -88,6 +95,24 @@ export const login = async(req, res, nxt) => {
             });
         }
 
+        if (validUser.status === 'pending') {
+            return res.status(403).json({
+                success: false,
+                accountStatus: 'pending',
+                error: "Your account is still waiting for admin approval.",
+                statusCode: 403
+            });
+        }
+
+        if (validUser.status === 'deactivated') {
+            return res.status(403).json({
+                success: false,
+                accountStatus: 'deactivated',
+                error: 'Your account has been activated. Please contact an admin.',
+                statusCode: 403
+            });
+        }
+
         const token = generateUserToken(validUser.id);
 
         return res.status(200).json({
@@ -97,7 +122,8 @@ export const login = async(req, res, nxt) => {
                     id: validUser.id,
                     username: validUser.username,
                     email: validUser.email,
-                    phoneNumber: validUser.phone_number
+                    phoneNumber: validUser.phone_number,
+                    role: validUser.role
                 }
             },
             token,
@@ -109,6 +135,98 @@ export const login = async(req, res, nxt) => {
         nxt(error);
     }
 
+};
+
+//Get all trhe users for admin: GET /api/auth/admin/users
+export const getAllUsersForAdmin = async (req, res, next) => {
+    try {
+        const users = await User.getAllUsers();
+        res.status(200).json({
+            success: true,
+            data: users,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get all the users for admin due to: " + error);
+        next(error);
+    }
+};
+
+//Approve the users permission: POST /api/auth/admin/users/:id/approve
+export const approveUserAccount = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        await User.setUserStatus(id, 'active');
+        res.status(200).json({
+            success: true,
+            message: "User approved successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to approve the user due to: " + error);
+        next(error);
+    }
+};
+
+//Deactivate the user account: POST /api/auth/admin/users/:id/deactivate
+export const deactivateUserAccount = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        if (parseInt(id) === req.user.id) {
+            return res.status(400).json({
+                success: false,
+                error: "You cannot deactivate your own account.",
+                statusCode: 400
+            });
+        }
+        await User.setUserStatus(id, 'deactivated');
+
+        res.status(200).json({
+            success: true,
+            message: "User deactivated successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to deactivate the user due to: " + error);
+        next(error);
+    }
+};
+
+//Delete the user from the user management list: DELETE /api/auth/admin/users/:id
+export const adminDeleteUser = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        if (parseInt(id) === req.user.id) {
+            return res.status(400).json({
+                success: false,
+                error: "You cannot delete your own account.",
+                statusCode: 400
+            });
+        }
+
+        const deleted = await User.deleteUserAccount(id);
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                error: "User was not found.",
+                statusCode: 404
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to delete the user (admin) due to: " + error);
+        next(error);
+    }
 }
 
 //View user profile: GET /api/auth/profile
@@ -123,6 +241,7 @@ export const viewProfile = async(req, res, nxt) => {
                 username: currentUser.username,
                 email: currentUser.email,
                 phoneNumber: currentUser.phone_number,
+                role: currentUser.role,
                 createdAt: currentUser.created_at,
                 updatedAt: currentUser.updated_at
             }
@@ -149,10 +268,13 @@ export const updateProfile = async(req, res, nxt) => {
             });
         }
 
+        //Role is intentionally left untouched here - this endpoint is for the user's own
+        //profile details, not self-promotion. Role changes should go through a separate admin-only flow.
         await User.updateUserProfile(userId, {
             username: username || currentUser.username,
             email: email || currentUser.email,
-            phone_number: phoneNumber || currentUser.phone_number
+            phone_number: phoneNumber || currentUser.phone_number,
+            role: currentUser.role
         });
 
         return res.status(200).json({

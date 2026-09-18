@@ -2,8 +2,16 @@ import React, { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../../services/AuthService';
 import achievementService from '../../services/AchievementService';
-import { Brain, User, Mail, Lock, ArrowRight } from "lucide-react";
+import { Brain, User, Mail, Lock, ArrowRight, GraduationCap, Presentation, Users, ShieldCheck, Clock } from "lucide-react";
 import toast from 'react-hot-toast';
+import Modal from '../../components/common/Modal';
+
+const ROLE_OPTIONS = [
+    { value: 'student', label: 'Student', icon: GraduationCap },
+    { value: 'lecturer', label: 'Lecturer', icon: Presentation },
+    { value: 'parents', label: 'Parent', icon: Users },
+    { value: 'admin', label: 'Admin', icon: ShieldCheck }
+];
 
 const AuthInput = ({ label, icon: Icon, type = "text", value, onChange, placeholder, focusKey, focusedField, onFocus, onBlur }) => (
     <div className="space-y-2">
@@ -30,9 +38,11 @@ const RegisterPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [role, setRole] = useState('student');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [focusedField, setFocusedField] = useState(null);
+    const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
 
     const navigate = useNavigate();
 
@@ -47,7 +57,7 @@ const RegisterPage = () => {
         setLoading(true);
         try {
             //Register new user account.
-            const { data } = await authService.register(username, email, password);
+            const { data } = await authService.register(username, email, password, role);
             const { token } = data;
             //Temporarily store the token so the follow-up achievement calls are authenticated.
             localStorage.setItem('token', token);
@@ -58,9 +68,14 @@ const RegisterPage = () => {
             //Add all unlock features when creating an account
             await achievementService.postAllUnlockFeatures();
 
-            toast.success('Account created! Please log in.');
-            navigate('/login');
-            
+            if (data.user.status === 'pending') {
+                //Lecturer/Parent/Admin accounts need an existing admin to approve them before they can log in.
+                setIsPendingModalOpen(true);
+            } else {
+                toast.success('Account created! Please log in.');
+                navigate('/login');
+            }
+
         } catch (error) {
             const msg = error.message || "Failed to register. Please try again.";
             setError(msg);
@@ -128,6 +143,31 @@ const RegisterPage = () => {
                             focusKey="confirmPassword" focusedField={focusedField} onFocus={setFocusedField} onBlur={setFocusedField}
                         />
 
+                        {/* Role Selector */}
+                        <div className="space-y-2">
+                            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide">I am a</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {ROLE_OPTIONS.map(({ value, label, icon: Icon }) => {
+                                    const isSelected = role === value;
+                                    return (
+                                        <button
+                                            key={value}
+                                            type="button"
+                                            onClick={() => setRole(value)}
+                                            className={`flex items-center gap-2.5 h-12 px-4 rounded-xl border-2 text-sm font-semibold transition-all duration-200 ${
+                                                isSelected
+                                                    ? 'border-purple-500 bg-purple-50 text-purple-700'
+                                                    : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                                            }`}
+                                        >
+                                            <Icon className="h-5 w-5" strokeWidth={2} />
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         {error && (
                             <div className="rounded-xl bg-red-50 border border-red-200 p-3">
                                 <p className="text-xs text-red-600 font-medium text-center">{error}</p>
@@ -153,6 +193,32 @@ const RegisterPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Pending Approval Modal */}
+            <Modal
+                isOpen={isPendingModalOpen}
+                onClose={() => navigate('/login')}
+                title="Account Pending Approval"
+            >
+                <div className="space-y-4 text-center">
+                    <div className="flex justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center">
+                            <Clock className="w-7 h-7 text-purple-600" strokeWidth={2} />
+                        </div>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                        Your account has been created, but <span className="font-semibold text-slate-800">{role}</span> accounts
+                        need to be approved by an admin before you can log in. You'll be able to sign in once your
+                        account has been approved.
+                    </p>
+                    <button
+                        onClick={() => navigate('/login')}
+                        className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors duration-200"
+                    >
+                        Got it
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

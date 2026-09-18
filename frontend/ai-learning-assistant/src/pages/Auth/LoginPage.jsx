@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
 import authService from '../../services/AuthService';
 import achievementService from '../../services/AchievementService';
-import { Brain, Mail, Lock, ArrowRight } from "lucide-react";
+import { Brain, Mail, Lock, ArrowRight, Clock, ShieldOff } from "lucide-react";
 import toast from 'react-hot-toast';
+import Modal from '../../components/common/Modal';
 
 const AuthInput = ({ label, icon: Icon, type = "text", value, onChange, placeholder, focusKey, focusedField, onFocus, onBlur }) => (
     <div className="space-y-2">
@@ -32,6 +33,7 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [focusedField, setFocusedField] = useState(null);
+    const [blockedReason, setBlockedReason] = useState(null); // 'pending' | 'deactivated' | null
 
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -50,9 +52,13 @@ const LoginPage = () => {
             navigate('/dashboard');
 
         } catch (error) {
-            const msg = error.error || error.message || "Failed to login. Please check your credentials.";
-            setError(msg);
-            toast.error(msg);
+            if (error.accountStatus === 'pending' || error.accountStatus === 'deactivated') {
+                setBlockedReason(error.accountStatus);
+            } else {
+                const msg = error.error || error.message || "Failed to login. Please check your credentials.";
+                setError(msg);
+                toast.error(msg);
+            }
         } finally {
             setLoading(false);
         }
@@ -131,6 +137,36 @@ const LoginPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Account Blocked Modal */}
+            <Modal
+                isOpen={!!blockedReason}
+                onClose={() => setBlockedReason(null)}
+                title={blockedReason === 'pending' ? "Pending Admin Approval" : "Account Deactivated"}
+            >
+                <div className="space-y-4 text-center">
+                    <div className="flex justify-center">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${blockedReason === 'pending' ? 'bg-purple-100' : 'bg-red-100'}`}>
+                            {blockedReason === 'pending'
+                                ? <Clock className="w-7 h-7 text-purple-600" strokeWidth={2} />
+                                : <ShieldOff className="w-7 h-7 text-red-600" strokeWidth={2} />
+                            }
+                        </div>
+                    </div>
+                    <p className="text-sm text-slate-600">
+                        {blockedReason === 'pending'
+                            ? "Your account is still waiting for an admin to approve it. Please check back later."
+                            : "Your account has been deactivated. Please contact an admin for help."
+                        }
+                    </p>
+                    <button
+                        onClick={() => setBlockedReason(null)}
+                        className="w-full h-11 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors duration-200"
+                    >
+                        Got it
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

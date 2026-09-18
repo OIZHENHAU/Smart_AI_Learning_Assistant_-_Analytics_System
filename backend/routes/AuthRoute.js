@@ -1,13 +1,17 @@
 import express from 'express';
 import {body} from 'express-validator';
-import protect from '../middleware/Auth.js'
+import protect, { requireRole } from '../middleware/Auth.js'
 import {
     register,
     login,
     viewProfile,
     updateProfile,
     changePassword,
-    deleteAccount
+    deleteAccount,
+    getAllUsersForAdmin,
+    approveUserAccount,
+    deactivateUserAccount,
+    adminDeleteUser
 } from "../controller/AuthController.js";
 
 const router = express.Router();
@@ -31,5 +35,10 @@ router.get('/profile', protect, viewProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/change-password', protect, changePassword);
 router.delete('/delete-account', protect, deleteAccount);
+
+router.get('/admin/users', protect, requireRole('admin'), getAllUsersForAdmin);
+router.post('/admin/users/:id/approve', protect, requireRole('admin'), approveUserAccount);
+router.post('/admin/users/:id/deactivate', protect, requireRole('admin'), deactivateUserAccount);
+router.delete('/admin/users/:id', protect, requireRole('admin'), adminDeleteUser);
 
 export default router;

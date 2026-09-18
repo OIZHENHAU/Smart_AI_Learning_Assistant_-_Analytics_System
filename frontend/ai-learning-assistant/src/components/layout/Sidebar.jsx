@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, X } from 'lucide-react';
+import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, X } from 'lucide-react';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -22,7 +22,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         navigate('/login');
     }
 
-    const navLinks = [
+    const baseNavLinks = [
         {to: '/dashboard', icon: Brain, text: 'Dashboard' },
         {to: '/documents', icon: Notebook, text: 'Documents'},
         {to: '/progress', icon: Activity, text: 'Performance'},
@@ -31,8 +31,14 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: '/flashcards', icon: ClipboardListIcon, text: 'Flashcards'},
         {to: '/fill-in-the-blank', icon: FileQuestion, text: 'Fill-In Questions'},
         {to: '/scheduling', icon: CalendarClockIcon, text: "Timetable"},
+        {to: '/admin/users', icon: Users, text: 'User Management'},
         {to: '/profile', icon: UserCircle2, text: "Profile"}
     ]
+
+    //Admins get the full student nav plus their own User Management page (everyone else never sees that link).
+    const navLinks = user?.role === 'admin'
+        ? baseNavLinks
+        : baseNavLinks.filter(link => link.to !== '/admin/users')
 
     return <>
         <div className={`fixed inset-0 bg-black/30 z-40 md:hidden transition-opacity duration-300

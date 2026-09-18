@@ -16,12 +16,13 @@ const login = async (email, password) => {
     }
 };
 
-const register = async (username, email, password) => {
+const register = async (username, email, password, role) => {
     try {
         const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
             username,
             email,
-            password
+            password,
+            role
         });
 
         return response.data;
@@ -77,8 +78,53 @@ const deleteAccount = async () => {
     }
 };
 
+const getAllUsersForAdmin = async () => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.AUTH.ADMIN_GET_USERS);
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get all users for admin at the frontend due to: " + error);
+        throw error.response?.data || { message: "An unknown error occurred." };
+    }
+};
+
+const approveUser = async (userId) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.ADMIN_APPROVE_USER(userId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to approve the user at the frontend due to: " + error);
+        throw error.response?.data || { message: "An unknown error occurred." };
+    }
+};
+
+const deactivateUser = async (userId) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.AUTH.ADMIN_DEACTIVATE_USER(userId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to deactivate the user at the frontend due to: " + error);
+        throw error.response?.data || { message: "An unknown error occurred." };
+    }
+};
+
+const deleteUserByAdmin = async (userId) => {
+    try {
+        const response = await axiosInstance.delete(API_PATHS.AUTH.ADMIN_DELETE_USER(userId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to delete the user (admin) at the frontend due to: " + error);
+        throw error.response?.data || { message: "An unknown error occurred." };
+    }
+};
+
 const authService = {
-    login, register, getProfile, updateProfile, changePassword, deleteAccount
+    login, register, getProfile, updateProfile, changePassword, deleteAccount,
+    getAllUsersForAdmin, approveUser, deactivateUser, deleteUserByAdmin
 };
 
 export default authService;

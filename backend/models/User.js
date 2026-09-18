@@ -1,9 +1,11 @@
 import db from '../config/MySQL.js';
 import bcrypt from 'bcryptjs';
 
+const PENDING_APPROVAL_ROLES = ['lecturer', 'parents', 'admin'];
+
 const User = {
     //Create User Account
-    async create({username, email, password, phone_number}) {
+    async create({username, email, password, phone_number, role}) {
         const salt = await bcrypt.genSalt(10);
         const password_hashing = await bcrypt.hash(password, salt);
 
@@ -15,10 +17,13 @@ const User = {
         try {
             await connection.beginTransaction();
 
+            const safeRole = role || 'student';
+            const status = PENDING_APPROVAL_ROLES.includes(safeRole) ? 'pending' : 'active';
+
             const [result] = await connection.execute(
-                `INSERT INTO users (username, email, password_hash, phone_number, created_at)
-                VALUES (?, ?, ?, ?, ?)`,
-                [username, email.toLowerCase(), password_hashing, phone_number || null, currentTime]
+                `INSERT INTO users (username, email, password_hash, phone_number, created_at, role, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [username, email.toLowerCase(), password_hashing, phone_number || null, currentTime, safeRole, status]
             );
 
             const userId = result.insertId;
@@ -43,6 +48,37 @@ const User = {
         }
     },
 
+    async getAllUsers() {
+        const connection = await db.getConnection();
+
+        try {
+            const [allUser] = await connection.execute(
+                `SELECT id, username, email, role, status, created_at FROM users ORDER BY created_at DESC`
+            )
+            return allUser;
+
+        } catch (error) {
+            console.error("Fail to get all the user due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    async setUserStatus(userId, status) {
+        try {
+            const [result] = await db.execute(
+                `UPDATE users SET status = ? WHERE id = ?`, [status, userId]
+            );
+            return result;
+
+        } catch (error) {
+            console.error("Fail to set the status of the user due to: " + error);
+            throw error;
+        }
+    },
+
     async findMatchEmail(email) {
         const [rows] = await db.execute(
             `SELECT * FROM users WHERE email = ?`,
@@ -64,12 +100,12 @@ const User = {
         return rows[0];
     },
 
-    async updateUserProfile(userId, {username, email, phone_number}) {
+    async updateUserProfile(userId, {username, email, phone_number, role}) {
         const [result] = await db.execute(
             `UPDATE users
-             SET username = ?, email = ?, phone_number = ?
+             SET username = ?, email = ?, phone_number = ?, role = ?
              WHERE id = ?`,
-             [username, email.toLowerCase(), phone_number || null, userId]
+             [username, email.toLowerCase(), phone_number || null, role, userId]
         );
         return result;
     },
@@ -91,7 +127,6 @@ const User = {
         try {
             await connection.beginTransaction();
 
-            //Quiz-related data (options/user_answers/questions depend on quizzes, quiz_schedules depends on quizzes)
             await connection.execute(
                 `DELETE o FROM options o
                  JOIN questions q ON o.question_id = q.id
@@ -109,9 +144,6 @@ const User = {
                  WHERE qz.user_id = ?`, [userId]
             );
             await connection.execute(
-                `DELETE FROM quiz_schedules WHERE user_id = ?`, [userId]
-            );
-            await connection.execute(
                 `DELETE FROM quizzes WHERE user_id = ?`, [userId]
             );
 
@@ -125,7 +157,17 @@ const User = {
                 `DELETE FROM flashcards WHERE user_id = ?`, [userId]
             );
 
-            //Chat-related data (messages/relevant_chunks depend on chat_histories)
+            await connection.execute(
+                `DELETE FROM fill_blank_sets WHERE user_id = ?`, [userId]
+            );
+
+            await connection.execute(
+                `DELETE FROM event_reminders WHERE user_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM calendar_events WHERE user_id = ?`, [userId]
+            );
+
             await connection.execute(
                 `DELETE m FROM messages m
                  JOIN chat_histories ch ON m.chat_id = ch.id
@@ -140,7 +182,6 @@ const User = {
                 `DELETE FROM chat_histories WHERE user_id = ?`, [userId]
             );
 
-            //Document-related data (document_chunks depends on documents)
             await connection.execute(
                 `DELETE dc FROM document_chunks dc
                  JOIN documents d ON dc.document_id = d.id
@@ -167,7 +208,7 @@ const User = {
                 `DELETE FROM daily_goal WHERE user_id = ?`, [userId]
             );
 
-            //Finally, the user row itself
+            //Finally delete the user row
             const [result] = await connection.execute(
                 `DELETE FROM users WHERE id = ?`, [userId]
             );
