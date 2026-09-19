@@ -9,7 +9,7 @@ import Spinner from '../../components/common/Spinner';
 const STATUS_STYLES = {
     pending: 'bg-yellow-100 text-yellow-700',
     active: 'bg-purple-100 text-purple-700',
-    deactivated: 'bg-red-100 text-red-700'
+    deactivated: 'bg-red-500 text-white'
 };
 
 const UserManagementPage = () => {
@@ -22,9 +22,16 @@ const UserManagementPage = () => {
     const [deactivateTarget, setDeactivateTarget] = useState(null);
     const [deactivating, setDeactivating] = useState(false);
 
-    const fetchUsers = async () => {
+    //Filters are left empty by default so the table shows everyone until an admin actively narrows it down.
+    const [usernameFilter, setUsernameFilter] = useState('');
+    const [emailFilter, setEmailFilter] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    const fetchUsers = async (filters = {}) => {
         try {
-            const data = await authService.getAllUsersForAdmin();
+            const data = await authService.getAllUsersForAdmin(filters);
             setUsers(Array.isArray(data?.data) ? data.data : []);
 
         } catch (error) {
@@ -36,19 +43,25 @@ const UserManagementPage = () => {
         }
     };
 
+    //Runs once on mount, then again (debounced) whenever any filter changes.
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        const timeout = setTimeout(() => {
+            fetchUsers({ username: usernameFilter, email: emailFilter, role: roleFilter, startDate, endDate });
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [usernameFilter, emailFilter, roleFilter, startDate, endDate]);
 
+    //Handle the activation of the user account.
     const handleApprove = async (targetUser) => {
         setBusyUserId(targetUser.id);
         try {
             await authService.approveUser(targetUser.id);
-            toast.success(`"${targetUser.username}" approved successfully.`);
+            const verb = targetUser.status === 'deactivated' ? 'activated' : 'approved';
+            toast.success(`"${targetUser.username}" ${verb} successfully.`);
             setUsers((prev) => prev.map((u) => u.id === targetUser.id ? { ...u, status: 'active' } : u));
 
         } catch (error) {
-            toast.error(error.error || "Failed to approve the user.");
+            toast.error(error.error || "Failed to update the user's status.");
             console.error(error);
 
         } finally {
@@ -107,6 +120,63 @@ const UserManagementPage = () => {
                 </div>
             </div>
 
+            {/* Filter Bar */}
+            <div className="flex flex-wrap items-end gap-4 w-full">
+                <div className="flex-1 min-w-[160px] flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-slate-700">Username:</label>
+                    <input
+                        type="text"
+                        value={usernameFilter}
+                        onChange={(e) => setUsernameFilter(e.target.value)}
+                        className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
+                    />
+                </div>
+
+                <div className="flex-1 min-w-[180px] flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-slate-700">Email:</label>
+                    <input
+                        type="text"
+                        value={emailFilter}
+                        onChange={(e) => setEmailFilter(e.target.value)}
+                        className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
+                    />
+                </div>
+
+                <div className="flex-1 min-w-[150px] flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-slate-700">Role:</label>
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
+                    >
+                        <option value="">All Roles</option>
+                        <option value="student">Student</option>
+                        <option value="lecturer">Lecturer</option>
+                        <option value="parents">Parent</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div className="flex-[1.6] min-w-[280px] flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-slate-700">Created At:</label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
+                        />
+                        <span className="text-sm text-slate-500 shrink-0">to</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400"
+                        />
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
@@ -147,7 +217,7 @@ const UserManagementPage = () => {
                                     <td className="py-4 pr-4 text-sm text-slate-600">{moment(row.created_at).format("M/D/YYYY")}</td>
                                     <td className="py-4">
                                         <div className='flex items-center justify-end gap-2'>
-                                            {row.status === 'pending' ? (
+                                            {row.status === 'pending' && (
                                                 <button
                                                     onClick={() => handleApprove(row)}
                                                     disabled={isSelf || isBusy}
@@ -156,14 +226,25 @@ const UserManagementPage = () => {
                                                     <CheckCircle2 className='w-3.5 h-3.5' />
                                                     Approve
                                                 </button>
-                                            ) : (
+                                            )}
+                                            {row.status === 'active' && (
                                                 <button
                                                     onClick={() => setDeactivateTarget(row)}
-                                                    disabled={isSelf || isBusy || row.status === 'deactivated'}
+                                                    disabled={isSelf || isBusy}
                                                     className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
                                                 >
                                                     <Ban className='w-3.5 h-3.5' />
                                                     Deactivate
+                                                </button>
+                                            )}
+                                            {row.status === 'deactivated' && (
+                                                <button
+                                                    onClick={() => handleApprove(row)}
+                                                    disabled={isSelf || isBusy}
+                                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-xs font-semibold hover:bg-purple-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
+                                                >
+                                                    <CheckCircle2 className='w-3.5 h-3.5' />
+                                                    Activate
                                                 </button>
                                             )}
                                             <button

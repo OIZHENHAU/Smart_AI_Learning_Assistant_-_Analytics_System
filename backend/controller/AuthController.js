@@ -140,7 +140,8 @@ export const login = async(req, res, nxt) => {
 //Get all trhe users for admin: GET /api/auth/admin/users
 export const getAllUsersForAdmin = async (req, res, next) => {
     try {
-        const users = await User.getAllUsers();
+        const { username, email, role, startDate, endDate } = req.query;
+        const users = await User.getAllUsers({ username, email, role, startDate, endDate });
         res.status(200).json({
             success: true,
             data: users,

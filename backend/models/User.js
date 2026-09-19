@@ -48,13 +48,42 @@ const User = {
         }
     },
 
-    async getAllUsers() {
+    async getAllUsers({ username, email, role, startDate, endDate } = {}) {
         const connection = await db.getConnection();
 
         try {
-            const [allUser] = await connection.execute(
-                `SELECT id, username, email, role, status, created_at FROM users ORDER BY created_at DESC`
-            )
+            let query = `SELECT id, username, email, role, status, created_at FROM users`;
+            const conditions = [];
+            const params = [];
+
+            if (username && username.trim()) {
+                conditions.push(`username LIKE ?`);
+                params.push(`%${username.trim()}%`);
+            }
+            if (email && email.trim()) {
+                conditions.push(`email LIKE ?`);
+                params.push(`%${email.trim()}%`);
+            }
+            if (role && role.trim()) {
+                conditions.push(`role = ?`);
+                params.push(role.trim());
+            }
+            if (startDate) {
+                conditions.push(`DATE(created_at) >= ?`);
+                params.push(startDate);
+            }
+            if (endDate) {
+                conditions.push(`DATE(created_at) <= ?`);
+                params.push(endDate);
+            }
+
+            if (conditions.length > 0) {
+                query += ` WHERE ` + conditions.join(' AND ');
+            }
+
+            query += ` ORDER BY created_at DESC`;
+
+            const [allUser] = await connection.execute(query, params);
             return allUser;
 
         } catch (error) {

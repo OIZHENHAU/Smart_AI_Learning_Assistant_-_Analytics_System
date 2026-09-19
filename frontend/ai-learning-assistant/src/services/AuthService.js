@@ -78,9 +78,11 @@ const deleteAccount = async () => {
     }
 };
 
-const getAllUsersForAdmin = async () => {
+const getAllUsersForAdmin = async (filters = {}) => {
     try {
-        const response = await axiosInstance.get(API_PATHS.AUTH.ADMIN_GET_USERS);
+        const response = await axiosInstance.get(API_PATHS.AUTH.ADMIN_GET_USERS, {
+            params: filters
+        });
         return response.data;
 
     } catch (error) {

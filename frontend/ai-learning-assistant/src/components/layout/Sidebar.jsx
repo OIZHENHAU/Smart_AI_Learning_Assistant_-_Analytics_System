@@ -25,11 +25,11 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const baseNavLinks = [
         {to: '/dashboard', icon: Brain, text: 'Dashboard' },
         {to: '/documents', icon: Notebook, text: 'Documents'},
-        {to: '/progress', icon: Activity, text: 'Performance'},
         {to: '/quizzes', icon: CircleQuestionMarkIcon, text: 'Quiz'},
         {to: '/achievements', icon: Trophy, text: 'Achievements'},
         {to: '/flashcards', icon: ClipboardListIcon, text: 'Flashcards'},
         {to: '/fill-in-the-blank', icon: FileQuestion, text: 'Fill-In Questions'},
+        {to: '/progress', icon: Activity, text: 'Performance'},
         {to: '/scheduling', icon: CalendarClockIcon, text: "Timetable"},
         {to: '/admin/users', icon: Users, text: 'User Management'},
         {to: '/profile', icon: UserCircle2, text: "Profile"}
