@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link, useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useCurrentClass } from '../../context/ClassContext';
 import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck } from 'lucide-react';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const { logout, user } = useAuth();
+    const { currentClass } = useCurrentClass();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -77,8 +79,25 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                     </button>
                 </div>
 
+                {/* The class that is open (only inside a class) */}
+                {classMatch && currentClass && String(currentClass.id) === classMatch.params.classId && (
+                    <div className='px-5 py-4 border-b border-slate-200/60'>
+                        <div className='flex items-center gap-3'>
+                            <div className='w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0'>
+                                <School className='w-6 h-6 text-purple-500' strokeWidth={2} />
+                            </div>
+                            <div className='min-w-0'>
+                                <h2 className='text-lg font-bold text-slate-900 leading-tight truncate' title={currentClass.class_name}>
+                                    {currentClass.class_name}
+                                </h2>
+                                <p className='text-xs text-slate-500 truncate'>Lecturer: {currentClass.owner_name}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Nvigation bar */}
-                <nav className='flex-1 px-3 py-6 space-y-1.5'>
+                <nav className={`flex-1 px-3 space-y-1.5 ${classMatch ? 'py-4' : 'py-6'}`}>
                     {
                         navLinks.map((link) => {
                             const active = !link.back && isActive(link.to);

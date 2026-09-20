@@ -141,7 +141,7 @@ const ClassListPage = () => {
                             <GraduationCap className='w-7 h-7 text-purple-600' strokeWidth={2} />
                         </div>
                         <div>
-                            <h1 className='text-2xl font-bold text-slate-900'>{isStudent ? 'My Classes' : 'Create Team'}</h1>
+                            <h1 className='text-2xl font-bold text-slate-900'>{isStudent ? 'My Classes' : 'Create Class'}</h1>
                             <p className='text-sm text-slate-500'>
                                 {isStudent ? 'Join a class with your class code' : 'Create class and organise your group'}
                             </p>

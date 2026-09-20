@@ -3,6 +3,7 @@ import { Outlet, useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import classService from '../../services/ClassService';
 import Spinner from '../../components/common/Spinner';
+import { useCurrentClass } from '../../context/ClassContext';
 
 const LOADING_MS = 3000;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -10,6 +11,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const ClassLayout = () => {
     const { classId } = useParams();
     const navigate = useNavigate();
+    const { setCurrentClass } = useCurrentClass();
     //The loaded class is stored with its id, so opening a different class automatically shows the loading page again.
     const [loaded, setLoaded] = useState(null);
     const classData = loaded?.classId === classId ? loaded.data : null;
@@ -38,6 +40,12 @@ const ClassLayout = () => {
         return () => { cancelled = true; };
     }, [classId, navigate]);
 
+    //Show the class name and lecturer at the top of the sidebar while this class is open.
+    useEffect(() => {
+        setCurrentClass(classData);
+        return () => setCurrentClass(null);
+    }, [classData, setCurrentClass]);
+
     if (!classData) {
         return (
             <div className='fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center'>
@@ -49,13 +57,6 @@ const ClassLayout = () => {
 
     return (
         <div className='max-w-7xl mx-auto'>
-            <div className='mb-6'>
-                <h1 className='text-2xl font-bold text-slate-900'>{classData.class_name}</h1>
-                <p className='text-sm text-slate-500'>
-                    Class Code: {classData.class_code} · Lecturer: {classData.owner_name}
-                </p>
-            </div>
-
             {/* Pages under this layout read the class through useOutletContext() */}
             <Outlet context={{ classData, setClassData }} />
         </div>
