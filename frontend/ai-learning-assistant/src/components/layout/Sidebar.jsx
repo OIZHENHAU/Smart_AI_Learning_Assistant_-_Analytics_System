@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, X } from 'lucide-react';
+import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck } from 'lucide-react';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const { logout, user } = useAuth();
@@ -31,14 +31,29 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: '/fill-in-the-blank', icon: FileQuestion, text: 'Fill-In Questions'},
         {to: '/progress', icon: Activity, text: 'Performance'},
         {to: '/scheduling', icon: CalendarClockIcon, text: "Timetable"},
-        {to: '/admin/users', icon: Users, text: 'User Management'},
+        {to: '/classes', icon: GraduationCap, text: 'Class', roles: ['student', 'lecturer', 'parents', 'admin']},
+        {to: '/admin/users', icon: Users, text: 'User Management', roles: ['admin']},
         {to: '/profile', icon: UserCircle2, text: "Profile"}
     ]
 
-    //Admins get the full student nav plus their own User Management page (everyone else never sees that link).
-    const navLinks = user?.role === 'admin'
-        ? baseNavLinks
-        : baseNavLinks.filter(link => link.to !== '/admin/users')
+    //Inside /classes/:classId/... the sidebar shows the class sections instead of the normal menu.
+    const classMatch = useMatch('/classes/:classId/*');
+    const classBase = classMatch ? `/classes/${classMatch.params.classId}` : '';
+
+    const classNavLinks = [
+        {to: '/classes', icon: ArrowLeft, text: 'Back to Classes', back: true},
+        {to: `${classBase}/announcement`, icon: Megaphone, text: 'Announcement'},
+        {to: `${classBase}/leaderboard`, icon: Trophy, text: 'Leaderboard'},
+        {to: `${classBase}/problem-sets`, icon: ListChecks, text: 'Problem Sets'},
+        {to: `${classBase}/video`, icon: Video, text: 'Video'},
+        {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},
+        {to: `${classBase}/permission`, icon: ShieldCheck, text: 'Permission', roles: ['lecturer', 'parents', 'admin']},
+        {to: `${classBase}/submission`, icon: ClipboardCheck, text: 'Submission'}
+    ]
+
+    //Links with a `roles` list are only shown to those roles; links without one are shown to everyone.
+    const navLinks = (classMatch ? classNavLinks : baseNavLinks)
+        .filter(link => !link.roles || link.roles.includes(user?.role))
 
     return <>
         <div className={`fixed inset-0 bg-black/30 z-40 md:hidden transition-opacity duration-300
@@ -66,7 +81,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                 <nav className='flex-1 px-3 py-6 space-y-1.5'>
                     {
                         navLinks.map((link) => {
-                            const active = isActive(link.to);
+                            const active = !link.back && isActive(link.to);
                             return (
                                 <Link
                                     key={link.to}

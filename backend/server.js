@@ -15,6 +15,7 @@ import progressRoutes from './routes/ProgressRoute.js';
 import dashboardRoutes from './routes/DashboardRoute.js';
 import achievementRoutes from './routes/AchievementRoute.js';
 import calendarEventRoutes from './routes/CalendarEventRoute.js';
+import classRoutes from './routes/ClassRoute.js';
 import Achievement from './models/Achievement.js';
 //Import mysql
 import mysql from 'mysql2';
@@ -54,6 +55,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/calendar-events', calendarEventRoutes);
+app.use('/api/classes', classRoutes);
 
 //Handling error
 app.use(errorHandling);

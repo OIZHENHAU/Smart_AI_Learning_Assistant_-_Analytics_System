@@ -89,6 +89,16 @@ export const API_PATHS = {
         SET_REMINDER: (id) => `/api/calendar-events/${id}/remind`,
         CANCEL_REMINDER: (id) => `/api/calendar-events/${id}/remind`
     },
+    CLASS: {
+        GET_ALL_CLASSES: "/api/classes",
+        CREATE_CLASS: "/api/classes",
+        GET_CLASS_BY_ID: (id) => `/api/classes/${id}`,
+        GET_CLASS_WORKSPACE: (id) => `/api/classes/${id}/workspace`,
+        FIND_CLASS_BY_CODE: (code) => `/api/classes/code/${encodeURIComponent(code)}`,
+        UPDATE_CLASS: (id) => `/api/classes/${id}`,
+        DELETE_CLASS: (id) => `/api/classes/${id}`,
+        JOIN_CLASS: (id) => `/api/classes/${id}/join`
+    },
     FLASHCARD: {
         GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",
         GET_FLASHCARD_BY_DOCUMENT: (documentId) => `/api/flashcards/${documentId}`,

@@ -220,6 +220,19 @@ const User = {
                 `DELETE FROM documents WHERE user_id = ?`, [userId]
             );
 
+            //Class-related data
+            await connection.execute(
+                `DELETE cm FROM class_members cm
+                 JOIN classes c ON cm.class_id = c.id
+                 WHERE c.owner_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM classes WHERE owner_id = ?`, [userId]
+            );
+            await connection.execute(
+                `DELETE FROM class_members WHERE user_id = ?`, [userId]
+            );
+
             //Study session and gamification data
             await connection.execute(
                 `DELETE FROM study_sessions WHERE user_id = ?`, [userId]

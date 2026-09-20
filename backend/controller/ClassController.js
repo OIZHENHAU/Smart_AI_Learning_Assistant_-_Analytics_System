@@ -1,0 +1,248 @@
+import Classroom from '../models/Classroom.js';
+
+const MAX_STUDENTS_LIMIT = 500;
+
+const canManageClass = (user, classroom) => user.role === 'admin' || classroom.owner_id === user.id;
+
+const parseMaxStudents = (value) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 && parsed <= MAX_STUDENTS_LIMIT ? parsed : null;
+};
+
+//Create a class: POST /api/classes
+export const createClass = async (req, res, next) => {
+    try {
+        const className = (req.body.className || '').trim();
+        const maxStudents = parseMaxStudents(req.body.maxStudents);
+
+        if (!className || className.length > 150) {
+            return res.status(400).json({
+                success: false,
+                error: "Class name is required and must be at most 150 characters.",
+                statusCode: 400
+            });
+        }
+        if (!maxStudents) {
+            return res.status(400).json({
+                success: false,
+                error: `Number of students must be a whole number between 1 and ${MAX_STUDENTS_LIMIT}.`,
+                statusCode: 400
+            });
+        }
+
+        const created = await Classroom.create({ ownerId: req.user.id, className, maxStudents });
+
+        res.status(201).json({
+            success: true,
+            message: "Class created successfully.",
+            data: created,
+            statusCode: 201
+        });
+
+    } catch (error) {
+        console.error("Fail to create the class at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Get all classes (with search filters): GET /api/classes
+export const getAllClasses = async (req, res, next) => {
+    try {
+        const { className, classCode, startDate, endDate } = req.query;
+        const data = await Classroom.getAll({
+            userId: req.user.id,
+            role: req.user.role,
+            className, classCode, startDate, endDate
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Classes retrieved successfully.",
+            data,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get all the classes at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Get one class: GET /api/classes/:id
+export const getClassById = async (req, res, next) => {
+    try {
+        const classroom = await Classroom.getById(req.params.id, req.user.id);
+
+        if (!classroom) {
+            return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
+        }
+        if (!canManageClass(req.user, classroom)) {
+            return res.status(403).json({ success: false, error: "You cannot view this class.", statusCode: 403 });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Class retrieved successfully.",
+            data: classroom,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the class at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Look a class up by its code (used by the "Join Class" pop-up): GET /api/classes/code/:code
+export const findClassByCode = async (req, res, next) => {
+    try {
+        const classCode = (req.params.code || '').trim().toLowerCase();
+        const classroom = classCode ? await Classroom.getByCode(classCode, req.user.id) : null;
+
+        if (!classroom) {
+            return res.status(404).json({ success: false, error: "No such class exists.", statusCode: 404 });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Class found.",
+            data: classroom,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to find the class by code at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Open a class workspace (owner, admin or approved member only): GET /api/classes/:id/workspace
+export const getClassWorkspace = async (req, res, next) => {
+    try {
+        const classroom = await Classroom.getById(req.params.id, req.user.id);
+
+        if (!classroom) {
+            return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
+        }
+
+        const canManage = canManageClass(req.user, classroom);
+        const isApprovedMember = classroom.my_status === 'approved';
+
+        if (!canManage && !isApprovedMember) {
+            const error = classroom.my_status === 'pending'
+                ? "Your request to join this class is still waiting for approval."
+                : "You do not have access to this class.";
+            return res.status(403).json({ success: false, error, statusCode: 403 });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Class workspace retrieved successfully.",
+            data: { ...classroom, class_role: canManage ? 'owner' : 'member' },
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to open the class workspace at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Update class name / number of students: PUT /api/classes/:id
+export const updateClass = async (req, res, next) => {
+    try {
+        const classroom = await Classroom.getById(req.params.id, req.user.id);
+
+        if (!classroom) {
+            return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
+        }
+        if (!canManageClass(req.user, classroom)) {
+            return res.status(403).json({ success: false, error: "You cannot edit this class.", statusCode: 403 });
+        }
+
+        const className = (req.body.className || '').trim();
+        const maxStudents = parseMaxStudents(req.body.maxStudents);
+
+        if (!className || className.length > 150) {
+            return res.status(400).json({
+                success: false,
+                error: "Class name is required and must be at most 150 characters.",
+                statusCode: 400
+            });
+        }
+        if (!maxStudents) {
+            return res.status(400).json({
+                success: false,
+                error: `Number of students must be a whole number between 1 and ${MAX_STUDENTS_LIMIT}.`,
+                statusCode: 400
+            });
+        }
+        if (maxStudents < classroom.member_count) {
+            return res.status(400).json({
+                success: false,
+                error: `${classroom.member_count} people have already joined, so the limit cannot be lower than that.`,
+                statusCode: 400
+            });
+        }
+
+        await Classroom.update(classroom.id, { className, maxStudents });
+
+        res.status(200).json({
+            success: true,
+            message: "Class updated successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to update the class at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Delete a class: DELETE /api/classes/:id
+export const deleteClass = async (req, res, next) => {
+    try {
+        const classroom = await Classroom.getById(req.params.id, req.user.id);
+
+        if (!classroom) {
+            return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
+        }
+        if (!canManageClass(req.user, classroom)) {
+            return res.status(403).json({ success: false, error: "You cannot delete this class.", statusCode: 403 });
+        }
+
+        await Classroom.delete(classroom.id);
+
+        res.status(200).json({
+            success: true,
+            message: "Class deleted successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to delete the class at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Join a class: POST /api/classes/:id/join
+export const joinClass = async (req, res, next) => {
+    try {
+        const outcome = await Classroom.join(req.params.id, req.user.id, req.user.role);
+
+        const responses = {
+            joined: { status: 200, message: "You have joined the class." },
+            requested: { status: 200, message: "Join request sent. Waiting for approval." },
+            not_found: { status: 404, error: "Class not found." },
+            already_joined: { status: 409, error: "You have already joined this class." },
+            full: { status: 400, error: "This class is already full." }
+        };
+        const { status, message, error } = responses[outcome];
+
+        res.status(status).json({ success: status === 200, message, error, statusCode: status });
+
+    } catch (error) {
+        console.error("Fail to join the class at the controller due to: " + error);
+        next(error);
+    }
+};
