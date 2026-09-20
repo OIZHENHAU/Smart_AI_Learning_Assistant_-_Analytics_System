@@ -30,7 +30,7 @@ export const createClass = async (req, res, next) => {
             });
         }
 
-        const created = await Classroom.create({ ownerId: req.user.id, className, maxStudents });
+        const created = await Classroom.createClassroom({ ownerId: req.user.id, className, maxStudents });
 
         res.status(201).json({
             success: true,
@@ -45,11 +45,11 @@ export const createClass = async (req, res, next) => {
     }
 };
 
-//Get all classes (with search filters): GET /api/classes
+//Get all classes based on search filters: GET /api/classes
 export const getAllClasses = async (req, res, next) => {
     try {
         const { className, classCode, startDate, endDate } = req.query;
-        const data = await Classroom.getAll({
+        const data = await Classroom.getAllClasses({
             userId: req.user.id,
             role: req.user.role,
             className, classCode, startDate, endDate
@@ -71,7 +71,7 @@ export const getAllClasses = async (req, res, next) => {
 //Get one class: GET /api/classes/:id
 export const getClassById = async (req, res, next) => {
     try {
-        const classroom = await Classroom.getById(req.params.id, req.user.id);
+        const classroom = await Classroom.getClassById(req.params.id, req.user.id);
 
         if (!classroom) {
             return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
@@ -93,11 +93,11 @@ export const getClassById = async (req, res, next) => {
     }
 };
 
-//Look a class up by its code (used by the "Join Class" pop-up): GET /api/classes/code/:code
+//Look a class up by its code: GET /api/classes/code/:code
 export const findClassByCode = async (req, res, next) => {
     try {
         const classCode = (req.params.code || '').trim().toLowerCase();
-        const classroom = classCode ? await Classroom.getByCode(classCode, req.user.id) : null;
+        const classroom = classCode ? await Classroom.getClassByCode(classCode, req.user.id) : null;
 
         if (!classroom) {
             return res.status(404).json({ success: false, error: "No such class exists.", statusCode: 404 });
@@ -119,7 +119,7 @@ export const findClassByCode = async (req, res, next) => {
 //Open a class workspace (owner, admin or approved member only): GET /api/classes/:id/workspace
 export const getClassWorkspace = async (req, res, next) => {
     try {
-        const classroom = await Classroom.getById(req.params.id, req.user.id);
+        const classroom = await Classroom.getClassById(req.params.id, req.user.id);
 
         if (!classroom) {
             return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
@@ -151,7 +151,7 @@ export const getClassWorkspace = async (req, res, next) => {
 //Update class name / number of students: PUT /api/classes/:id
 export const updateClass = async (req, res, next) => {
     try {
-        const classroom = await Classroom.getById(req.params.id, req.user.id);
+        const classroom = await Classroom.getClassById(req.params.id, req.user.id);
 
         if (!classroom) {
             return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
@@ -185,7 +185,7 @@ export const updateClass = async (req, res, next) => {
             });
         }
 
-        await Classroom.update(classroom.id, { className, maxStudents });
+        await Classroom.updateClass(classroom.id, { className, maxStudents });
 
         res.status(200).json({
             success: true,
@@ -202,16 +202,24 @@ export const updateClass = async (req, res, next) => {
 //Delete a class: DELETE /api/classes/:id
 export const deleteClass = async (req, res, next) => {
     try {
-        const classroom = await Classroom.getById(req.params.id, req.user.id);
+        const classroom = await Classroom.getClassById(req.params.id, req.user.id);
 
         if (!classroom) {
-            return res.status(404).json({ success: false, error: "Class not found.", statusCode: 404 });
+            return res.status(404).json({ 
+                success: false, 
+                error: "Class not found.", 
+                statusCode: 404 
+            });
         }
         if (!canManageClass(req.user, classroom)) {
-            return res.status(403).json({ success: false, error: "You cannot delete this class.", statusCode: 403 });
+            return res.status(403).json({ 
+                success: false, 
+                error: "You cannot delete this class.", 
+                statusCode: 403 
+            });
         }
 
-        await Classroom.delete(classroom.id);
+        await Classroom.deleteClass(classroom.id);
 
         res.status(200).json({
             success: true,
@@ -228,7 +236,7 @@ export const deleteClass = async (req, res, next) => {
 //Join a class: POST /api/classes/:id/join
 export const joinClass = async (req, res, next) => {
     try {
-        const outcome = await Classroom.join(req.params.id, req.user.id, req.user.role);
+        const outcome = await Classroom.joinClass(req.params.id, req.user.id, req.user.role);
 
         const responses = {
             joined: { status: 200, message: "You have joined the class." },

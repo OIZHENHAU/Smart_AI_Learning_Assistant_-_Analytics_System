@@ -18,7 +18,7 @@ const CLASS_SELECT = `SELECT c.id, c.owner_id, u.username AS owner_name, c.class
                       JOIN users u ON u.id = c.owner_id`;
 
 const Classroom = {
-    async create({ ownerId, className, maxStudents }) {
+    async createClassroom({ ownerId, className, maxStudents }) {
         for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
             const classCode = generateClassCode();
 
@@ -40,7 +40,7 @@ const Classroom = {
         throw new Error('Unable to generate a unique class code. Please try again.');
     },
 
-    async getAll({ userId, role, className, classCode, startDate, endDate }) {
+    async getAllClasses({ userId, role, className, classCode, startDate, endDate }) {
         try {
             let query = CLASS_SELECT;
             const conditions = [];
@@ -84,17 +84,17 @@ const Classroom = {
         }
     },
 
-    async getById(classId, userId) {
+    async getClassById(classId, userId) {
         const [rows] = await db.execute(`${CLASS_SELECT} WHERE c.id = ?`, [userId, classId]);
         return rows[0];
     },
 
-    async getByCode(classCode, userId) {
+    async getClassByCode(classCode, userId) {
         const [rows] = await db.execute(`${CLASS_SELECT} WHERE c.class_code = ?`, [userId, classCode]);
         return rows[0];
     },
 
-    async update(classId, { className, maxStudents }) {
+    async updateClass(classId, { className, maxStudents }) {
         const [result] = await db.execute(
             `UPDATE classes SET class_name = ?, max_students = ? WHERE id = ?`,
             [className, maxStudents, classId]
@@ -102,12 +102,12 @@ const Classroom = {
         return result;
     },
 
-    async delete(classId) {
+    async deleteClass(classId) {
         const [result] = await db.execute(`DELETE FROM classes WHERE id = ?`, [classId]);
         return result;
     },
 
-    async join(classId, userId, role) {
+    async joinClass(classId, userId, role) {
         const connection = await db.getConnection();
 
         try {
