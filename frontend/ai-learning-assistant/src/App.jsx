@@ -29,7 +29,8 @@ import ClassLayout from './pages/Classes/ClassLayout';
 import ClassSectionPage from './pages/Classes/ClassSectionPage';
 import ClassPermissionPage from './pages/Classes/ClassPermissionPage';
 import ClassSettingsPage from './pages/Classes/ClassSettingsPage';
-import { Megaphone, Trophy, ListChecks, Video, ClipboardCheck } from 'lucide-react';
+import ClassAnnouncementPage from './pages/Classes/ClassAnnouncementPage';
+import { Trophy, ListChecks, Video, ClipboardCheck } from 'lucide-react';
 
 
 const App = () => {
@@ -74,7 +75,7 @@ const App = () => {
                     <Route path='/classes' element={<ClassListPage/>}/>
                     <Route path='/classes/:classId' element={<ClassLayout/>}>
                         <Route index element={<Navigate to='announcement' replace/>}/>
-                        <Route path='announcement' element={<ClassSectionPage title='Announcement' description='Post and read class announcements.' icon={Megaphone}/>}/>
+                        <Route path='announcement' element={<ClassAnnouncementPage/>}/>
                         <Route path='leaderboard' element={<ClassSectionPage title='Leaderboard' description='See how everyone in the class ranks.' icon={Trophy}/>}/>
                         <Route path='problem-sets' element={<ClassSectionPage title='Problem Sets' description='Practice problems for this class.' icon={ListChecks}/>}/>
                         <Route path='video' element={<ClassSectionPage title='Video' description='Lecture videos for this class.' icon={Video}/>}/>

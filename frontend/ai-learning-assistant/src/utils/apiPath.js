@@ -97,7 +97,10 @@ export const API_PATHS = {
         FIND_CLASS_BY_CODE: (code) => `/api/classes/code/${encodeURIComponent(code)}`,
         UPDATE_CLASS: (id) => `/api/classes/${id}`,
         DELETE_CLASS: (id) => `/api/classes/${id}`,
-        JOIN_CLASS: (id) => `/api/classes/${id}/join`
+        JOIN_CLASS: (id) => `/api/classes/${id}/join`,
+        ANNOUNCEMENTS: (classId) => `/api/classes/${classId}/announcements`,
+        ANNOUNCEMENT_BY_ID: (classId, id) => `/api/classes/${classId}/announcements/${id}`,
+        ANNOUNCEMENT_IMAGE: (classId) => `/api/classes/${classId}/announcements/images`
     },
     FLASHCARD: {
         GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",

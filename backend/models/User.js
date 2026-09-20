@@ -222,6 +222,9 @@ const User = {
 
             //Class-related data
             await connection.execute(
+                `DELETE FROM class_announcements WHERE author_id = ?`, [userId]
+            );
+            await connection.execute(
                 `DELETE cm FROM class_members cm
                  JOIN classes c ON cm.class_id = c.id
                  WHERE c.owner_id = ?`, [userId]
