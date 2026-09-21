@@ -29,7 +29,8 @@ const ToolbarButton = ({ onClick, active, label, children }) => (
     </button>
 );
 
-const RichTextEditor = ({ classId, value, onChange }) => {
+//allowImages = false hides the image button (comments can't have images, and students can't upload them).
+const RichTextEditor = ({ classId, value, onChange, allowImages = true }) => {
     const fileInputRef = useRef(null);
 
     const editor = useEditor({
@@ -88,10 +89,14 @@ const RichTextEditor = ({ classId, value, onChange }) => {
                 <ToolbarButton label='Numbered list' active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}>
                     <ListOrdered className='w-4 h-4' />
                 </ToolbarButton>
-                <ToolbarButton label='Attach image' onClick={() => fileInputRef.current?.click()}>
-                    <ImagePlus className='w-4 h-4' />
-                </ToolbarButton>
-                <input ref={fileInputRef} type='file' accept='image/*' className='hidden' onChange={handleImage} />
+                {allowImages && (
+                    <>
+                        <ToolbarButton label='Attach image' onClick={() => fileInputRef.current?.click()}>
+                            <ImagePlus className='w-4 h-4' />
+                        </ToolbarButton>
+                        <input ref={fileInputRef} type='file' accept='image/*' className='hidden' onChange={handleImage} />
+                    </>
+                )}
             </div>
 
             <EditorContent editor={editor} />

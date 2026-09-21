@@ -132,7 +132,7 @@ const DocumentListPage = () => {
                         <FileText className="w-8 h-8 text-purple-400" />
                     </div>
                     <h3 className="text-lg font-medium text-slate-700 mb-1">No documents yet</h3>
-                    <p className="text-slate-400 text-sm mb-6">Please upload your first document ^.^</p>
+                    <p className="text-slate-400 text-sm mb-6">Please upload your first document.</p>
                     <button
                         onClick={() => setIsUploadModalOpen(true)}
                         className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"

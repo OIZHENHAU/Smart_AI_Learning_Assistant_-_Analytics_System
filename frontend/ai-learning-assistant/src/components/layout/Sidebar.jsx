@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentClass } from '../../context/ClassContext';
-import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck, Home, BookOpen } from 'lucide-react';
+import ProfilePage from '../../pages/Profile/ProfilePage';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const { logout, user } = useAuth();
@@ -44,13 +45,17 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
 
     const classNavLinks = [
         {to: '/classes', icon: ArrowLeft, text: 'Back to Classes', back: true},
+        {to: `${classBase}/home`, icon: Home, text: 'Home'},
         {to: `${classBase}/announcement`, icon: Megaphone, text: 'Announcement'},
-        {to: `${classBase}/leaderboard`, icon: Trophy, text: 'Leaderboard'},
+        {to: `${classBase}/documents`, icon: Notebook, text: 'Documents'},
         {to: `${classBase}/problem-sets`, icon: ListChecks, text: 'Problem Sets'},
+        {to: `${classBase}/leaderboard`, icon: Trophy, text: 'Leaderboard'},
         {to: `${classBase}/video`, icon: Video, text: 'Video'},
-        {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},
+        {to: `${classBase}/submission`, icon: ClipboardCheck, text: 'Submission'},
+        {to: `${classBase}/lesson-plan`, icon: BookOpen, text: 'Lesson Plan'},
+        {to: `${classBase}/users`, icon: Users, text: 'Users'},
         {to: `${classBase}/permission`, icon: ShieldCheck, text: 'Permission', roles: ['lecturer', 'parents', 'admin']},
-        {to: `${classBase}/submission`, icon: ClipboardCheck, text: 'Submission'}
+        {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},
     ]
 
     //Links with a `roles` list are only shown to those roles; links without one are shown to everyone.

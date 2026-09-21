@@ -24,6 +24,19 @@ import {
     requireAnnouncementManager
 } from '../controller/AnnouncementController.js';
 
+import uploadClassDocument from '../config/classDocumentUpload.js';
+import { requireClassManager } from '../utils/ClassAccess.js';
+import {
+    getClassDocuments,
+    createClassDocument,
+    getClassDocument,
+    deleteClassDocument,
+    getComments,
+    createComment,
+    updateComment,
+    deleteComment
+} from '../controller/ClassDocumentController.js';
+
 const router = express.Router();
 
 const staffOnly = requireRole('lecturer', 'parents', 'admin');
@@ -43,6 +56,17 @@ router.post('/:id/announcements', staffOnly, createAnnouncement);
 router.post('/:id/announcements/images', staffOnly, requireAnnouncementManager, uploadAnnouncementImage.single('image'), saveAnnouncementImage);
 router.put('/:id/announcements/:announcementId', staffOnly, updateAnnouncement);
 router.delete('/:id/announcements/:announcementId', staffOnly, deleteAnnouncement);
+
+//Anyone in the class can read the documents and comment, only lecturer, parents and admin can upload and delete documents.
+router.get('/:id/documents', everyone, getClassDocuments);
+router.post('/:id/documents', staffOnly, requireClassManager, uploadClassDocument.single('file'), createClassDocument);
+router.get('/:id/documents/:documentId', everyone, getClassDocument);
+router.delete('/:id/documents/:documentId', staffOnly, deleteClassDocument);
+
+router.get('/:id/documents/:documentId/comments', everyone, getComments);
+router.post('/:id/documents/:documentId/comments', everyone, createComment);
+router.put('/:id/documents/:documentId/comments/:commentId', everyone, updateComment);
+router.delete('/:id/documents/:documentId/comments/:commentId', everyone, deleteComment);
 
 //Creating and managing classes is for lecturer, parents and admin only.
 router.post('/', staffOnly, createClass);

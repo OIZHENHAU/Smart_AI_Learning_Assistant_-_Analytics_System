@@ -1,5 +1,7 @@
 import Classroom from '../models/Classroom.js';
 import Announcement from '../models/Announcement.js';
+import ClassDocument from '../models/ClassDocument.js';
+import { removeClassDocumentFiles } from '../config/classDocumentUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/AnnouncementImages.js';
 
 const MAX_STUDENTS_LIMIT = 500;
@@ -235,10 +237,12 @@ export const deleteClass = async (req, res, next) => {
             });
         }
 
-        //Read the announcements before the class delete cascades them away, then remove their images from disk.
+        //Read the announcements and documents before the class delete cascades them away, then remove their files from disk.
         const announcements = await Announcement.getContentByClass(classroom.id);
+        const documentFiles = await ClassDocument.getFileNamesByClass(classroom.id);
         await Classroom.deleteClass(classroom.id);
         await deleteUnusedImages([...new Set(announcements.flatMap((a) => extractImageFilenames(a.content)))]);
+        await removeClassDocumentFiles(documentFiles);
 
         res.status(200).json({
             success: true,

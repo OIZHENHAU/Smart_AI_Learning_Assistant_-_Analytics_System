@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Settings } from 'lucide-react';
+import { Settings, UserCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import moment from 'moment';
 import classService from '../../services/ClassService';
 
-const ClassSettingsPage = () => {
+const ClassProfilePage = () => {
     const { classData, setClassData } = useOutletContext();
     //Only the owner (or an admin) can edit, students just see the class information.
     const isOwner = classData.class_role === 'owner';
@@ -45,7 +45,7 @@ const ClassSettingsPage = () => {
                 </div>
                 <div>
                     <h2 className='text-2xl font-bold text-slate-900'>Settings</h2>
-                    <p className='text-sm text-slate-500'>Class information</p>
+                    <p className='text-sm text-slate-500'>Edit or update class information</p>
                 </div>
             </div>
 
@@ -95,4 +95,4 @@ const ClassSettingsPage = () => {
     );
 };
 
-export default ClassSettingsPage;
+export default ClassProfilePage;

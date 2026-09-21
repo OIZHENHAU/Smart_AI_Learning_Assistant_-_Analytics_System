@@ -104,7 +104,11 @@ export const API_PATHS = {
         REMOVE_MEMBER: (classId, userId) => `/api/classes/${classId}/members/${userId}`,
         ANNOUNCEMENTS: (classId) => `/api/classes/${classId}/announcements`,
         ANNOUNCEMENT_BY_ID: (classId, id) => `/api/classes/${classId}/announcements/${id}`,
-        ANNOUNCEMENT_IMAGE: (classId) => `/api/classes/${classId}/announcements/images`
+        ANNOUNCEMENT_IMAGE: (classId) => `/api/classes/${classId}/announcements/images`,
+        DOCUMENTS: (classId) => `/api/classes/${classId}/documents`,
+        DOCUMENT_BY_ID: (classId, id) => `/api/classes/${classId}/documents/${id}`,
+        DOCUMENT_COMMENTS: (classId, id) => `/api/classes/${classId}/documents/${id}/comments`,
+        DOCUMENT_COMMENT_BY_ID: (classId, id, commentId) => `/api/classes/${classId}/documents/${id}/comments/${commentId}`
     },
     FLASHCARD: {
         GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",

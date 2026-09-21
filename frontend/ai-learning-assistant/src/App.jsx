@@ -30,7 +30,9 @@ import ClassSectionPage from './pages/Classes/ClassSectionPage';
 import ClassPermissionPage from './pages/Classes/ClassPermissionPage';
 import ClassSettingsPage from './pages/Classes/ClassSettingsPage';
 import ClassAnnouncementPage from './pages/Classes/ClassAnnouncementPage';
-import { Trophy, ListChecks, Video, ClipboardCheck } from 'lucide-react';
+import ClassDocumentsPage from './pages/Classes/ClassDocumentsPage';
+import ClassDocumentDetailPage from './pages/Classes/ClassDocumentDetailPage';
+import { Trophy, ListChecks, Video, ClipboardCheck, BookOpen, Users, Home } from 'lucide-react';
 
 
 const App = () => {
@@ -75,7 +77,12 @@ const App = () => {
                     <Route path='/classes' element={<ClassListPage/>}/>
                     <Route path='/classes/:classId' element={<ClassLayout/>}>
                         <Route index element={<Navigate to='announcement' replace/>}/>
+                        <Route path='home' element={<ClassSectionPage title='Home' description='An overview of this class.' icon={Home}/>}/>
                         <Route path='announcement' element={<ClassAnnouncementPage/>}/>
+                        <Route path='lesson-plan' element={<ClassSectionPage title='Lesson Plan' description='The lesson plan for this class.' icon={BookOpen}/>}/>
+                        <Route path='documents' element={<ClassDocumentsPage/>}/>
+                        <Route path='documents/:documentId' element={<ClassDocumentDetailPage/>}/>
+                        <Route path='users' element={<ClassSectionPage title='Users' description='The people who joined this class.' icon={Users}/>}/>
                         <Route path='leaderboard' element={<ClassSectionPage title='Leaderboard' description='See how everyone in the class ranks.' icon={Trophy}/>}/>
                         <Route path='problem-sets' element={<ClassSectionPage title='Problem Sets' description='Practice problems for this class.' icon={ListChecks}/>}/>
                         <Route path='video' element={<ClassSectionPage title='Video' description='Lecture videos for this class.' icon={Video}/>}/>
