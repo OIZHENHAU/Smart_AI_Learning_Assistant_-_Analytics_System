@@ -6,19 +6,18 @@ import announcementService from '../../services/AnnouncementService';
 import { useAuth } from '../../context/AuthContext';
 import Spinner from '../../components/common/Spinner';
 import Pagination from '../../components/common/Pagination';
-import AnnouncementCard from '../../components/classes/AnnouncementCard';
-import AnnouncementModal from '../../components/classes/AnnouncementModal';
+import AnnouncementCard from '../../components/classes/Announcement/AnnouncementCard';
+import AnnouncementModal from '../../components/classes/Announcement/AnnouncementModal';
 
 const ClassAnnouncementPage = () => {
     const { classData } = useOutletContext();
     const { user } = useAuth();
     const classId = classData.id;
-    //Lecturer, parents and admin can create, edit and delete. Students can only read.
     const canManage = user?.role !== 'student';
 
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modal, setModal] = useState(null);           // null = closed, { announcement } = create (null) or edit
+    const [modal, setModal] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
@@ -36,7 +35,6 @@ const ClassAnnouncementPage = () => {
             const data = await announcementService.getAnnouncements(classId, { search, startDate, endDate, page });
             const pages = data?.pagination?.totalPages || 1;
 
-            //e.g. the last announcement of the last page was deleted, so go back one page.
             if (page > pages) {
                 setPage(pages);
                 return;
@@ -54,19 +52,16 @@ const ClassAnnouncementPage = () => {
         }
     };
 
-    //Runs on mount, then (debounced) whenever a search filter or the page changes.
     useEffect(() => {
         const timeout = setTimeout(fetchAnnouncements, 400);
         return () => clearTimeout(timeout);
     }, [classId, search, startDate, endDate, page]);
 
-    //Every search field goes back to page 1, because the results change.
     const onFilterChange = (setter) => (e) => {
         setter(e.target.value);
         setPage(1);
     };
 
-    //Reload the page so the list refills, instead of only removing the one card.
     const handleConfirmDelete = async () => {
         setDeleting(true);
         try {
@@ -84,7 +79,6 @@ const ClassAnnouncementPage = () => {
         }
     };
 
-    //A new announcement shows up first, so go back to page 1. An edited one stays on its page.
     const handleSaved = () => {
         if (!modal.announcement && page !== 1) setPage(1);
         else fetchAnnouncements();

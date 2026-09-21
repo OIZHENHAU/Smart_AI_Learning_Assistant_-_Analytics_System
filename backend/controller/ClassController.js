@@ -6,6 +6,18 @@ const MAX_STUDENTS_LIMIT = 500;
 
 const canManageClass = (user, classroom) => user.role === 'admin' || classroom.owner_id === user.id;
 
+const sendError = (res, status, error) => res.status(status).json({ success: false, error, statusCode: status });
+
+//Loads the class and checks the caller owns it (or is admin). Returns { classroom } or { status, error }.
+const getManagedClass = async (req) => {
+    const classroom = await Classroom.getClassById(req.params.id, req.user.id);
+
+    if (!classroom) return { status: 404, error: "Class not found." };
+    if (!canManageClass(req.user, classroom)) return { status: 403, error: "You cannot manage this class." };
+
+    return { classroom };
+};
+
 const parseMaxStudents = (value) => {
     const parsed = Number(value);
     return Number.isInteger(parsed) && parsed > 0 && parsed <= MAX_STUDENTS_LIMIT ? parsed : null;
@@ -133,7 +145,9 @@ export const getClassWorkspace = async (req, res, next) => {
         if (!canManage && !isApprovedMember) {
             const error = classroom.my_status === 'pending'
                 ? "Your request to join this class is still waiting for approval."
-                : "You do not have access to this class.";
+                : classroom.my_status === 'deactivated'
+                    ? "Your access to this class has been deactivated."
+                    : "You do not have access to this class.";
             return res.status(403).json({ success: false, error, statusCode: 403 });
         }
 
@@ -256,6 +270,99 @@ export const joinClass = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to join the class at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//List who requested to join the class: GET /api/classes/:id/members
+export const getClassMembers = async (req, res, next) => {
+    try {
+        const { classroom, status, error } = await getManagedClass(req);
+        if (error) return sendError(res, status, error);
+
+        const { username, email, role, startDate, endDate } = req.query;
+        const data = await Classroom.getMembers(classroom.id, { username, email, role, startDate, endDate });
+
+        res.status(200).json({
+            success: true,
+            message: "Class members retrieved successfully.",
+            data,
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to get the class members at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Approve a join request or re-activate a member: PUT /api/classes/:id/members/:userId/approve
+export const approveClassMember = async (req, res, next) => {
+    try {
+        const { classroom, status, error } = await getManagedClass(req);
+        if (error) return sendError(res, status, error);
+
+        const outcome = await Classroom.approveMember(classroom.id, req.params.userId);
+
+        const responses = {
+            approved: { status: 200, message: "Member approved successfully." },
+            not_found: { status: 404, error: "This user is not in the class." },
+            already_approved: { status: 409, error: "This member is already active." },
+            full: { status: 400, error: "This class is already full." }
+        };
+        const result = responses[outcome];
+
+        res.status(result.status).json({
+            success: result.status === 200,
+            message: result.message,
+            error: result.error,
+            statusCode: result.status
+        });
+
+    } catch (error) {
+        console.error("Fail to approve the class member at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Deactivate a member: PUT /api/classes/:id/members/:userId/deactivate
+export const deactivateClassMember = async (req, res, next) => {
+    try {
+        const { classroom, status, error } = await getManagedClass(req);
+        if (error) return sendError(res, status, error);
+
+        const updated = await Classroom.deactivateMember(classroom.id, req.params.userId);
+        if (!updated) return sendError(res, 404, "No active member found.");
+
+        res.status(200).json({
+            success: true,
+            message: "Member deactivated successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to deactivate the class member at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Remove a member or reject a request: DELETE /api/classes/:id/members/:userId
+export const removeClassMember = async (req, res, next) => {
+    try {
+        const { classroom, status, error } = await getManagedClass(req);
+        if (error) return sendError(res, status, error);
+
+        const removed = await Classroom.removeMember(classroom.id, req.params.userId);
+        if (!removed) return sendError(res, 404, "This user is not in the class.");
+
+        res.status(200).json({
+            success: true,
+            message: "Member removed successfully.",
+            statusCode: 200
+        });
+
+    } catch (error) {
+        console.error("Fail to remove the class member at the controller due to: " + error);
         next(error);
     }
 };

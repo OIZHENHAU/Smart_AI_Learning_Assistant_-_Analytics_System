@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import RichTextEditor from './RichTextEditor';
-import announcementService from '../../services/AnnouncementService';
+import RichTextEditor from '../RichTextEditor';
+import announcementService from '../../../services/AnnouncementService';
 
 //announcement = null creates a new one, otherwise the given announcement is edited.
 //Render it only while it is open, so the editor always starts from the saved content.

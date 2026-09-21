@@ -29,7 +29,9 @@ const ClassDetailModal = ({ classData, onClose, onChanged }) => {
         ? 'Pending'
         : classData.my_status === 'approved'
             ? 'Joined'
-            : isFull ? 'Full' : 'Join';
+            : classData.my_status === 'deactivated'
+                ? 'Deactivated'
+                : isFull ? 'Full' : 'Join';
 
     const handleUpdate = async () => {
         if (!className.trim() || !maxStudents) {

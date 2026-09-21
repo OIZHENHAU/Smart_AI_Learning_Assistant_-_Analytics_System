@@ -154,6 +154,111 @@ const Classroom = {
         } finally {
             connection.release();
         }
+    },
+
+    //Everyone who asked to join (or was added to) the class, with the same filters as User Management.
+    async getMembers(classId, { username, email, role, startDate, endDate } = {}) {
+        try {
+            let query = `SELECT u.id, u.username, u.email, u.role, m.status, m.joined_at AS created_at
+                         FROM class_members m
+                         JOIN users u ON u.id = m.user_id
+                         JOIN classes c ON c.id = m.class_id
+                         WHERE m.class_id = ? AND m.user_id <> c.owner_id`;
+            const params = [classId];
+
+            if (username && username.trim()) {
+                query += ` AND u.username LIKE ?`;
+                params.push(`%${username.trim()}%`);
+            }
+            if (email && email.trim()) {
+                query += ` AND u.email LIKE ?`;
+                params.push(`%${email.trim()}%`);
+            }
+            if (role && role.trim()) {
+                query += ` AND u.role = ?`;
+                params.push(role.trim());
+            }
+            if (startDate) {
+                query += ` AND DATE(m.joined_at) >= ?`;
+                params.push(startDate);
+            }
+            if (endDate) {
+                query += ` AND DATE(m.joined_at) <= ?`;
+                params.push(endDate);
+            }
+            query += ` ORDER BY m.joined_at DESC`;
+
+            const [rows] = await db.execute(query, params);
+            return rows;
+
+        } catch (error) {
+            console.error("Fail to get the class members due to: " + error);
+            throw error;
+        }
+    },
+
+    //Approve a pending request or re-activate a deactivated member. Re-checks the class limit inside a transaction.
+    async approveMember(classId, userId) {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            const [classRows] = await connection.execute(
+                `SELECT max_students FROM classes WHERE id = ? FOR UPDATE`, [classId]
+            );
+            const [memberRows] = await connection.execute(
+                `SELECT status FROM class_members WHERE class_id = ? AND user_id = ?`, [classId, userId]
+            );
+            if (!classRows[0] || !memberRows[0]) {
+                await connection.rollback();
+                return 'not_found';
+            }
+            if (memberRows[0].status === 'approved') {
+                await connection.rollback();
+                return 'already_approved';
+            }
+
+            const [[{ total }]] = await connection.execute(
+                `SELECT COUNT(*) AS total FROM class_members WHERE class_id = ? AND status = 'approved'`, [classId]
+            );
+            if (total >= classRows[0].max_students) {
+                await connection.rollback();
+                return 'full';
+            }
+
+            await connection.execute(
+                `UPDATE class_members SET status = 'approved' WHERE class_id = ? AND user_id = ?`, [classId, userId]
+            );
+            await connection.commit();
+            return 'approved';
+
+        } catch (error) {
+            await connection.rollback();
+            console.error("Fail to approve the class member due to: " + error);
+            throw error;
+
+        } finally {
+            connection.release();
+        }
+    },
+
+    //Only an approved member can be deactivated. Returns false when there was nothing to update.
+    async deactivateMember(classId, userId) {
+        const [result] = await db.execute(
+            `UPDATE class_members SET status = 'deactivated'
+             WHERE class_id = ? AND user_id = ? AND status = 'approved'`,
+            [classId, userId]
+        );
+        return result.affectedRows > 0;
+    },
+
+    //Removes the member (or rejects a pending request). Returns false when they were not in the class.
+    async removeMember(classId, userId) {
+        const [result] = await db.execute(
+            `DELETE FROM class_members WHERE class_id = ? AND user_id = ?`, [classId, userId]
+        );
+        return result.affectedRows > 0;
     }
 };
 

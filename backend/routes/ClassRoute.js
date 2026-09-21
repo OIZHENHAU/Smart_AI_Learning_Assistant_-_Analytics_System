@@ -8,7 +8,11 @@ import {
     getClassWorkspace,
     updateClass,
     deleteClass,
-    joinClass
+    joinClass,
+    getClassMembers,
+    approveClassMember,
+    deactivateClassMember,
+    removeClassMember
 } from '../controller/ClassController.js';
 import uploadAnnouncementImage from '../config/announcementImageUpload.js';
 import {
@@ -45,5 +49,11 @@ router.post('/', staffOnly, createClass);
 router.get('/:id', staffOnly, getClassById);
 router.put('/:id', staffOnly, updateClass);
 router.delete('/:id', staffOnly, deleteClass);
+
+//Permission page: the class owner (or an admin) manages who joined, the same way User Management does for accounts.
+router.get('/:id/members', staffOnly, getClassMembers);
+router.put('/:id/members/:userId/approve', staffOnly, approveClassMember);
+router.put('/:id/members/:userId/deactivate', staffOnly, deactivateClassMember);
+router.delete('/:id/members/:userId', staffOnly, removeClassMember);
 
 export default router;
