@@ -262,6 +262,7 @@ export const joinClass = async (req, res, next) => {
             requested: { status: 200, message: "Join request sent. Waiting for approval." },
             not_found: { status: 404, error: "Class not found." },
             already_joined: { status: 409, error: "You have already joined this class." },
+            deactivated: { status: 403, error: "Your access to this class has been deactivated. Please contact the class owner." },
             full: { status: 400, error: "This class is already full." }
         };
         const { status, message, error } = responses[outcome];

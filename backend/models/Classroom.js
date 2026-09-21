@@ -122,11 +122,11 @@ const Classroom = {
             }
 
             const [existing] = await connection.execute(
-                `SELECT 1 FROM class_members WHERE class_id = ? AND user_id = ?`, [classId, userId]
+                `SELECT status FROM class_members WHERE class_id = ? AND user_id = ?`, [classId, userId]
             );
             if (existing.length > 0) {
                 await connection.rollback();
-                return 'already_joined';
+                return existing[0].status === 'deactivated' ? 'deactivated' : 'already_joined';
             }
 
             const [[{ total }]] = await connection.execute(

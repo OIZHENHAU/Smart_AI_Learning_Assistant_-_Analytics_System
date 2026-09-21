@@ -54,10 +54,14 @@ const ClassListPage = () => {
         return () => clearTimeout(timeout);
     }, [nameFilter, codeFilter, startDate, endDate]);
 
-    //Opening a class goes into its workspace, a pending student can't enter yet.
+    //Opening a class goes into its workspace, a pending or deactivated student cannot access this class.
     const handleOpenClass = (classData) => {
         if (classData.my_status === 'pending') {
             toast.error("Your request to join this class is still waiting for approval.");
+            return;
+        }
+        if (classData.my_status === 'deactivated') {
+            toast.error("Your access to this class has been deactivated.");
             return;
         }
         navigate(`/classes/${classData.id}`);

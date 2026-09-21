@@ -4,6 +4,7 @@ import moment from 'moment';
 
 const ClassCard = ({ classData, onOpen, onDelete, canDelete = true }) => {
     const isPending = classData.my_status === 'pending';
+    const isDeactivated = classData.my_status === 'deactivated';
 
     return (
         <div
@@ -34,10 +35,14 @@ const ClassCard = ({ classData, onOpen, onDelete, canDelete = true }) => {
                 <p className='text-xs text-slate-400'>
                     Created on {moment(classData.created_at).format('MMM D, YYYY')}
                 </p>
-                {/* A student whose request hasn't been approved yet sees "pending" instead of the student count */}
+                {/* A student whose request hasn't been approved yet (or was deactivated) sees the status instead of the student count */}
                 {isPending ? (
                     <span className='text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-100'>
                         pending
+                    </span>
+                ) : isDeactivated ? (
+                    <span className='text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100'>
+                        deactivated
                     </span>
                 ) : (
                     <span className='text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-100'>
