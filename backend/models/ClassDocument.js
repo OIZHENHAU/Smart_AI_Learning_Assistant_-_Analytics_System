@@ -20,13 +20,22 @@ const ClassDocument = {
         return result.insertId;
     },
 
-    async getDocuments(classId, search) {
+    //search matches the title or the original file name, the dates filter on when the document was uploaded.
+    async getDocuments(classId, { search, startDate, endDate } = {}) {
         let query = `${SELECT_DOCUMENT} WHERE d.class_id = ?`;
         const params = [classId];
 
         if (search && search.trim()) {
-            query += ` AND d.title LIKE ?`;
-            params.push(`%${search.trim()}%`);
+            query += ` AND (d.title LIKE ? OR d.original_name LIKE ?)`;
+            params.push(`%${search.trim()}%`, `%${search.trim()}%`);
+        }
+        if (startDate) {
+            query += ` AND DATE(d.created_at) >= ?`;
+            params.push(startDate);
+        }
+        if (endDate) {
+            query += ` AND DATE(d.created_at) <= ?`;
+            params.push(endDate);
         }
 
         const [rows] = await db.execute(`${query} ORDER BY d.created_at DESC, d.id DESC`, params);

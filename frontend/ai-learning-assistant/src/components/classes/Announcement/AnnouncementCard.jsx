@@ -7,13 +7,13 @@ const AnnouncementCard = ({ announcement, canManage, onEdit, onDelete }) => {
         <div className='bg-white border border-slate-200 rounded-lg p-5'>
             <div className='flex items-start justify-between gap-4'>
                 <div className='min-w-0'>
-                    <h3 className='flex items-center gap-2 text-2xl font-bold text-slate-900'>
+                    <h3 className='flex items-center gap-2 text-2xl font-bold text-purple-700'>
                         <CalendarDays className='w-5 h-5 shrink-0' />
                         <span className='break-words'>{announcement.title}</span>
                     </h3>
                     <p className='text-sm text-slate-500 mt-1'>
                         {moment(announcement.created_at).format('dddd, MMMM D YYYY, HH:mm')} by{' '}
-                        <span className='text-blue-600'>{announcement.author_name}</span>
+                        <span className='text-purple-600'>{announcement.author_name}</span>
                     </p>
                 </div>
 

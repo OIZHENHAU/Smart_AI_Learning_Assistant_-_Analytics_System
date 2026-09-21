@@ -44,13 +44,14 @@ const readCommentBody = (body, isReply) => {
     return { title, content };
 };
 
-//Get the documents of a class: GET /api/classes/:id/documents?search=
+//Get the documents of a class: GET /api/classes/:id/documents?search=&startDate=&endDate=
 export const getClassDocuments = async (req, res, next) => {
     try {
         const access = await getClassAccess(req.params.id, req.user);
         if (access.error) return sendError(res, access.status, access.error);
 
-        const data = await ClassDocument.getDocuments(access.classroom.id, req.query.search);
+        const { search, startDate, endDate } = req.query;
+        const data = await ClassDocument.getDocuments(access.classroom.id, { search, startDate, endDate });
 
         res.status(200).json({
             success: true,

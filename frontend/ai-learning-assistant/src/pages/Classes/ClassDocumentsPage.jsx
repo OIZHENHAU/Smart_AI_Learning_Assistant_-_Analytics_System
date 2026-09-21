@@ -27,9 +27,15 @@ const ClassDocumentsPage = () => {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
+    //Search filters, all empty by default so every document is shown.
+    const [search, setSearch] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const hasFilters = search || startDate || endDate;
+
     const fetchDocuments = async () => {
         try {
-            const result = await classDocumentService.getDocuments(classData.id);
+            const result = await classDocumentService.getDocuments(classData.id, { search, startDate, endDate });
             setDocuments(Array.isArray(result?.data) ? result.data : []);
 
         } catch (error) {
@@ -41,9 +47,11 @@ const ClassDocumentsPage = () => {
         }
     };
 
+    //Runs on mount, then (debounced) whenever a search filter changes.
     useEffect(() => {
-        fetchDocuments();
-    }, [classData.id]);
+        const timeout = setTimeout(fetchDocuments, 400);
+        return () => clearTimeout(timeout);
+    }, [classData.id, search, startDate, endDate]);
 
     const closeUploadModal = () => {
         setIsUploadModalOpen(false);
@@ -121,11 +129,15 @@ const ClassDocumentsPage = () => {
                     <div className='w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4'>
                         <FileText className='w-8 h-8 text-purple-400' />
                     </div>
-                    <h3 className='text-lg font-medium text-slate-700 mb-1'>No documents yet</h3>
+                    <h3 className='text-lg font-medium text-slate-700 mb-1'>
+                        {hasFilters ? 'No matching document' : 'No documents yet'}
+                    </h3>
                     <p className='text-slate-400 text-sm mb-6'>
-                        {canManage ? 'Please upload the first document for this class.' : 'Your lecturer has not uploaded any document yet.'}
+                        {hasFilters
+                            ? 'Try changing your search.'
+                            : canManage ? 'Please upload the first document for this class.' : 'Your lecturer has not uploaded any document yet.'}
                     </p>
-                    {canManage && (
+                    {canManage && !hasFilters && (
                         <button
                             onClick={() => setIsUploadModalOpen(true)}
                             className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors'
@@ -192,7 +204,7 @@ const ClassDocumentsPage = () => {
                         <p className='text-sm text-slate-500'>Documents shared in this class.</p>
                     </div>
                 </div>
-                {canManage && documents.length > 0 && (
+                {canManage && (documents.length > 0 || hasFilters) && (
                     <button
                         onClick={() => setIsUploadModalOpen(true)}
                         className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors'
@@ -201,6 +213,37 @@ const ClassDocumentsPage = () => {
                         Upload Document
                     </button>
                 )}
+            </div>
+
+            {/* Search bar */}
+            <div className='flex flex-wrap items-end gap-4 w-full mb-8'>
+                <div className='flex-1 min-w-[220px] flex flex-col gap-1.5'>
+                    <label className='text-sm font-medium text-slate-700'>Title or File Name:</label>
+                    <input
+                        type='text'
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className='w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                    />
+                </div>
+                <div className='flex-[1.4] min-w-[280px] flex flex-col gap-1.5'>
+                    <label className='text-sm font-medium text-slate-700'>Created At:</label>
+                    <div className='flex items-center gap-2'>
+                        <input
+                            type='date'
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className='flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                        />
+                        <span className='text-sm text-slate-500 shrink-0'>to</span>
+                        <input
+                            type='date'
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className='flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                        />
+                    </div>
+                </div>
             </div>
 
             {renderContent()}

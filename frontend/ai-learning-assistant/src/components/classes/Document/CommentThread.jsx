@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { MessageSquare, Pencil, Trash2, MessageCircleQuestionMark } from 'lucide-react';
 import toast from 'react-hot-toast';
 import moment from 'moment';
 import RichTextEditor from '../RichTextEditor';
@@ -35,7 +35,7 @@ const CommentEntry = ({ item, currentUserId, canModerate, onEdit, onDelete }) =>
 
 const CommentThread = ({ thread, classId, documentId, currentUserId, canModerate, onEdit, onDelete, onChanged }) => {
     const [reply, setReply] = useState('');
-    const [editorKey, setEditorKey] = useState(0); //changing the key clears the editor after a reply is posted
+    const [editorKey, setEditorKey] = useState(0);
     const [posting, setPosting] = useState(false);
     const hasText = reply.replace(/<[^>]*>/g, '').trim().length > 0;
 
@@ -62,7 +62,7 @@ const CommentThread = ({ thread, classId, documentId, currentUserId, canModerate
         <div className='bg-white border border-slate-200 rounded-lg p-5 space-y-3'>
             <div>
                 <h3 className='flex items-center gap-2 text-xl font-bold text-purple-700'>
-                    <MessageSquare className='w-5 h-5 shrink-0' />
+                    <MessageCircleQuestionMark className='w-5 h-5 shrink-0' />
                     <span className='break-words min-w-0'>{thread.title}</span>
                 </h3>
                 <p className='text-sm text-slate-500'>

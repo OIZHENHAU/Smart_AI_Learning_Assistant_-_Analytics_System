@@ -12,8 +12,9 @@ const request = async (call, action) => {
     }
 };
 
-const getDocuments = (classId, search = '') =>
-    request(() => axiosInstance.get(API_PATHS.CLASS.DOCUMENTS(classId), { params: { search } }), "get the class documents");
+//filters = { search, startDate, endDate }
+const getDocuments = (classId, filters = {}) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.DOCUMENTS(classId), { params: filters }), "get the class documents");
 
 const getDocument = (classId, id) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.DOCUMENT_BY_ID(classId, id)), "get the class document");

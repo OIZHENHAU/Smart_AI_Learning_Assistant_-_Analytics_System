@@ -114,7 +114,10 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                                     className={`group flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200
                                         ${active
                                             ? "bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
-                                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                            : link.back
+                                                //Back to Classes always has the grey background, it gets a little darker on hover.
+                                                ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}
                                 >
                                     <link.icon
