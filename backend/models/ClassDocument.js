@@ -20,7 +20,7 @@ const ClassDocument = {
         return result.insertId;
     },
 
-    //search matches the title or the original file name, the dates filter on when the document was uploaded.
+    //search matches the title or the original file name, the dates filter on uploaded documenty.
     async getDocuments(classId, { search, startDate, endDate } = {}) {
         let query = `${SELECT_DOCUMENT} WHERE d.class_id = ?`;
         const params = [classId];

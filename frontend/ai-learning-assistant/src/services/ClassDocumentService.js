@@ -12,7 +12,6 @@ const request = async (call, action) => {
     }
 };
 
-//filters = { search, startDate, endDate }
 const getDocuments = (classId, filters = {}) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.DOCUMENTS(classId), { params: filters }), "get the class documents");
 
@@ -30,7 +29,6 @@ const deleteDocument = (classId, id) =>
 const getComments = (classId, id) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.DOCUMENT_COMMENTS(classId, id)), "get the comments");
 
-//payload = { title, content } for a new thread, { content, parentId } for a reply.
 const createComment = (classId, id, payload) =>
     request(() => axiosInstance.post(API_PATHS.CLASS.DOCUMENT_COMMENTS(classId, id), payload), "post the comment");
 

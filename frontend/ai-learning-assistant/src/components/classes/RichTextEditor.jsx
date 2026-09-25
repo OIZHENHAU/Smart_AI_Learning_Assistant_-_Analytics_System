@@ -30,7 +30,9 @@ const ToolbarButton = ({ onClick, active, label, children }) => (
 );
 
 //allowImages = false hides the image button (comments can't have images, and students can't upload them).
-const RichTextEditor = ({ classId, value, onChange, allowImages = true }) => {
+//uploadImage(file) lets the caller point image uploads somewhere other than announcements (e.g. a problem set
+//question); it defaults to the announcement uploader so existing callers don't need to change.
+const RichTextEditor = ({ classId, value, onChange, allowImages = true, uploadImage }) => {
     const fileInputRef = useRef(null);
 
     const editor = useEditor({
@@ -55,7 +57,8 @@ const RichTextEditor = ({ classId, value, onChange, allowImages = true }) => {
         if (!file) return;
 
         try {
-            const result = await announcementService.uploadImage(classId, file);
+            const doUpload = uploadImage || ((f) => announcementService.uploadImage(classId, f));
+            const result = await doUpload(file);
             editor.chain().focus().setImage({ src: result.data.url }).run();
 
         } catch (error) {

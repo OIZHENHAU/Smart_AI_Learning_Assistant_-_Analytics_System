@@ -32,7 +32,9 @@ import ClassSettingsPage from './pages/Classes/ClassSettingsPage';
 import ClassAnnouncementPage from './pages/Classes/ClassAnnouncementPage';
 import ClassDocumentsPage from './pages/Classes/ClassDocumentsPage';
 import ClassDocumentDetailPage from './pages/Classes/ClassDocumentDetailPage';
-import { Trophy, ListChecks, Video, ClipboardCheck, BookOpen, Users, Home } from 'lucide-react';
+import ClassProblemSetsPage from './pages/Classes/ClassProblemSetsPage';
+import ProblemSetBuilderPage from './pages/Classes/ProblemSetBuilderPage';
+import { Trophy, Video, ClipboardCheck, BookOpen, Users, Home } from 'lucide-react';
 
 
 const App = () => {
@@ -84,7 +86,8 @@ const App = () => {
                         <Route path='documents/:documentId' element={<ClassDocumentDetailPage/>}/>
                         <Route path='users' element={<ClassSectionPage title='Users' description='The people who joined this class.' icon={Users}/>}/>
                         <Route path='leaderboard' element={<ClassSectionPage title='Leaderboard' description='See how everyone in the class ranks.' icon={Trophy}/>}/>
-                        <Route path='problem-sets' element={<ClassSectionPage title='Problem Sets' description='Practice problems for this class.' icon={ListChecks}/>}/>
+                        <Route path='problem-sets' element={<ClassProblemSetsPage/>}/>
+                        <Route path='problem-sets/:setId' element={<ProblemSetBuilderPage/>}/>
                         <Route path='video' element={<ClassSectionPage title='Video' description='Lecture videos for this class.' icon={Video}/>}/>
                         <Route path='settings' element={<ClassSettingsPage/>}/>
                         <Route path='permission' element={<ClassPermissionPage/>}/>

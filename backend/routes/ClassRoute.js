@@ -37,6 +37,24 @@ import {
     deleteComment
 } from '../controller/ClassDocumentController.js';
 
+import uploadBadgeImage from '../config/problemSetBadgeUpload.js';
+import uploadProblemSetImage from '../config/problemSetImageUpload.js';
+import {
+    getProblemSets,
+    createProblemSet,
+    getProblemSetDetail,
+    updateProblemSetTitle,
+    deleteProblemSet,
+    addQuestion,
+    updateQuestion,
+    deleteQuestion,
+    createAchievementDraft,
+    saveAchievement,
+    removeAchievement,
+    publishProblemSet,
+    uploadQuestionImage
+} from '../controller/ProblemSetController.js';
+
 const router = express.Router();
 
 const staffOnly = requireRole('lecturer', 'parents', 'admin');
@@ -67,6 +85,24 @@ router.get('/:id/documents/:documentId/comments', everyone, getComments);
 router.post('/:id/documents/:documentId/comments', everyone, createComment);
 router.put('/:id/documents/:documentId/comments/:commentId', everyone, updateComment);
 router.delete('/:id/documents/:documentId/comments/:commentId', everyone, deleteComment);
+
+//Anyone in the class can read the published problem sets, only lecturer, parents and admin can build and publish them.
+router.get('/:id/problem-sets', everyone, getProblemSets);
+router.post('/:id/problem-sets', staffOnly, createProblemSet);
+router.get('/:id/problem-sets/:setId', everyone, getProblemSetDetail);
+router.put('/:id/problem-sets/:setId', staffOnly, updateProblemSetTitle);
+router.delete('/:id/problem-sets/:setId', staffOnly, deleteProblemSet);
+router.put('/:id/problem-sets/:setId/publish', staffOnly, publishProblemSet);
+
+router.post('/:id/problem-sets/:setId/questions', staffOnly, addQuestion);
+router.put('/:id/problem-sets/:setId/questions/:questionId', staffOnly, updateQuestion);
+router.delete('/:id/problem-sets/:setId/questions/:questionId', staffOnly, deleteQuestion);
+
+router.post('/:id/problem-sets/:setId/achievement', staffOnly, createAchievementDraft);
+router.put('/:id/problem-sets/:setId/achievement', staffOnly, uploadBadgeImage.single('badgeImage'), saveAchievement);
+router.delete('/:id/problem-sets/:setId/achievement', staffOnly, removeAchievement);
+
+router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, uploadProblemSetImage.single('image'), uploadQuestionImage);
 
 //Creating and managing classes is for lecturer, parents and admin only.
 router.post('/', staffOnly, createClass);

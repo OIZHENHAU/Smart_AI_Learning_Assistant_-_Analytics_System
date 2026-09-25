@@ -2,7 +2,13 @@ import Classroom from '../models/Classroom.js';
 import Announcement from '../models/Announcement.js';
 import ClassDocument from '../models/ClassDocument.js';
 import { removeClassDocumentFiles } from '../config/classDocumentUpload.js';
+import ProblemSet from '../models/ProblemSet.js';
+import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/AnnouncementImages.js';
+import {
+    extractImageFilenames as extractDescriptionImages,
+    deleteUnusedImages as deleteUnusedDescriptionImages
+} from '../utils/ProblemSetImages.js';
 
 const MAX_STUDENTS_LIMIT = 500;
 
@@ -237,12 +243,17 @@ export const deleteClass = async (req, res, next) => {
             });
         }
 
-        //Read the announcements and documents before the class delete cascades them away, then remove their files from disk.
+        //Read the announcements, documents, badges and question descriptions before the class delete cascades them
+        //away, then remove their files from disk.
         const announcements = await Announcement.getContentByClass(classroom.id);
         const documentFiles = await ClassDocument.getFileNamesByClass(classroom.id);
+        const badgeFiles = await ProblemSet.getBadgeFileNamesByClass(classroom.id);
+        const descriptions = await ProblemSet.getDescriptionsByClass(classroom.id);
         await Classroom.deleteClass(classroom.id);
         await deleteUnusedImages([...new Set(announcements.flatMap((a) => extractImageFilenames(a.content)))]);
         await removeClassDocumentFiles(documentFiles);
+        await Promise.all(badgeFiles.map(removeBadgeFile));
+        await deleteUnusedDescriptionImages([...new Set(descriptions.flatMap((d) => extractDescriptionImages(d)))]);
 
         res.status(200).json({
             success: true,

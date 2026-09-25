@@ -108,7 +108,14 @@ export const API_PATHS = {
         DOCUMENTS: (classId) => `/api/classes/${classId}/documents`,
         DOCUMENT_BY_ID: (classId, id) => `/api/classes/${classId}/documents/${id}`,
         DOCUMENT_COMMENTS: (classId, id) => `/api/classes/${classId}/documents/${id}/comments`,
-        DOCUMENT_COMMENT_BY_ID: (classId, id, commentId) => `/api/classes/${classId}/documents/${id}/comments/${commentId}`
+        DOCUMENT_COMMENT_BY_ID: (classId, id, commentId) => `/api/classes/${classId}/documents/${id}/comments/${commentId}`,
+        PROBLEM_SETS: (classId) => `/api/classes/${classId}/problem-sets`,
+        PROBLEM_SET_BY_ID: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}`,
+        PROBLEM_SET_PUBLISH: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/publish`,
+        PROBLEM_SET_QUESTIONS: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/questions`,
+        PROBLEM_SET_QUESTION_BY_ID: (classId, setId, qId) => `/api/classes/${classId}/problem-sets/${setId}/questions/${qId}`,
+        PROBLEM_SET_ACHIEVEMENT: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/achievement`,
+        PROBLEM_SET_IMAGE: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/images`
     },
     FLASHCARD: {
         GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",
