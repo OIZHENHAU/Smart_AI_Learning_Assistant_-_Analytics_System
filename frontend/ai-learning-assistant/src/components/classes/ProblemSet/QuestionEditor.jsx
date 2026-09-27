@@ -1,78 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Pencil, Eye, Trash2, Plus, X, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import problemSetService from '../../../services/ProblemSetService';
 import RichTextEditor from '../RichTextEditor';
-
-const emptyOptions = () => [{ text: '', isCorrect: true }];
-//Same text without any tags, so an empty "<p></p>" from the rich text editor doesn't count as a real description.
-const toPlainText = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+import { hasDescription as checkHasDescription } from './publishChecks';
 
 //Editor / Student Preview for one question. requirePoints is true while the set has an achievement.
-const QuestionEditor = ({ classId, setId, question, questionNumber, requirePoints, onSaved, onDeleted }) => {
+//Nothing is saved from here: every edit goes up through onChange and stays in the builder page until the
+//lecturer publishes or saves as draft. Only deleting the question talks to the server straight away.
+const QuestionEditor = ({ classId, setId, question, value, questionNumber, requirePoints, onChange, onDeleted }) => {
     const [tab, setTab] = useState('edit');
-    const [title, setTitle] = useState(question.title);
-    const [points, setPoints] = useState(question.points ?? '');
-    const [description, setDescription] = useState(question.description || '');
-    const [options, setOptions] = useState(
-        question.options.length ? question.options.map((o) => ({ text: o.option_text, isCorrect: o.is_correct })) : emptyOptions()
-    );
-    const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    //Stops the debounced autosave from firing after the question has been deleted, or after switching to another question.
-    const aliveRef = useRef(true);
+    const { title, points, description, options } = value;
 
-    //Reset local state whenever a different question is selected.
-    useEffect(() => {
-        aliveRef.current = true;
-        setTab('edit');
-        setTitle(question.title);
-        setPoints(question.points ?? '');
-        setDescription(question.description || '');
-        setOptions(question.options.length ? question.options.map((o) => ({ text: o.option_text, isCorrect: o.is_correct })) : emptyOptions());
-
-        return () => { aliveRef.current = false; };
-    }, [question.id]);
-
-    //Autosaves shortly after the lecturer stops typing.
-    useEffect(() => {
-        if (!title.trim()) return; //don't save an empty title while it's still being typed
-
-        const timeout = setTimeout(() => { handleSave(); }, 700);
-        return () => clearTimeout(timeout);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [title, points, description, JSON.stringify(options)]);
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            await problemSetService.updateQuestion(classId, setId, question.id, {
-                title: title.trim(),
-                description,
-                points: points === '' ? null : Number(points),
-                options: options.filter((o) => o.text.trim())
-            });
-            if (aliveRef.current) onSaved();
-
-        } catch (error) {
-            if (aliveRef.current) toast.error(error.error || "Failed to save the question.");
-            console.error(error);
-
-        } finally {
-            if (aliveRef.current) setSaving(false);
-        }
-    };
+    const setPoints = (next) => onChange({ points: next });
+    const setDescription = (next) => onChange({ description: next });
+    const setOptions = (update) => onChange({ options: update(options) });
 
     const handleDelete = async () => {
         setDeleting(true);
-        aliveRef.current = false; //stop any pending autosave from firing after this question is gone
         try {
             await problemSetService.deleteQuestion(classId, setId, question.id);
             toast.success("Question deleted successfully.");
             onDeleted();
 
         } catch (error) {
-            aliveRef.current = true;
             toast.error(error.error || "Failed to delete the question.");
             console.error(error);
 
@@ -87,7 +39,7 @@ const QuestionEditor = ({ classId, setId, question, questionNumber, requirePoint
     const addOption = () => setOptions((prev) => [...prev, { text: '', isCorrect: false }]);
 
     const filledOptions = options.filter((o) => o.text.trim());
-    const hasDescription = !!toPlainText(description) || description.includes('<img');
+    const hasDescription = checkHasDescription(description);
     const descriptionNeedsMoreOptions = hasDescription && filledOptions.length <= 1;
 
     return (
@@ -98,7 +50,6 @@ const QuestionEditor = ({ classId, setId, question, questionNumber, requirePoint
                     <span className='text-base font-bold text-slate-900'>Multiple Choice Question</span>
                 </div>
                 <div className='flex items-center gap-3'>
-                    {saving && <span className='text-xs text-slate-400'>Saving...</span>}
                     <button
                         onClick={handleDelete}
                         disabled={deleting}

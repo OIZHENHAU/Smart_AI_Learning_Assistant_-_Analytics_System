@@ -1,13 +1,19 @@
 import sanitizeHtml from 'sanitize-html';
 import ProblemSet from '../models/ProblemSet.js';
+import ProblemSetAttempt from '../models/ProblemSetAttempt.js';
 import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
+import { removeQuestionFile, removeQuestionFiles } from '../config/problemSetFileUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/ProblemSetImages.js';
+import { getBlanks, maskBlanks } from '../utils/ProblemSetBlanks.js';
 import { getClassAccess, sendError } from '../utils/ClassAccess.js';
 
+const QUESTION_TYPES = ['mcq', 'fill_blank', 'open_ended'];
+
 //Same tags a question description is allowed to have as an announcement's content, images included.
+//data-blank marks a fill-in-the-blank answer inside the passage.
 const DESCRIPTION_CLEAN_OPTIONS = {
     allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'a', 'img', 'span', 'h1', 'h2', 'h3', 'blockquote'],
-    allowedAttributes: { a: ['href', 'target', 'rel'], img: ['src', 'alt'], span: ['style'] },
+    allowedAttributes: { a: ['href', 'target', 'rel'], img: ['src', 'alt'], span: ['style', 'data-blank'] },
     allowedStyles: { span: { 'font-family': [/^[\w\s,'"-]+$/] } },
     allowedSchemes: ['http', 'https'],
     transformTags: { a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' }) }
@@ -37,12 +43,23 @@ export const getProblemSets = async (req, res, next) => {
         const access = await getClassAccess(req.params.id, req.user);
         if (access.error) return sendError(res, access.status, access.error);
 
-        const data = await ProblemSet.getAllForClass(access.classroom.id, { includeDrafts: access.canManage });
+        const { title, startDate, endDate } = req.query;
+        const data = await ProblemSet.getAllForClass(access.classroom.id, { includeDrafts: access.canManage, title, startDate, endDate });
+
+        //Students see their own score next to each set they've already attempted, on the list itself.
+        let withAttempts = data;
+        if (req.user.role === 'student') {
+            const attempts = await ProblemSetAttempt.getAttemptsForUserByClass(access.classroom.id, req.user.id);
+            withAttempts = data.map((set) => ({
+                ...set,
+                my_attempt: attempts.find((a) => a.problem_set_id === set.id) || null
+            }));
+        }
 
         res.status(200).json({
             success: true,
             message: "Problem sets retrieved successfully.",
-            data,
+            data: withAttempts,
             statusCode: 200
         });
 
@@ -83,11 +100,20 @@ export const getProblemSetDetail = async (req, res, next) => {
         const result = await loadSet(req);
         if (result.error) return sendError(res, result.status, result.error);
 
-        const [questions, achievement] = await Promise.all([
+        const [rawQuestions, achievement] = await Promise.all([
             ProblemSet.getQuestions(result.set.id),
             ProblemSet.getAchievement(result.set.id)
         ]);
-        const totalPoints = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+        const totalPoints = rawQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+
+        //Only the lecturer/parents/admin who can manage this set get to see the answers. A student (or anyone else
+        //who isn't staff) never receives is_correct, nor a fill-in-the-blank's answers (they live both in the
+        //passage and in the options), at the API level, not just the UI.
+        const questions = result.canManage
+            ? rawQuestions
+            : rawQuestions.map((q) => q.type === 'fill_blank'
+                ? { ...q, description: maskBlanks(q.description), options: q.options.map(({ id, position }) => ({ id, position })) }
+                : { ...q, options: q.options.map(({ is_correct, ...option }) => option) });
 
         res.status(200).json({
             success: true,
@@ -130,8 +156,10 @@ export const deleteProblemSet = async (req, res, next) => {
         if (!result.canManage) return sendError(res, 403, "You cannot delete this problem set.");
 
         const achievement = await ProblemSet.getAchievement(result.set.id);
-        await ProblemSet.deleteSet(result.set.id); //questions/options/achievement cascade
+        const questionFiles = await ProblemSet.getFileNamesBySet(result.set.id);
+        await ProblemSet.deleteSet(result.set.id); //questions/options/files/achievement cascade
         if (achievement) await removeBadgeFile(achievement.badge_image);
+        await removeQuestionFiles(questionFiles);
 
         res.status(200).json({ success: true, message: "Problem set deleted successfully.", statusCode: 200 });
 
@@ -141,14 +169,16 @@ export const deleteProblemSet = async (req, res, next) => {
     }
 };
 
-//Add a blank question: POST /api/classes/:id/problem-sets/:setId/questions
+//Add a blank question of the given type (multiple choice by default): POST /api/classes/:id/problem-sets/:setId/questions
+//body: { type: 'mcq' | 'fill_blank' | 'open_ended' }
 export const addQuestion = async (req, res, next) => {
     try {
         const result = await loadSet(req);
         if (result.error) return sendError(res, result.status, result.error);
         if (!result.canManage) return sendError(res, 403, "You cannot edit this problem set.");
 
-        const id = await ProblemSet.addQuestion(result.set.id);
+        const type = QUESTION_TYPES.includes(req.body?.type) ? req.body.type : 'mcq';
+        const id = await ProblemSet.addQuestion(result.set.id, type);
 
         res.status(201).json({ success: true, message: "Question added successfully.", data: { id }, statusCode: 201 });
 
@@ -158,22 +188,28 @@ export const addQuestion = async (req, res, next) => {
     }
 };
 
-//Only checks that the request itself is well-formed (a title, and points being a real number). Business rules
-//like "a description needs more than one option" are intentionally NOT enforced here: the lecturer is still
-//mid-edit while autosaving, and a mid-typing 400 (and its error toast) on every keystroke isn't something they
-//caused on purpose. Those rules are only enforced once, together, when the set is actually published.
+//Only checks that the request itself is well-formed (lengths, and points being a real number). Business rules
+//like "a title is required" or "a description needs more than one option" are intentionally NOT enforced here:
+//a draft is allowed to be incomplete. Those rules are only enforced once, together, when the set is published.
 const readQuestionBody = (body) => {
+    const type = QUESTION_TYPES.includes(body.type) ? body.type : 'mcq';
     const title = (body.title || '').trim();
     const description = sanitizeHtml(body.description || '', DESCRIPTION_CLEAN_OPTIONS);
     const points = body.points === '' || body.points === undefined || body.points === null ? null : Number(body.points);
-    const options = Array.isArray(body.options)
-        ? body.options.map((o) => ({ text: (o.text || '').trim(), isCorrect: !!o.isCorrect })).filter((o) => o.text)
-        : [];
 
-    if (!title) return { error: "Question title is required." };
+    //A fill-in-the-blank's answers are always read back out of the passage itself, never taken from the client.
+    let options = [];
+    if (type === 'mcq' && Array.isArray(body.options)) {
+        options = body.options.map((o) => ({ text: (o.text || '').trim(), isCorrect: !!o.isCorrect })).filter((o) => o.text);
+    } else if (type === 'fill_blank') {
+        options = getBlanks(description).map((text) => ({ text, isCorrect: true }));
+    }
+
+    if (title.length > 255) return { error: "Question title must be at most 255 characters." };
     if (points !== null && (!Number.isInteger(points) || points < 0)) return { error: "Points must be a whole number." };
+    if (options.some((o) => o.text.length > 500)) return { error: "Each answer must be at most 500 characters." };
 
-    return { title, description, points, options };
+    return { type, title, description, points, options };
 };
 
 //Save a question's fields and its answer options: PUT /api/classes/:id/problem-sets/:setId/questions/:questionId
@@ -190,6 +226,11 @@ export const updateQuestion = async (req, res, next) => {
         if (body.error) return sendError(res, 400, body.error);
 
         await ProblemSet.updateQuestion(question.id, body);
+
+        //Only an open-ended question keeps attachments; switching it to another type drops them.
+        if (body.type !== 'open_ended') {
+            await removeQuestionFiles(await ProblemSet.deleteFilesForQuestion(question.id));
+        }
 
         //Images that were in the old description but not in the new one are no longer needed.
         const stillUsed = extractImageFilenames(body.description);
@@ -214,8 +255,10 @@ export const deleteQuestion = async (req, res, next) => {
         const question = await ProblemSet.getQuestionById(req.params.questionId);
         if (!question || question.problem_set_id !== result.set.id) return sendError(res, 404, "Question not found.");
 
-        await ProblemSet.deleteQuestion(result.set.id, question.id);
+        const questionFiles = await ProblemSet.getFileNamesByQuestion(question.id);
+        await ProblemSet.deleteQuestion(result.set.id, question.id); //options and files cascade
         await deleteUnusedImages(extractImageFilenames(question.description), question.id);
+        await removeQuestionFiles(questionFiles);
 
         res.status(200).json({ success: true, message: "Question deleted successfully.", statusCode: 200 });
 
@@ -333,7 +376,9 @@ export const publishProblemSet = async (req, res, next) => {
         //Collects every problem across every question, rather than stopping at the first one, so the builder
         //can show the lecturer everything that needs fixing in one pass instead of a fix-one-republish loop.
         const issues = [];
+        //scope says where the builder shows the issue: on a question card, or on the achievement card.
         const addIssue = (q, message) => issues.push({
+            scope: q ? 'question' : 'achievement',
             questionId: q?.id ?? null,
             questionNumber: q ? questions.indexOf(q) + 1 : null,
             questionTitle: q?.title?.trim() || (q ? 'Untitled Question' : null),
@@ -346,11 +391,24 @@ export const publishProblemSet = async (req, res, next) => {
                 addIssue(q, "This question needs a points value because the set has an achievement.");
             }
             const hasDescription = !!toPlainText(q.description || '') || (q.description || '').includes('<img');
-            if (hasDescription && q.options.length <= 1) {
-                addIssue(q, "This question has a description, so it needs more than one answer option.");
-            }
-            if (q.options.length > 0 && !q.options.some((o) => o.is_correct)) {
-                addIssue(q, "This question needs one answer option marked correct.");
+
+            if (q.type === 'fill_blank') {
+                if (q.options.length === 0) {
+                    addIssue(q, "Highlight at least one word or phrase in the passage and turn it into a blank.");
+                } else if (q.options.some((o) => !o.option_text.trim())) {
+                    addIssue(q, "Every blank needs some text in it.");
+                }
+            } else if (q.type === 'open_ended') {
+                if (!hasDescription && q.files.length === 0) {
+                    addIssue(q, "Add a description or attach a file so students know what to answer.");
+                }
+            } else {
+                if (hasDescription && q.options.length <= 1) {
+                    addIssue(q, "This question has a description, so it needs more than one answer option.");
+                }
+                if (q.options.length > 0 && !q.options.some((o) => o.is_correct)) {
+                    addIssue(q, "This question needs one answer option marked correct.");
+                }
             }
         }
 
@@ -400,6 +458,63 @@ export const uploadQuestionImage = async (req, res, next) => {
 
     } catch (error) {
         console.error("Fail to upload the problem set image at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Attach a file to an open-ended question: POST /api/classes/:id/problem-sets/:setId/questions/:questionId/files (form field "file")
+//Uploads straight away (like description images), so the file is on the question even before Save as Draft.
+export const uploadQuestionFile = async (req, res, next) => {
+    try {
+        if (!req.file) return sendError(res, 400, "Please choose a file.");
+
+        const result = await loadSet(req);
+        if (result.error || !result.canManage) {
+            await removeQuestionFile(req.file.filename);
+            return sendError(res, result.status || 403, result.error || "You cannot edit this problem set.");
+        }
+
+        const question = await ProblemSet.getQuestionById(req.params.questionId);
+        if (!question || question.problem_set_id !== result.set.id) {
+            await removeQuestionFile(req.file.filename);
+            return sendError(res, 404, "Question not found.");
+        }
+
+        const file = await ProblemSet.addQuestionFile(question.id, {
+            originalName: req.file.originalname,
+            fileName: req.file.filename,
+            fileSize: req.file.size
+        });
+
+        res.status(201).json({ success: true, message: "File attached successfully.", data: file, statusCode: 201 });
+
+    } catch (error) {
+        if (req.file) await removeQuestionFile(req.file.filename);
+        console.error("Fail to upload the question file at the controller due to: " + error);
+        next(error);
+    }
+};
+
+//Remove an attached file: DELETE /api/classes/:id/problem-sets/:setId/questions/:questionId/files/:fileId
+export const deleteQuestionFile = async (req, res, next) => {
+    try {
+        const result = await loadSet(req);
+        if (result.error) return sendError(res, result.status, result.error);
+        if (!result.canManage) return sendError(res, 403, "You cannot edit this problem set.");
+
+        const question = await ProblemSet.getQuestionById(req.params.questionId);
+        if (!question || question.problem_set_id !== result.set.id) return sendError(res, 404, "Question not found.");
+
+        const file = await ProblemSet.getQuestionFile(req.params.fileId);
+        if (!file || file.question_id !== question.id) return sendError(res, 404, "File not found.");
+
+        await ProblemSet.deleteQuestionFile(file.id);
+        await removeQuestionFile(file.file_name);
+
+        res.status(200).json({ success: true, message: "File removed successfully.", statusCode: 200 });
+
+    } catch (error) {
+        console.error("Fail to delete the question file at the controller due to: " + error);
         next(error);
     }
 };

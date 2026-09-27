@@ -39,6 +39,7 @@ import {
 
 import uploadBadgeImage from '../config/problemSetBadgeUpload.js';
 import uploadProblemSetImage from '../config/problemSetImageUpload.js';
+import uploadQuestionFileMiddleware from '../config/problemSetFileUpload.js';
 import {
     getProblemSets,
     createProblemSet,
@@ -52,8 +53,11 @@ import {
     saveAchievement,
     removeAchievement,
     publishProblemSet,
-    uploadQuestionImage
+    uploadQuestionImage,
+    uploadQuestionFile,
+    deleteQuestionFile
 } from '../controller/ProblemSetController.js';
+import { getAttemptView, submitAttempt, getAttemptResult } from '../controller/ProblemSetAttemptController.js';
 
 const router = express.Router();
 
@@ -98,11 +102,20 @@ router.post('/:id/problem-sets/:setId/questions', staffOnly, addQuestion);
 router.put('/:id/problem-sets/:setId/questions/:questionId', staffOnly, updateQuestion);
 router.delete('/:id/problem-sets/:setId/questions/:questionId', staffOnly, deleteQuestion);
 
+//Attachments for an open-ended question; class access is checked by requireClassManager before multer runs.
+router.post('/:id/problem-sets/:setId/questions/:questionId/files', staffOnly, requireClassManager, uploadQuestionFileMiddleware.single('file'), uploadQuestionFile);
+router.delete('/:id/problem-sets/:setId/questions/:questionId/files/:fileId', staffOnly, deleteQuestionFile);
+
 router.post('/:id/problem-sets/:setId/achievement', staffOnly, createAchievementDraft);
 router.put('/:id/problem-sets/:setId/achievement', staffOnly, uploadBadgeImage.single('badgeImage'), saveAchievement);
 router.delete('/:id/problem-sets/:setId/achievement', staffOnly, removeAchievement);
 
 router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, uploadProblemSetImage.single('image'), uploadQuestionImage);
+
+//Attempting a problem set is for students only; the checks live in loadPublishedSet inside the controller.
+router.get('/:id/problem-sets/:setId/attempt', everyone, getAttemptView);
+router.post('/:id/problem-sets/:setId/attempt', everyone, submitAttempt);
+router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
 
 //Creating and managing classes is for lecturer, parents and admin only.
 router.post('/', staffOnly, createClass);

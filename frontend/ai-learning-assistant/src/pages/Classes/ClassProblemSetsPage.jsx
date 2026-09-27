@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { Plus, ListChecks, Trash2 } from 'lucide-react';
+import { Plus, ListChecks, Trash2, Pencil, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import moment from 'moment';
 import problemSetService from '../../services/ProblemSetService';
 import Spinner from '../../components/common/Spinner';
 import { useAuth } from '../../context/AuthContext';
+import { BASE_URL } from '../../utils/apiPath';
 
 const STAFF_ROLES = ['lecturer', 'parents', 'admin'];
 
@@ -13,7 +14,7 @@ const ClassProblemSetsPage = () => {
     const { classData } = useOutletContext();
     const { user } = useAuth();
     const navigate = useNavigate();
-    //Everyone in the class can view published problem sets, only lecturer, parents and admin can create or delete them.
+    //Everyone in the class can view published problem sets, only lecturer, parents and admin can create, edit or delete them.
     const canManage = STAFF_ROLES.includes(user?.role);
 
     const [sets, setSets] = useState([]);
@@ -22,9 +23,15 @@ const ClassProblemSetsPage = () => {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
+    //Search filters, all empty by default so every problem set is shown.
+    const [titleFilter, setTitleFilter] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const hasFilters = titleFilter || startDate || endDate;
+
     const fetchSets = async () => {
         try {
-            const result = await problemSetService.getProblemSets(classData.id);
+            const result = await problemSetService.getProblemSets(classData.id, { title: titleFilter, startDate, endDate });
             setSets(Array.isArray(result?.data) ? result.data : []);
 
         } catch (error) {
@@ -36,9 +43,12 @@ const ClassProblemSetsPage = () => {
         }
     };
 
+    //Runs on mount, then (debounced) whenever a search filter changes.
     useEffect(() => {
-        fetchSets();
-    }, [classData.id]);
+        const timeout = setTimeout(fetchSets, 400);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [classData.id, titleFilter, startDate, endDate]);
 
     //A draft is created immediately, so the lecturer lands straight in the builder for it.
     const handleCreate = async () => {
@@ -73,83 +83,12 @@ const ClassProblemSetsPage = () => {
         }
     };
 
-    const renderContent = () => {
-        if (loading) {
-            return (
-                <div className='flex justify-center items-center py-20'>
-                    <Spinner />
-                </div>
-            );
-        }
-
-        if (sets.length === 0) {
-            return (
-                <div className='flex flex-col items-center justify-center py-24 text-center'>
-                    <div className='w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4'>
-                        <ListChecks className='w-8 h-8 text-purple-400' />
-                    </div>
-                    <h3 className='text-lg font-medium text-slate-700 mb-1'>No problem sets yet</h3>
-                    <p className='text-slate-400 text-sm mb-6'>
-                        {canManage ? 'Create the first problem set for this class.' : 'Nothing has been published yet.'}
-                    </p>
-                    {canManage && (
-                        <button
-                            onClick={handleCreate}
-                            disabled={creating}
-                            className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors'
-                        >
-                            <Plus className='w-4 h-4' />
-                            {creating ? 'Creating...' : 'Create Problem Set'}
-                        </button>
-                    )}
-                </div>
-            );
-        }
-
-        return (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                {sets.map((set) => (
-                    <div
-                        key={set.id}
-                        onClick={() => navigate(`/classes/${classData.id}/problem-sets/${set.id}`)}
-                        className='bg-white border border-slate-200 rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all group'
-                    >
-                        <div className='flex items-start justify-between gap-3'>
-                            <div className='flex items-center gap-4 min-w-0'>
-                                <div className='w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0'>
-                                    <ListChecks className='w-5 h-5 text-purple-500' />
-                                </div>
-                                <div className='min-w-0'>
-                                    <p className='text-sm font-bold text-slate-800 truncate'>{set.title}</p>
-                                    <p className='text-xs text-slate-400 truncate'>by {set.author_name}</p>
-                                </div>
-                            </div>
-                            {canManage && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(set); }}
-                                    className='opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all shrink-0'
-                                    aria-label='Delete problem set'
-                                >
-                                    <Trash2 className='w-4 h-4' />
-                                </button>
-                            )}
-                        </div>
-                        <div className='flex items-center justify-between mt-3'>
-                            <p className='text-xs text-slate-400'>
-                                Created {moment(set.created_at).format('MMM D, YYYY')}
-                            </p>
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${
-                                set.status === 'published'
-                                    ? 'bg-purple-50 text-purple-600 border-purple-100'
-                                    : 'bg-amber-50 text-amber-600 border-amber-100'
-                            }`}>
-                                {set.status}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        );
+    //Where the title / primary action of a row goes: the builder for staff, the attempt or review page for a student.
+    const primaryPath = (set) => {
+        if (canManage) return `/classes/${classData.id}/problem-sets/${set.id}`;
+        return set.my_attempt
+            ? `/classes/${classData.id}/problem-sets/${set.id}/attempt/result`
+            : `/classes/${classData.id}/problem-sets/${set.id}/attempt`;
     };
 
     return (
@@ -164,7 +103,7 @@ const ClassProblemSetsPage = () => {
                         <p className='text-sm text-slate-500'>Practice problems for this class.</p>
                     </div>
                 </div>
-                {canManage && sets.length > 0 && (
+                {canManage && (
                     <button
                         onClick={handleCreate}
                         disabled={creating}
@@ -176,7 +115,160 @@ const ClassProblemSetsPage = () => {
                 )}
             </div>
 
-            {renderContent()}
+            {/* Search bar */}
+            <div className='flex flex-wrap items-end gap-4 w-full mb-8'>
+                <div className='flex-1 min-w-[220px] flex flex-col gap-1.5'>
+                    <label className='text-sm font-medium text-slate-700'>Title or Content:</label>
+                    <input
+                        type='text'
+                        value={titleFilter}
+                        onChange={(e) => setTitleFilter(e.target.value)}
+                        className='w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                    />
+                </div>
+                <div className='flex-[1.4] min-w-[280px] flex flex-col gap-1.5'>
+                    <label className='text-sm font-medium text-slate-700'>Created At:</label>
+                    <div className='flex items-center gap-2'>
+                        <input
+                            type='date'
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className='flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                        />
+                        <span className='text-sm text-slate-500 shrink-0'>to</span>
+                        <input
+                            type='date'
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className='flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400'
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className='flex justify-center items-center py-20'>
+                    <Spinner />
+                </div>
+            ) : sets.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-24 text-center'>
+                    <div className='w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-4'>
+                        <ListChecks className='w-8 h-8 text-purple-400' />
+                    </div>
+                    <h3 className='text-lg font-medium text-slate-700 mb-1'>
+                        {hasFilters ? 'No matching problem set' : 'No problem sets yet'}
+                    </h3>
+                    <p className='text-slate-400 text-sm mb-6'>
+                        {hasFilters
+                            ? 'Try changing your search.'
+                            : canManage ? 'Create the first problem set for this class.' : 'Nothing has been published yet.'}
+                    </p>
+                    {canManage && !hasFilters && (
+                        <button
+                            onClick={handleCreate}
+                            disabled={creating}
+                            className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors'
+                        >
+                            <Plus className='w-4 h-4' />
+                            {creating ? 'Creating...' : 'Create Problem Set'}
+                        </button>
+                    )}
+                </div>
+            ) : (
+                <div className='bg-white border border-slate-200 rounded-2xl p-6 shadow-sm overflow-x-auto'>
+                    <table className='w-full text-left'>
+                        <thead>
+                            <tr className='text-sm font-bold text-slate-900 border-b border-slate-200'>
+                                <th className='pb-3 pr-70'>Title</th>
+                                <th className='pb-3 pr-4'>Points</th>
+                                <th className='pb-3 pr-4'>Needed For</th>
+                                <th className='pb-3 pr-4'>Status</th>
+                                <th className='pb-3 pr-4'>Created At</th>
+                                <th className='pb-3 pr-4'>Ends At</th>
+                                <th className='pb-3 text-right'>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sets.map((set) => (
+                                <tr key={set.id} className='border-b border-slate-100 last:border-0'>
+                                    <td className='py-4 pr-4'>
+                                        <button
+                                            onClick={() => navigate(primaryPath(set))}
+                                            className='text-sm font-semibold text-purple-600 hover:text-purple-700 hover:underline text-left'
+                                        >
+                                            {set.title}
+                                        </button>
+                                        <p className='text-xs text-slate-400'>by {set.author_name}</p>
+                                    </td>
+                                    <td className='py-4 pr-4 text-sm text-slate-600'>{set.total_points ?? 0}</td>
+                                    <td className='py-4 pr-4'>
+                                        {set.achievement_badge ? (
+                                            <img
+                                                src={`${BASE_URL}/uploads/problem-set-badges/${set.achievement_badge}`}
+                                                alt={set.achievement_title || 'Achievement badge'}
+                                                title={set.achievement_title || 'Achievement badge'}
+                                                className='w-8 h-8 rounded-full object-cover border border-slate-200'
+                                            />
+                                        ) : (
+                                            <span className='text-sm text-slate-400'>-</span>
+                                        )}
+                                    </td>
+                                    <td className='py-4 pr-4'>
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
+                                            set.status === 'published'
+                                                ? 'bg-purple-100 text-purple-700'
+                                                : 'bg-amber-100 text-amber-700'
+                                        }`}>
+                                            {set.status}
+                                        </span>
+                                    </td>
+                                    <td className='py-4 pr-4 text-sm text-slate-600'>{moment(set.created_at).format('M/D/YYYY')}</td>
+                                    <td className='py-4 pr-4 text-sm text-slate-600'>
+                                        {set.achievement_expiry ? moment(set.achievement_expiry).format('M/D/YYYY') : '-'}
+                                    </td>
+                                    <td className='py-4'>
+                                        <div className='flex items-center justify-end gap-2'>
+                                            {canManage ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => navigate(`/classes/${classData.id}/problem-sets/${set.id}`)}
+                                                        className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-colors'
+                                                    >
+                                                        <Pencil className='w-3.5 h-3.5' />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteTarget(set)}
+                                                        className='w-8 h-8 flex items-center justify-center rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors'
+                                                        aria-label='Delete problem set'
+                                                    >
+                                                        <Trash2 className='w-3.5 h-3.5' />
+                                                    </button>
+                                                </>
+                                            ) : set.my_attempt ? (
+                                                <button
+                                                    onClick={() => navigate(`/classes/${classData.id}/problem-sets/${set.id}/attempt/result`)}
+                                                    className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 text-xs font-semibold hover:bg-purple-100 transition-colors'
+                                                >
+                                                    <Eye className='w-3.5 h-3.5' />
+                                                    View Submission
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => navigate(`/classes/${classData.id}/problem-sets/${set.id}/attempt`)}
+                                                    className='px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors'
+                                                >
+                                                    Attempt
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal */}
             {deleteTarget && (

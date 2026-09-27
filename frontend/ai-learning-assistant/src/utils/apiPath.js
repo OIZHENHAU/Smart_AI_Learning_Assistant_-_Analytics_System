@@ -115,7 +115,11 @@ export const API_PATHS = {
         PROBLEM_SET_QUESTIONS: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/questions`,
         PROBLEM_SET_QUESTION_BY_ID: (classId, setId, qId) => `/api/classes/${classId}/problem-sets/${setId}/questions/${qId}`,
         PROBLEM_SET_ACHIEVEMENT: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/achievement`,
-        PROBLEM_SET_IMAGE: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/images`
+        PROBLEM_SET_IMAGE: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/images`,
+        PROBLEM_SET_ATTEMPT: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/attempt`,
+        PROBLEM_SET_ATTEMPT_RESULT: (classId, setId) => `/api/classes/${classId}/problem-sets/${setId}/attempt/result`,
+        PROBLEM_SET_QUESTION_FILES: (classId, setId, qId) => `/api/classes/${classId}/problem-sets/${setId}/questions/${qId}/files`,
+        PROBLEM_SET_QUESTION_FILE_BY_ID: (classId, setId, qId, fileId) => `/api/classes/${classId}/problem-sets/${setId}/questions/${qId}/files/${fileId}`
     },
     FLASHCARD: {
         GET_ALL_FLASHCARD: "/api/flashcards/all-flashcard",

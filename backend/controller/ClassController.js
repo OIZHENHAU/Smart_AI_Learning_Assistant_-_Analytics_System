@@ -4,6 +4,7 @@ import ClassDocument from '../models/ClassDocument.js';
 import { removeClassDocumentFiles } from '../config/classDocumentUpload.js';
 import ProblemSet from '../models/ProblemSet.js';
 import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
+import { removeQuestionFiles } from '../config/problemSetFileUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/AnnouncementImages.js';
 import {
     extractImageFilenames as extractDescriptionImages,
@@ -243,17 +244,19 @@ export const deleteClass = async (req, res, next) => {
             });
         }
 
-        //Read the announcements, documents, badges and question descriptions before the class delete cascades them
+        //Read the announcements, documents, badges, question descriptions and question attachments before the class delete cascades them
         //away, then remove their files from disk.
         const announcements = await Announcement.getContentByClass(classroom.id);
         const documentFiles = await ClassDocument.getFileNamesByClass(classroom.id);
         const badgeFiles = await ProblemSet.getBadgeFileNamesByClass(classroom.id);
         const descriptions = await ProblemSet.getDescriptionsByClass(classroom.id);
+        const questionFiles = await ProblemSet.getFileNamesByClass(classroom.id);
         await Classroom.deleteClass(classroom.id);
         await deleteUnusedImages([...new Set(announcements.flatMap((a) => extractImageFilenames(a.content)))]);
         await removeClassDocumentFiles(documentFiles);
         await Promise.all(badgeFiles.map(removeBadgeFile));
         await deleteUnusedDescriptionImages([...new Set(descriptions.flatMap((d) => extractDescriptionImages(d)))]);
+        await removeQuestionFiles(questionFiles);
 
         res.status(200).json({
             success: true,

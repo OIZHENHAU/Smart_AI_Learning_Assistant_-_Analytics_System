@@ -12,8 +12,8 @@ const request = async (call, action) => {
     }
 };
 
-const getProblemSets = (classId) =>
-    request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SETS(classId)), "get the problem sets");
+const getProblemSets = (classId, filters = {}) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SETS(classId), { params: filters }), "get the problem sets");
 
 const createProblemSet = (classId, title) =>
     request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SETS(classId), { title }), "create the problem set");
@@ -30,10 +30,11 @@ const deleteProblemSet = (classId, setId) =>
 const publishProblemSet = (classId, setId) =>
     request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_PUBLISH(classId, setId)), "publish the problem set");
 
-const addQuestion = (classId, setId) =>
-    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTIONS(classId, setId)), "add the question");
+//type = 'mcq' (default) | 'fill_blank' | 'open_ended'
+const addQuestion = (classId, setId, type = 'mcq') =>
+    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTIONS(classId, setId), { type }), "add the question");
 
-//payload = { title, description, points, options: [{ text, isCorrect }] }
+//payload = { type, title, description, points, options: [{ text, isCorrect }] }
 const updateQuestion = (classId, setId, questionId, payload) =>
     request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_QUESTION_BY_ID(classId, setId, questionId), payload), "save the question");
 
@@ -62,10 +63,36 @@ const uploadQuestionImage = (classId, setId, file) => {
     }), "upload the question image");
 };
 
+//Attaches a file (PDF, .ipynb or ZIP, up to 50MB) to an open-ended question straight away.
+const uploadQuestionFile = (classId, setId, questionId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTION_FILES(classId, setId, questionId), formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 5 * 60 * 1000 //up to 50MB, so don't let the default timeout cut it off
+    }), "upload the question file");
+};
+
+const deleteQuestionFile = (classId, setId, questionId, fileId) =>
+    request(() => axiosInstance.delete(API_PATHS.CLASS.PROBLEM_SET_QUESTION_FILE_BY_ID(classId, setId, questionId, fileId)), "remove the question file");
+
+const getAttemptView = (classId, setId) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId)), "get the problem set to attempt");
+
+//answers = [{ questionId, optionId }]
+const submitAttempt = (classId, setId, answers) =>
+    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId), { answers }), "submit the attempt");
+
+const getAttemptResult = (classId, setId) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT_RESULT(classId, setId)), "get the attempt result");
+
 const problemSetService = {
     getProblemSets, createProblemSet, getProblemSet, updateTitle, deleteProblemSet, publishProblemSet,
     addQuestion, updateQuestion, deleteQuestion,
-    createAchievementDraft, saveAchievement, removeAchievement, uploadQuestionImage
+    createAchievementDraft, saveAchievement, removeAchievement, uploadQuestionImage,
+    uploadQuestionFile, deleteQuestionFile,
+    getAttemptView, submitAttempt, getAttemptResult
 };
 
 export default problemSetService;

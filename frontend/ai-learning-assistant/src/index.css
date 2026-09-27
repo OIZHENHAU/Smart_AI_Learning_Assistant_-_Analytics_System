@@ -60,6 +60,26 @@
 
 /* Text written in the announcement editor and shown in the announcement cards.
    Kept outside @layer so it wins over Tailwind's reset (which removes bullets, link colours and image sizing). */
+/* Fill-in-the-blank passage: each blank is a purple chip, numbered by a CSS counter in reading order. */
+.blank-passage { counter-reset: blank; }
+.blank-passage p { margin: 0; }
+.blank-passage span[data-blank] {
+    counter-increment: blank;
+    color: #7c3aed;
+    font-weight: 600;
+    background: #faf5ff;
+    border-bottom: 2px solid #c4b5fd;
+    border-radius: 6px;
+    padding: 1px 6px;
+    margin: 0 2px;
+}
+.blank-passage span[data-blank]::before {
+    content: counter(blank);
+    font-size: 0.65em;
+    vertical-align: super;
+    margin-right: 3px;
+}
+
 .rich-content p { margin: 0.5rem 0; }
 .rich-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
 .rich-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
