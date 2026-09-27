@@ -4,14 +4,11 @@ import toast from 'react-hot-toast';
 import problemSetService from '../../../services/ProblemSetService';
 import RichTextEditor from '../RichTextEditor';
 import { BASE_URL } from '../../../utils/apiPath';
+import { formatFileSize } from '../../../utils/formatFileSize';
 
 //Same limits as backend/config/problemSetFileUpload.js.
 const ALLOWED_EXTENSIONS = ['.pdf', '.ipynb', '.zip'];
 const MAX_SIZE = 50 * 1024 * 1024;
-
-const formatSize = (bytes) => bytes >= 1024 * 1024
-    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
 //Files upload as soon as they're dropped in (like description images); the description waits for Save as Draft.
 const OpenEndedEditor = ({ classId, setId, questionId, description, files, onDescriptionChange, onFilesChange }) => {
@@ -119,7 +116,7 @@ const OpenEndedEditor = ({ classId, setId, questionId, description, files, onDes
                             >
                                 {file.original_name}
                             </a>
-                            <span className='text-xs text-slate-400 shrink-0'>{formatSize(file.file_size)}</span>
+                            <span className='text-xs text-slate-400 shrink-0'>{formatFileSize(file.file_size)}</span>
                             <button
                                 type='button'
                                 onClick={() => handleRemove(file)}

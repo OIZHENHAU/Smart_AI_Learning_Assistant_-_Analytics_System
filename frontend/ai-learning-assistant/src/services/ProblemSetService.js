@@ -80,9 +80,20 @@ const deleteQuestionFile = (classId, setId, questionId, fileId) =>
 const getAttemptView = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId)), "get the problem set to attempt");
 
-//answers = [{ questionId, optionId }]
-const submitAttempt = (classId, setId, answers) =>
-    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId), { answers }), "submit the attempt");
+//answers = [{ questionId, optionId?, blanks?, text? }]
+//files = { [questionId]: File[] } for open-ended answers; everything goes up together in one request.
+const submitAttempt = (classId, setId, answers, files = {}) => {
+    const formData = new FormData();
+    formData.append('answers', JSON.stringify(answers));
+    Object.entries(files).forEach(([questionId, list]) => {
+        list.forEach((file) => formData.append(`file_${questionId}`, file));
+    });
+
+    return request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId), formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 5 * 60 * 1000 //may carry several large files
+    }), "submit the attempt");
+};
 
 const getAttemptResult = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT_RESULT(classId, setId)), "get the attempt result");

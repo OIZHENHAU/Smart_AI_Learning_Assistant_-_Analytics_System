@@ -25,7 +25,9 @@ const toQuestionDraft = (q) => {
         description: q.description || '',
         options: type === 'mcq' && q.options.length
             ? q.options.map((o) => ({ text: o.option_text, isCorrect: o.is_correct }))
-            : blankOptions(type)
+            : blankOptions(type),
+        //A fill-in-the-blank's blank answers live in the passage; its options that aren't correct are the extra words.
+        distractors: type === 'fill_blank' ? q.options.filter((o) => !o.is_correct).map((o) => o.option_text) : []
     };
 };
 
@@ -198,7 +200,8 @@ const ProblemSetBuilderPage = () => {
         updateQuestionDraft(question, {
             type,
             title: keepTitle ? current.title : getQuestionType(type).title,
-            options: blankOptions(type)
+            options: blankOptions(type),
+            distractors: []
         });
     };
 
@@ -226,7 +229,8 @@ const ProblemSetBuilderPage = () => {
                 description: draft.description,
                 points: draft.points === '' ? null : Number(draft.points),
                 //Fill-in-the-blank answers are read out of the passage by the server; open-ended has none.
-                options: draft.type === 'mcq' ? draft.options.filter((o) => o.text.trim()) : []
+                options: draft.type === 'mcq' ? draft.options.filter((o) => o.text.trim()) : [],
+                distractors: draft.type === 'fill_blank' ? draft.distractors : []
             });
         }
 

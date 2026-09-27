@@ -40,6 +40,7 @@ import {
 import uploadBadgeImage from '../config/problemSetBadgeUpload.js';
 import uploadProblemSetImage from '../config/problemSetImageUpload.js';
 import uploadQuestionFileMiddleware from '../config/problemSetFileUpload.js';
+import uploadAnswerFiles from '../config/problemSetAnswerUpload.js';
 import {
     getProblemSets,
     createProblemSet,
@@ -114,7 +115,7 @@ router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, u
 
 //Attempting a problem set is for students only; the checks live in loadPublishedSet inside the controller.
 router.get('/:id/problem-sets/:setId/attempt', everyone, getAttemptView);
-router.post('/:id/problem-sets/:setId/attempt', everyone, submitAttempt);
+router.post('/:id/problem-sets/:setId/attempt', everyone, uploadAnswerFiles.any(), submitAttempt);
 router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
 
 //Creating and managing classes is for lecturer, parents and admin only.

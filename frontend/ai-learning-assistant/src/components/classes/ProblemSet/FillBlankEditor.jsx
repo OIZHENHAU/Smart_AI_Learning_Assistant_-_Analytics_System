@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { useEditor, EditorContent, Mark, mergeAttributes } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Bold, Italic, Underline, Brackets, X, ArrowRight } from 'lucide-react';
+import { Bold, Italic, Underline, Brackets, X, ArrowRight, Plus } from 'lucide-react';
 import { getBlanks } from './questionTypes';
+
+const MAX_DISTRACTORS = 20; //same limit as the backend
 
 //A blank is a mark on the selected text, saved as <span data-blank="">answer</span>. The numbers are drawn by CSS
 //counters (.blank-passage in index.css), so they always follow reading order without any extra bookkeeping.
@@ -35,9 +37,11 @@ const ToolbarButton = ({ onClick, active, label, children }) => (
     </button>
 );
 
-const FillBlankEditor = ({ value, onChange }) => {
+//distractors = extra wrong words mixed into the student's word bank, so they can't just use every word.
+const FillBlankEditor = ({ value, onChange, distractors, onDistractorsChange }) => {
     const wrapperRef = useRef(null);
     const [bubble, setBubble] = useState(null); // { top, left } while some text is selected
+    const [newWord, setNewWord] = useState('');
 
     //Places the floating "Turn into Blank" button just above the middle of the selection.
     const updateBubble = (editor) => {
@@ -94,6 +98,14 @@ const FillBlankEditor = ({ value, onChange }) => {
 
     const blanks = getBlanks(value);
     const blankLabel = inBlank ? 'Remove Blank' : 'Turn into Blank';
+
+    const addDistractor = () => {
+        const word = newWord.trim();
+        if (!word) return;
+        const taken = [...blanks, ...distractors].some((w) => w.toLowerCase() === word.toLowerCase());
+        if (!taken && distractors.length < MAX_DISTRACTORS) onDistractorsChange([...distractors, word]);
+        setNewWord('');
+    };
 
     return (
         <div className='space-y-5'>
@@ -168,7 +180,52 @@ const FillBlankEditor = ({ value, onChange }) => {
                         ))}
                     </div>
                 )}
-                <p className='text-xs text-slate-400 mt-2'>Students see each blank as an empty box and type the answer.</p>
+            </div>
+
+            <div>
+                <span className='text-xs font-bold text-slate-400 tracking-wide mb-1 block'>EXTRA WORDS (OPTIONAL)</span>
+            
+                {distractors.length > 0 && (
+                    <div className='flex flex-wrap gap-2 mb-2'>
+                        {distractors.map((word, index) => (
+                            <span key={word} className='inline-flex items-center gap-2 pl-3 pr-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-600'>
+                                {word}
+                                <button
+                                    type='button'
+                                    onClick={() => onDistractorsChange(distractors.filter((_, i) => i !== index))}
+                                    aria-label={`Remove ${word}`}
+                                    className='text-slate-300 hover:text-red-500'
+                                >
+                                    <X className='w-3.5 h-3.5' />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <div className='flex gap-2 max-w-md'>
+                    <input
+                        value={newWord}
+                        onChange={(e) => setNewWord(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                addDistractor();
+                            }
+                        }}
+                        placeholder='Add a wrong word, then press Enter'
+                        maxLength={500}
+                        disabled={distractors.length >= MAX_DISTRACTORS}
+                        className='flex-1 h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400 disabled:bg-slate-50'
+                    />
+                    <button
+                        type='button'
+                        onClick={addDistractor}
+                        disabled={!newWord.trim() || distractors.length >= MAX_DISTRACTORS}
+                        className='flex items-center gap-1.5 px-4 h-10 rounded-lg border border-purple-200 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors disabled:opacity-50'
+                    >
+                        <Plus className='w-4 h-4' /> Add
+                    </button>
+                </div>
             </div>
         </div>
     );

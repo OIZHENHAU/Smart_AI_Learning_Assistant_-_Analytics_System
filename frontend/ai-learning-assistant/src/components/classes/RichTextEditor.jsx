@@ -32,7 +32,8 @@ const ToolbarButton = ({ onClick, active, label, children }) => (
 //allowImages = false hides the image button (comments can't have images, and students can't upload them).
 //uploadImage(file) lets the caller point image uploads somewhere other than announcements (e.g. a problem set
 //question); it defaults to the announcement uploader so existing callers don't need to change.
-const RichTextEditor = ({ classId, value, onChange, allowImages = true, uploadImage }) => {
+//toolbarExtra is rendered at the end of the toolbar, for caller-specific buttons (e.g. attaching answer files).
+const RichTextEditor = ({ classId, value, onChange, allowImages = true, uploadImage, toolbarExtra }) => {
     const fileInputRef = useRef(null);
 
     const editor = useEditor({
@@ -100,6 +101,7 @@ const RichTextEditor = ({ classId, value, onChange, allowImages = true, uploadIm
                         <input ref={fileInputRef} type='file' accept='image/*' className='hidden' onChange={handleImage} />
                     </>
                 )}
+                {toolbarExtra}
             </div>
 
             <EditorContent editor={editor} />

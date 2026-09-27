@@ -3,11 +3,14 @@ import ProblemSet from '../models/ProblemSet.js';
 import ProblemSetAttempt from '../models/ProblemSetAttempt.js';
 import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
 import { removeQuestionFile, removeQuestionFiles } from '../config/problemSetFileUpload.js';
+import { removeAnswerFiles } from '../config/problemSetAnswerUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/ProblemSetImages.js';
 import { getBlanks, maskBlanks } from '../utils/ProblemSetBlanks.js';
 import { getClassAccess, sendError } from '../utils/ClassAccess.js';
 
 const QUESTION_TYPES = ['mcq', 'fill_blank', 'open_ended'];
+//Most extra wrong words a fill-in-the-blank's word bank may have.
+const MAX_DISTRACTORS = 20;
 
 //Same tags a question description is allowed to have as an announcement's content, images included.
 //data-blank marks a fill-in-the-blank answer inside the passage.
@@ -46,14 +49,14 @@ export const getProblemSets = async (req, res, next) => {
         const { title, startDate, endDate } = req.query;
         const data = await ProblemSet.getAllForClass(access.classroom.id, { includeDrafts: access.canManage, title, startDate, endDate });
 
-        //Students see their own score next to each set they've already attempted, on the list itself.
+        //Students see that they've submitted a set, never their score: results aren't released to them yet.
         let withAttempts = data;
         if (req.user.role === 'student') {
             const attempts = await ProblemSetAttempt.getAttemptsForUserByClass(access.classroom.id, req.user.id);
-            withAttempts = data.map((set) => ({
-                ...set,
-                my_attempt: attempts.find((a) => a.problem_set_id === set.id) || null
-            }));
+            withAttempts = data.map((set) => {
+                const attempt = attempts.find((a) => a.problem_set_id === set.id);
+                return { ...set, my_attempt: attempt ? { submitted_at: attempt.submitted_at } : null };
+            });
         }
 
         res.status(200).json({
@@ -157,9 +160,11 @@ export const deleteProblemSet = async (req, res, next) => {
 
         const achievement = await ProblemSet.getAchievement(result.set.id);
         const questionFiles = await ProblemSet.getFileNamesBySet(result.set.id);
-        await ProblemSet.deleteSet(result.set.id); //questions/options/files/achievement cascade
+        const answerFiles = await ProblemSetAttempt.getFileNamesBySet(result.set.id);
+        await ProblemSet.deleteSet(result.set.id); //questions/options/files/attempts/achievement cascade
         if (achievement) await removeBadgeFile(achievement.badge_image);
         await removeQuestionFiles(questionFiles);
+        await removeAnswerFiles(answerFiles);
 
         res.status(200).json({ success: true, message: "Problem set deleted successfully.", statusCode: 200 });
 
@@ -202,7 +207,21 @@ const readQuestionBody = (body) => {
     if (type === 'mcq' && Array.isArray(body.options)) {
         options = body.options.map((o) => ({ text: (o.text || '').trim(), isCorrect: !!o.isCorrect })).filter((o) => o.text);
     } else if (type === 'fill_blank') {
-        options = getBlanks(description).map((text) => ({ text, isCorrect: true }));
+        //The blanks (correct, in reading order) come first, then the extra wrong words for the word bank.
+        //An extra word that repeats a blank answer or another extra word is dropped, ignoring case.
+        const blanks = getBlanks(description);
+        const seen = new Set(blanks.map((text) => text.toLowerCase()));
+        const distractors = [];
+        for (const raw of Array.isArray(body.distractors) ? body.distractors : []) {
+            const text = String(raw ?? '').trim();
+            if (!text || seen.has(text.toLowerCase()) || distractors.length >= MAX_DISTRACTORS) continue;
+            seen.add(text.toLowerCase());
+            distractors.push(text);
+        }
+        options = [
+            ...blanks.map((text) => ({ text, isCorrect: true })),
+            ...distractors.map((text) => ({ text, isCorrect: false }))
+        ];
     }
 
     if (title.length > 255) return { error: "Question title must be at most 255 characters." };
@@ -256,9 +275,11 @@ export const deleteQuestion = async (req, res, next) => {
         if (!question || question.problem_set_id !== result.set.id) return sendError(res, 404, "Question not found.");
 
         const questionFiles = await ProblemSet.getFileNamesByQuestion(question.id);
-        await ProblemSet.deleteQuestion(result.set.id, question.id); //options and files cascade
+        const answerFiles = await ProblemSetAttempt.getFileNamesByQuestion(question.id);
+        await ProblemSet.deleteQuestion(result.set.id, question.id); //options, files and answers cascade
         await deleteUnusedImages(extractImageFilenames(question.description), question.id);
         await removeQuestionFiles(questionFiles);
+        await removeAnswerFiles(answerFiles);
 
         res.status(200).json({ success: true, message: "Question deleted successfully.", statusCode: 200 });
 
@@ -393,9 +414,10 @@ export const publishProblemSet = async (req, res, next) => {
             const hasDescription = !!toPlainText(q.description || '') || (q.description || '').includes('<img');
 
             if (q.type === 'fill_blank') {
-                if (q.options.length === 0) {
+                const blanks = q.options.filter((o) => o.is_correct);
+                if (blanks.length === 0) {
                     addIssue(q, "Highlight at least one word or phrase in the passage and turn it into a blank.");
-                } else if (q.options.some((o) => !o.option_text.trim())) {
+                } else if (blanks.some((o) => !o.option_text.trim())) {
                     addIssue(q, "Every blank needs some text in it.");
                 }
             } else if (q.type === 'open_ended') {

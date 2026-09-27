@@ -12,7 +12,7 @@ import { QUESTION_TYPES, getQuestionType } from './questionTypes';
 //only deleting the question and attaching/removing files talk to the server straight away.
 const QuestionCard = ({ classId, setId, question, value, questionNumber, showPoints, issues = [], onChange, onTypeChange, onFilesChange, onDeleted }) => {
     const [deleting, setDeleting] = useState(false);
-    const { type, title, points, description, options, files } = value;
+    const { type, title, points, description, options, distractors, files } = value;
     const TypeIcon = getQuestionType(type).icon;
 
     const handleDelete = async () => {
@@ -83,7 +83,13 @@ const QuestionCard = ({ classId, setId, question, value, questionNumber, showPoi
 
             <div className='p-6'>
                 {type === 'fill_blank' ? (
-                    <FillBlankEditor key={`${question.id}-fill`} value={description} onChange={(next) => onChange({ description: next })} />
+                    <FillBlankEditor
+                        key={`${question.id}-fill`}
+                        value={description}
+                        onChange={(next) => onChange({ description: next })}
+                        distractors={distractors}
+                        onDistractorsChange={(next) => onChange({ distractors: next })}
+                    />
                 ) : type === 'open_ended' ? (
                     <OpenEndedEditor
                         key={`${question.id}-open`}

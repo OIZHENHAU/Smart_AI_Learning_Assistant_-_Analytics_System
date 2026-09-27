@@ -214,13 +214,19 @@ const ClassProblemSetsPage = () => {
                                         )}
                                     </td>
                                     <td className='py-4 pr-4'>
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
-                                            set.status === 'published'
-                                                ? 'bg-purple-100 text-purple-700'
-                                                : 'bg-amber-100 text-amber-700'
-                                        }`}>
-                                            {set.status}
-                                        </span>
+                                        {!canManage && set.my_attempt ? (
+                                            <span className='px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700'>
+                                                Submitted
+                                            </span>
+                                        ) : (
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
+                                                set.status === 'published'
+                                                    ? 'bg-purple-100 text-purple-700'
+                                                    : 'bg-amber-100 text-amber-700'
+                                            }`}>
+                                                {set.status}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className='py-4 pr-4 text-sm text-slate-600'>{moment(set.created_at).format('M/D/YYYY')}</td>
                                     <td className='py-4 pr-4 text-sm text-slate-600'>
