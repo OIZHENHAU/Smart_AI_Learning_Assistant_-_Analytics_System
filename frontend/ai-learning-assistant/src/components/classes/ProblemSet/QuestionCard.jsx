@@ -6,6 +6,7 @@ import MultipleChoiceEditor from './MultipleChoiceEditor';
 import FillBlankEditor from './FillBlankEditor';
 import OpenEndedEditor from './OpenEndedEditor';
 import IssueList from './IssueList';
+import QuestionComments from './QuestionComments';
 import { QUESTION_TYPES, getQuestionType } from './questionTypes';
 
 //One question on the builder page. Edits go up through onChange and stay unsaved until Save as Draft / Publish;
@@ -111,6 +112,10 @@ const QuestionCard = ({ classId, setId, question, value, questionNumber, showPoi
                         onChange={onChange}
                     />
                 )}
+            </div>
+
+            <div className='px-6 pb-6'>
+                <QuestionComments classId={classId} setId={setId} questionId={question.id} collapsible />
             </div>
         </div>
     );

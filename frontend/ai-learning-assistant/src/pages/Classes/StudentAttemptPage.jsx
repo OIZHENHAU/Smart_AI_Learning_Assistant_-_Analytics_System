@@ -9,6 +9,7 @@ import AttemptFillBlank from '../../components/classes/ProblemSet/AttemptFillBla
 import AttemptOpenEnded from '../../components/classes/ProblemSet/AttemptOpenEnded';
 import AttachmentList from '../../components/classes/ProblemSet/AttachmentList';
 import { hasDescription } from '../../components/classes/ProblemSet/publishChecks';
+import QuestionComments from '../../components/classes/ProblemSet/QuestionComments';
 
 //Student take page: one question at a time, submit once at the end. Nothing is sent to the server until the
 //student confirms the submission, and then everything (answers + files) goes up together.
@@ -193,6 +194,8 @@ const StudentAttemptPage = () => {
                             />
                         </>
                     )}
+
+                    <QuestionComments classId={classData.id} setId={setId} questionId={question.id} />
                 </div>
 
                 {/* Navigation */}

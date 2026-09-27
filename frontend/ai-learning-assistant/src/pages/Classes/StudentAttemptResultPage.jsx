@@ -6,6 +6,7 @@ import Spinner from '../../components/common/Spinner';
 import BlankPassage from '../../components/classes/ProblemSet/BlankPassage';
 import AttachmentList from '../../components/classes/ProblemSet/AttachmentList';
 import { hasDescription } from '../../components/classes/ProblemSet/publishChecks';
+import QuestionComments from '../../components/classes/ProblemSet/QuestionComments';
 
 const NoAnswer = ({ children = "You didn't answer this question." }) => (
     <p className='text-xs text-slate-400 italic'>{children}</p>
@@ -124,6 +125,9 @@ const StudentAttemptResultPage = () => {
                         {q.type === 'fill_blank' ? <FillBlankAnswer q={q} />
                             : q.type === 'open_ended' ? <OpenEndedAnswer q={q} />
                             : <MultipleChoiceAnswer q={q} />}
+                        <div className='mt-4'>
+                            <QuestionComments classId={classData.id} setId={setId} questionId={q.id} collapsible />
+                        </div>
                     </div>
                 ))}
             </div>

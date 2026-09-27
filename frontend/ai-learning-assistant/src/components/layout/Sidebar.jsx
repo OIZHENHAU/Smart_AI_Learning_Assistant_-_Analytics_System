@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCurrentClass } from '../../context/ClassContext';
-import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck, Home, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Brain, Notebook, Activity, CircleQuestionMarkIcon, Trophy, ClipboardListIcon, FileQuestion, CalendarClockIcon, UserCircle2, Users, School, X, GraduationCap, ArrowLeft, Megaphone, ListChecks, Video, Settings, ShieldCheck, ClipboardCheck, Home, BookOpen, MessageSquare } from 'lucide-react';
 import ProfilePage from '../../pages/Profile/ProfilePage';
 
 const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
@@ -53,6 +53,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: `${classBase}/video`, icon: Video, text: 'Video'},
         {to: `${classBase}/submission`, icon: ClipboardCheck, text: 'Submission'},
         {to: `${classBase}/lesson-plan`, icon: BookOpen, text: 'Lesson Plan'},
+        {to: `${classBase}/comments`, icon: MessageSquare, text: 'Comments'},
         {to: `${classBase}/users`, icon: Users, text: 'Users'},
         {to: `${classBase}/permission`, icon: ShieldCheck, text: 'Permission', roles: ['lecturer', 'parents', 'admin']},
         {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},

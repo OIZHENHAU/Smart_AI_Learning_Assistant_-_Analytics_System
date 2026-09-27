@@ -59,6 +59,12 @@ import {
     deleteQuestionFile
 } from '../controller/ProblemSetController.js';
 import { getAttemptView, submitAttempt, getAttemptResult } from '../controller/ProblemSetAttemptController.js';
+import {
+    getQuestionComments,
+    createQuestionComment,
+    updateQuestionComment,
+    deleteQuestionComment
+} from '../controller/ProblemSetCommentController.js';
 
 const router = express.Router();
 
@@ -117,6 +123,12 @@ router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, u
 router.get('/:id/problem-sets/:setId/attempt', everyone, getAttemptView);
 router.post('/:id/problem-sets/:setId/attempt', everyone, uploadAnswerFiles.any(), submitAttempt);
 router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
+
+//Private lecturer–student conversations on each question; the controller decides who can see which.
+router.get('/:id/problem-sets/:setId/questions/:questionId/comments', everyone, getQuestionComments);
+router.post('/:id/problem-sets/:setId/questions/:questionId/comments', everyone, createQuestionComment);
+router.put('/:id/problem-sets/:setId/questions/:questionId/comments/:commentId', everyone, updateQuestionComment);
+router.delete('/:id/problem-sets/:setId/questions/:questionId/comments/:commentId', everyone, deleteQuestionComment);
 
 //Creating and managing classes is for lecturer, parents and admin only.
 router.post('/', staffOnly, createClass);

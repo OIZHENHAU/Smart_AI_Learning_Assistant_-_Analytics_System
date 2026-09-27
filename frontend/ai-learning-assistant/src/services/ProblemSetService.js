@@ -77,6 +77,20 @@ const uploadQuestionFile = (classId, setId, questionId, file) => {
 const deleteQuestionFile = (classId, setId, questionId, fileId) =>
     request(() => axiosInstance.delete(API_PATHS.CLASS.PROBLEM_SET_QUESTION_FILE_BY_ID(classId, setId, questionId, fileId)), "remove the question file");
 
+//Private lecturer–student conversation on one question. The server only returns what the caller may see.
+const getQuestionComments = (classId, setId, questionId) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENTS(classId, setId, questionId)), "get the comments");
+
+//payload = { content, parentId? }
+const createQuestionComment = (classId, setId, questionId, payload) =>
+    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENTS(classId, setId, questionId), payload), "post the comment");
+
+const updateQuestionComment = (classId, setId, questionId, commentId, payload) =>
+    request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENT_BY_ID(classId, setId, questionId, commentId), payload), "update the comment");
+
+const deleteQuestionComment = (classId, setId, questionId, commentId) =>
+    request(() => axiosInstance.delete(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENT_BY_ID(classId, setId, questionId, commentId)), "delete the comment");
+
 const getAttemptView = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId)), "get the problem set to attempt");
 
@@ -103,6 +117,7 @@ const problemSetService = {
     addQuestion, updateQuestion, deleteQuestion,
     createAchievementDraft, saveAchievement, removeAchievement, uploadQuestionImage,
     uploadQuestionFile, deleteQuestionFile,
+    getQuestionComments, createQuestionComment, updateQuestionComment, deleteQuestionComment,
     getAttemptView, submitAttempt, getAttemptResult
 };
 

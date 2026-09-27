@@ -36,7 +36,7 @@ import ClassProblemSetsPage from './pages/Classes/ClassProblemSetsPage';
 import ProblemSetBuilderPage from './pages/Classes/ProblemSetBuilderPage';
 import StudentAttemptPage from './pages/Classes/StudentAttemptPage';
 import StudentAttemptResultPage from './pages/Classes/StudentAttemptResultPage';
-import { Trophy, Video, ClipboardCheck, BookOpen, Users, Home } from 'lucide-react';
+import { Trophy, Video, ClipboardCheck, BookOpen, Users, Home, MessageSquare } from 'lucide-react';
 
 
 const App = () => {
@@ -88,6 +88,7 @@ const App = () => {
                         <Route path='documents/:documentId' element={<ClassDocumentDetailPage/>}/>
                         <Route path='users' element={<ClassSectionPage title='Users' description='The people who joined this class.' icon={Users}/>}/>
                         <Route path='leaderboard' element={<ClassSectionPage title='Leaderboard' description='See how everyone in the class ranks.' icon={Trophy}/>}/>
+                        <Route path='comments' element={<ClassSectionPage title='Comments' description='Discussion and comments for this class.' icon={MessageSquare}/>}/>
                         <Route path='problem-sets' element={<ClassProblemSetsPage/>}/>
                         <Route path='problem-sets/:setId' element={<ProblemSetBuilderPage/>}/>
                         <Route path='problem-sets/:setId/attempt' element={<StudentAttemptPage/>}/>
