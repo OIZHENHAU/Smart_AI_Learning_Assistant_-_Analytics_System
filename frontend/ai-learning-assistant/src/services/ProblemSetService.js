@@ -30,22 +30,18 @@ const deleteProblemSet = (classId, setId) =>
 const publishProblemSet = (classId, setId) =>
     request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_PUBLISH(classId, setId)), "publish the problem set");
 
-//type = 'mcq' (default) | 'fill_blank' | 'open_ended'
 const addQuestion = (classId, setId, type = 'mcq') =>
     request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTIONS(classId, setId), { type }), "add the question");
 
-//payload = { type, title, description, points, options: [{ text, isCorrect }] }
 const updateQuestion = (classId, setId, questionId, payload) =>
     request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_QUESTION_BY_ID(classId, setId, questionId), payload), "save the question");
 
 const deleteQuestion = (classId, setId, questionId) =>
     request(() => axiosInstance.delete(API_PATHS.CLASS.PROBLEM_SET_QUESTION_BY_ID(classId, setId, questionId)), "delete the question");
 
-//Creates the blank achievement row the moment the toggle is switched on.
 const createAchievementDraft = (classId, setId) =>
     request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ACHIEVEMENT(classId, setId)), "start the achievement");
 
-//formData: badgeImage (File, optional), title, description, minPoints, expiryDate. Nothing here needs to be complete.
 const saveAchievement = (classId, setId, formData) =>
     request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_ACHIEVEMENT(classId, setId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -63,25 +59,22 @@ const uploadQuestionImage = (classId, setId, file) => {
     }), "upload the question image");
 };
 
-//Attaches a file (PDF, .ipynb or ZIP, up to 50MB) to an open-ended question straight away.
 const uploadQuestionFile = (classId, setId, questionId, file) => {
     const formData = new FormData();
     formData.append('file', file);
 
     return request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTION_FILES(classId, setId, questionId), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 5 * 60 * 1000 //up to 50MB, so don't let the default timeout cut it off
+        timeout: 5 * 60 * 1000
     }), "upload the question file");
 };
 
 const deleteQuestionFile = (classId, setId, questionId, fileId) =>
     request(() => axiosInstance.delete(API_PATHS.CLASS.PROBLEM_SET_QUESTION_FILE_BY_ID(classId, setId, questionId, fileId)), "remove the question file");
 
-//Private lecturer–student conversation on one question. The server only returns what the caller may see.
 const getQuestionComments = (classId, setId, questionId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENTS(classId, setId, questionId)), "get the comments");
 
-//payload = { content, parentId? }
 const createQuestionComment = (classId, setId, questionId, payload) =>
     request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_QUESTION_COMMENTS(classId, setId, questionId), payload), "post the comment");
 
@@ -94,20 +87,25 @@ const deleteQuestionComment = (classId, setId, questionId, commentId) =>
 const getAttemptView = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId)), "get the problem set to attempt");
 
-//answers = [{ questionId, optionId?, blanks?, text? }]
-//files = { [questionId]: File[] } for open-ended answers; everything goes up together in one request.
-const submitAttempt = (classId, setId, answers, files = {}) => {
+const buildAttemptForm = (answers, files, keepFileIds) => {
     const formData = new FormData();
     formData.append('answers', JSON.stringify(answers));
+    formData.append('keepFileIds', JSON.stringify(keepFileIds));
     Object.entries(files).forEach(([questionId, list]) => {
         list.forEach((file) => formData.append(`file_${questionId}`, file));
     });
-
-    return request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId), formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 5 * 60 * 1000 //may carry several large files
-    }), "submit the attempt");
+    return formData;
 };
+
+const MULTIPART = { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 5 * 60 * 1000 };
+
+const submitAttempt = (classId, setId, answers, files = {}, keepFileIds = []) =>
+    request(() => axiosInstance.post(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT(classId, setId),
+        buildAttemptForm(answers, files, keepFileIds), MULTIPART), "submit the attempt");
+
+const saveAttemptDraft = (classId, setId, answers, files = {}, keepFileIds = []) =>
+    request(() => axiosInstance.put(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT_DRAFT(classId, setId),
+        buildAttemptForm(answers, files, keepFileIds), MULTIPART), "save the attempt");
 
 const getAttemptResult = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT_RESULT(classId, setId)), "get the attempt result");
@@ -118,7 +116,7 @@ const problemSetService = {
     createAchievementDraft, saveAchievement, removeAchievement, uploadQuestionImage,
     uploadQuestionFile, deleteQuestionFile,
     getQuestionComments, createQuestionComment, updateQuestionComment, deleteQuestionComment,
-    getAttemptView, submitAttempt, getAttemptResult
+    getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft
 };
 
 export default problemSetService;

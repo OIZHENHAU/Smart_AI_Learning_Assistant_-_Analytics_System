@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import BlankPassage from './BlankPassage';
 
-//fills = one entry per blank: the index of the word-bank chip placed there, or null while empty.
-//Click a chip to put it in the highlighted blank; click a filled blank to send its word back to the bank.
 const AttemptFillBlank = ({ question, fills, onChange }) => {
     const [active, setActive] = useState(() => Math.max(0, fills.findIndex((f) => f == null)));
     const used = new Set(fills.filter((f) => f != null));
 
     const placeWord = (wordIndex) => {
         const target = fills[active] == null ? active : fills.findIndex((f) => f == null);
-        if (target === -1) return; //every blank is filled; clear one first
+        if (target === -1) return;
 
         const next = [...fills];
         next[target] = wordIndex;
@@ -67,7 +65,6 @@ const AttemptFillBlank = ({ question, fills, onChange }) => {
                     </button>
                 ))}
             </div>
-            <p className='text-xs text-slate-400 mt-2'>Click a word to place it in the highlighted blank. Click a filled blank to take the word back.</p>
         </div>
     );
 };

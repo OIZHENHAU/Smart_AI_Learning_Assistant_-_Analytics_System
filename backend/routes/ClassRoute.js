@@ -58,7 +58,7 @@ import {
     uploadQuestionFile,
     deleteQuestionFile
 } from '../controller/ProblemSetController.js';
-import { getAttemptView, submitAttempt, getAttemptResult } from '../controller/ProblemSetAttemptController.js';
+import { getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft } from '../controller/ProblemSetAttemptController.js';
 import {
     getQuestionComments,
     createQuestionComment,
@@ -122,6 +122,7 @@ router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, u
 //Attempting a problem set is for students only; the checks live in loadPublishedSet inside the controller.
 router.get('/:id/problem-sets/:setId/attempt', everyone, getAttemptView);
 router.post('/:id/problem-sets/:setId/attempt', everyone, uploadAnswerFiles.any(), submitAttempt);
+router.put('/:id/problem-sets/:setId/attempt/draft', everyone, uploadAnswerFiles.any(), saveAttemptDraft);
 router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
 
 //Private lecturer–student conversations on each question; the controller decides who can see which.

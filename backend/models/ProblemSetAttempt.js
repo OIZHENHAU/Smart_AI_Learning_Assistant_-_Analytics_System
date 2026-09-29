@@ -235,12 +235,14 @@ const ProblemSetAttempt = {
         return rows;
     },
 
-    //The three below are read before a question/set/class is deleted, because the delete cascades the answer
-    //rows away but not the students' files on disk.
+    //The three below are read before a question/set/class is deleted, because the delete cascades the answer and
+    //draft rows away but not the students' files on disk (submitted and saved-draft files alike).
     async getFileNamesByQuestion(questionId) {
         const [rows] = await db.execute(
             `SELECT f.file_name FROM problem_set_attempt_files f
-             JOIN problem_set_attempt_answers ans ON ans.id = f.answer_id WHERE ans.question_id = ?`, [questionId]
+             JOIN problem_set_attempt_answers ans ON ans.id = f.answer_id WHERE ans.question_id = ?
+             UNION ALL
+             SELECT d.file_name FROM problem_set_draft_files d WHERE d.question_id = ?`, [questionId, questionId]
         );
         return rows.map((row) => row.file_name);
     },
@@ -249,7 +251,10 @@ const ProblemSetAttempt = {
         const [rows] = await db.execute(
             `SELECT f.file_name FROM problem_set_attempt_files f
              JOIN problem_set_attempt_answers ans ON ans.id = f.answer_id
-             JOIN problem_set_attempts a ON a.id = ans.attempt_id WHERE a.problem_set_id = ?`, [problemSetId]
+             JOIN problem_set_attempts a ON a.id = ans.attempt_id WHERE a.problem_set_id = ?
+             UNION ALL
+             SELECT d.file_name FROM problem_set_draft_files d
+             JOIN problem_set_attempt_drafts dr ON dr.id = d.draft_id WHERE dr.problem_set_id = ?`, [problemSetId, problemSetId]
         );
         return rows.map((row) => row.file_name);
     },
@@ -259,7 +264,11 @@ const ProblemSetAttempt = {
             `SELECT f.file_name FROM problem_set_attempt_files f
              JOIN problem_set_attempt_answers ans ON ans.id = f.answer_id
              JOIN problem_set_attempts a ON a.id = ans.attempt_id
-             JOIN problem_sets p ON p.id = a.problem_set_id WHERE p.class_id = ?`, [classId]
+             JOIN problem_sets p ON p.id = a.problem_set_id WHERE p.class_id = ?
+             UNION ALL
+             SELECT d.file_name FROM problem_set_draft_files d
+             JOIN problem_set_attempt_drafts dr ON dr.id = d.draft_id
+             JOIN problem_sets p ON p.id = dr.problem_set_id WHERE p.class_id = ?`, [classId, classId]
         );
         return rows.map((row) => row.file_name);
     }

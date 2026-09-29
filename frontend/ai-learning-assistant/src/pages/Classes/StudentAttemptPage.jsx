@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { ListChecks, AlertTriangle } from 'lucide-react';
+import { ListChecks, AlertTriangle, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import moment from 'moment';
 import problemSetService from '../../services/ProblemSetService';
 import Spinner from '../../components/common/Spinner';
 import Modal from '../../components/common/Modal';
@@ -11,23 +12,59 @@ import AttachmentList from '../../components/classes/ProblemSet/AttachmentList';
 import { hasDescription } from '../../components/classes/ProblemSet/publishChecks';
 import QuestionComments from '../../components/classes/ProblemSet/QuestionComments';
 
-//Student take page: one question at a time, submit once at the end. Nothing is sent to the server until the
-//student confirms the submission, and then everything (answers + files) goes up together.
+const toFills = (question, words = []) => {
+    const used = new Set();
+    return Array.from({ length: question.blankCount }, (_, i) => {
+        const word = words[i];
+        if (!word) return null;
+        const index = question.wordBank.findIndex((w, j) => w === word && !used.has(j));
+        if (index === -1) return null;
+        used.add(index);
+        return index;
+    });
+};
+
+const groupFiles = (files = []) => files.reduce((groups, file) => ({
+    ...groups, [file.question_id]: [...(groups[file.question_id] || []), file]
+}), {});
+
+
 const StudentAttemptPage = () => {
     const { classData } = useOutletContext();
     const { setId } = useParams();
     const navigate = useNavigate();
-
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
-    //One map per question type, all keyed by question id.
-    const [selected, setSelected] = useState({}); // mcq: optionId
-    const [fills, setFills] = useState({});       // fill_blank: [wordBankIndex | null, ...]
-    const [texts, setTexts] = useState({});       // open_ended: answer html
-    const [files, setFiles] = useState({});       // open_ended: File[]
+    const [selected, setSelected] = useState({}); 
+    const [fills, setFills] = useState({});
+    const [texts, setTexts] = useState({});
+    const [files, setFiles] = useState({});
+    const [savedFiles, setSavedFiles] = useState({});
+    const [savedAt, setSavedAt] = useState(null);
+    const [dirty, setDirty] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    const restoreDraft = (questions, draft) => {
+        if (!draft) return;
+        const nextSelected = {};
+        const nextFills = {};
+        const nextTexts = {};
+        for (const answer of draft.answers) {
+            const q = questions.find((item) => item.id === answer.questionId);
+            if (!q) continue;
+            if (q.type === 'fill_blank') nextFills[q.id] = toFills(q, answer.blanks);
+            else if (q.type === 'open_ended') { if (answer.text) nextTexts[q.id] = answer.text; }
+            else if (answer.optionId != null) nextSelected[q.id] = answer.optionId;
+        }
+        setSelected(nextSelected);
+        setFills(nextFills);
+        setTexts(nextTexts);
+        setSavedFiles(groupFiles(draft.files));
+        setSavedAt(draft.savedAt);
+    };
 
     useEffect(() => {
         problemSetService.getAttemptView(classData.id, setId)
@@ -36,6 +73,7 @@ const StudentAttemptPage = () => {
                     navigate(`/classes/${classData.id}/problem-sets/${setId}/attempt/result`, { replace: true });
                 } else {
                     setData(result.data);
+                    restoreDraft(result.data.questions, result.data.draft);
                 }
             })
             .catch((error) => {
@@ -44,23 +82,30 @@ const StudentAttemptPage = () => {
                 navigate(`/classes/${classData.id}/problem-sets`);
             })
             .finally(() => setLoading(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [classData.id, setId]);
+
+
+    const edit = (setter, questionId, value) => {
+        setter((prev) => ({ ...prev, [questionId]: value }));
+        setDirty(true);
+    };
 
     const isAnswered = (q) => {
         if (q.type === 'fill_blank') return (fills[q.id] || []).some((f) => f != null);
-        if (q.type === 'open_ended') return hasDescription(texts[q.id]) || (files[q.id] || []).length > 0;
+        if (q.type === 'open_ended') {
+            return hasDescription(texts[q.id]) || (files[q.id] || []).length > 0 || (savedFiles[q.id] || []).length > 0;
+        }
         return selected[q.id] != null;
     };
     const answeredCount = data ? data.questions.filter(isAnswered).length : 0;
 
-    //Warn before closing/refreshing the tab once something has been answered, since nothing is saved until submit.
+    
     useEffect(() => {
-        if (answeredCount === 0 || submitting) return;
+        if (!dirty || submitting) return;
         const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
         window.addEventListener('beforeunload', warn);
         return () => window.removeEventListener('beforeunload', warn);
-    }, [answeredCount, submitting]);
+    }, [dirty, submitting]);
 
     if (loading || !data) {
         return <div className='flex justify-center py-12'><Spinner /></div>;
@@ -74,23 +119,43 @@ const StudentAttemptPage = () => {
     const isLast = currentIndex === data.questions.length - 1;
     const unansweredCount = data.questions.length - answeredCount;
 
-    //Called by the confirmation modal's Submit button, not directly by the page's Submit button.
+    
+    const buildAnswers = () => data.questions.map((q) => {
+        if (q.type === 'fill_blank') {
+            const placed = fills[q.id] || [];
+            return {
+                questionId: q.id,
+                blanks: Array.from({ length: q.blankCount }, (_, i) => placed[i] == null ? '' : q.wordBank[placed[i]])
+            };
+        }
+        if (q.type === 'open_ended') return { questionId: q.id, text: texts[q.id] || '' };
+        return { questionId: q.id, optionId: selected[q.id] ?? null };
+    });
+    const keepFileIds = () => Object.values(savedFiles).flat().map((f) => f.id);
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const result = await problemSetService.saveAttemptDraft(classData.id, setId, buildAnswers(), files, keepFileIds());
+            setSavedFiles(groupFiles(result.data?.files));
+            setFiles({});
+            setSavedAt(result.data?.savedAt || new Date());
+            setDirty(false);
+            toast.success("Attempt saved. You can come back and continue later.");
+
+        } catch (error) {
+            toast.error(error.error || error.message || "Failed to save your attempt.");
+            console.error(error);
+
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleConfirmSubmit = async () => {
         setSubmitting(true);
         try {
-            const answers = data.questions.map((q) => {
-                if (q.type === 'fill_blank') {
-                    const placed = fills[q.id] || [];
-                    return {
-                        questionId: q.id,
-                        blanks: Array.from({ length: q.blankCount }, (_, i) => placed[i] == null ? '' : q.wordBank[placed[i]])
-                    };
-                }
-                if (q.type === 'open_ended') return { questionId: q.id, text: texts[q.id] || '' };
-                return { questionId: q.id, optionId: selected[q.id] ?? null };
-            });
-
-            await problemSetService.submitAttempt(classData.id, setId, answers, files);
+            await problemSetService.submitAttempt(classData.id, setId, buildAnswers(), files, keepFileIds());
             toast.success("Submitted successfully.");
             setConfirmOpen(false);
             navigate(`/classes/${classData.id}/problem-sets`);
@@ -106,11 +171,25 @@ const StudentAttemptPage = () => {
 
     return (
         <div className='space-y-6'>
-            <div className='flex items-center gap-4'>
-                <div className='w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center shrink-0'>
-                    <ListChecks className='w-7 h-7 text-purple-600' strokeWidth={2} />
+            <div className='flex flex-wrap items-center justify-between gap-4'>
+                <div className='flex items-center gap-4 min-w-0'>
+                    <div className='w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center shrink-0'>
+                        <ListChecks className='w-7 h-7 text-purple-600' strokeWidth={2} />
+                    </div>
+                    <h1 className='text-2xl font-bold text-slate-900'>{data.title}</h1>
                 </div>
-                <h1 className='text-2xl font-bold text-slate-900'>{data.title}</h1>
+                <div className='flex items-center gap-3'>
+                    <span className={`text-xs ${dirty ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {dirty ? 'Unsaved changes' : savedAt ? `Saved at ${moment(savedAt).format('h:mma, D MMM')}` : ''}
+                    </span>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving || submitting || (!dirty && !!savedAt)}
+                        className='flex items-center gap-2 border border-purple-300 text-purple-600 hover:bg-purple-50 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:hover:bg-transparent'
+                    >
+                        <Save className='w-4 h-4' /> {saving ? 'Saving...' : 'Save Attempt'}
+                    </button>
+                </div>
             </div>
 
             <div className='max-w-4xl mx-auto space-y-6'>
@@ -130,7 +209,6 @@ const StudentAttemptPage = () => {
                     </div>
                 </div>
 
-                {/* Question Card — keyed so each question's editors start fresh from the saved answer */}
                 <div key={question.id} className='space-y-4'>
                     <div className='bg-white border-2 border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 p-6'>
                         <div className='inline-flex items-center px-4 py-2 bg-linear-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl mb-5'>
@@ -141,12 +219,10 @@ const StudentAttemptPage = () => {
                             <AttemptFillBlank
                                 question={question}
                                 fills={fills[question.id] || Array(question.blankCount).fill(null)}
-                                onChange={(next) => setFills((prev) => ({ ...prev, [question.id]: next }))}
+                                onChange={(next) => edit(setFills, question.id, next)}
                             />
                         ) : (
                             <>
-                                {/* Students see the description as the question itself; the title is only the lecturer's label.
-                                    A question with no description falls back to its title so it's never blank. */}
                                 {hasDescription(question.description) ? (
                                     <div className='rich-content text-lg font-semibold text-slate-900 leading-relaxed' dangerouslySetInnerHTML={{ __html: question.description }} />
                                 ) : (
@@ -160,7 +236,7 @@ const StudentAttemptPage = () => {
                                             return (
                                                 <button
                                                     key={opt.id}
-                                                    onClick={() => setSelected((prev) => ({ ...prev, [question.id]: opt.id }))}
+                                                    onClick={() => edit(setSelected, question.id, opt.id)}
                                                     className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 ${
                                                         isSelected
                                                             ? 'border-purple-500 bg-purple-50 text-purple-900'
@@ -189,8 +265,10 @@ const StudentAttemptPage = () => {
                                 classId={classData.id}
                                 text={texts[question.id] || ''}
                                 files={files[question.id] || []}
-                                onTextChange={(next) => setTexts((prev) => ({ ...prev, [question.id]: next }))}
-                                onFilesChange={(next) => setFiles((prev) => ({ ...prev, [question.id]: next }))}
+                                savedFiles={savedFiles[question.id] || []}
+                                onTextChange={(next) => edit(setTexts, question.id, next)}
+                                onFilesChange={(next) => edit(setFiles, question.id, next)}
+                                onSavedFilesChange={(next) => edit(setSavedFiles, question.id, next)}
                             />
                         </>
                     )}

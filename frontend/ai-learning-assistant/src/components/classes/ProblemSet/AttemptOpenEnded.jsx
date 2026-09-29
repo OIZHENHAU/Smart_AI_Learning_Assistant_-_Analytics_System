@@ -1,16 +1,33 @@
 import React, { useRef } from 'react';
-import { UploadCloud, Paperclip, X } from 'lucide-react';
+import { UploadCloud, Paperclip, X, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RichTextEditor from '../RichTextEditor';
 import { formatFileSize } from '../../../utils/formatFileSize';
+import { BASE_URL } from '../../../utils/apiPath';
 
-//Same limits as backend/config/problemSetAnswerUpload.js.
 const ALLOWED_EXTENSIONS = ['.pdf', '.ipynb', '.zip', '.docx', '.txt', '.png', '.jpg', '.jpeg'];
 const MAX_SIZE = 50 * 1024 * 1024;
 const MAX_FILES = 5;
 
-//The "Your Answer" box. Files stay in the browser until the whole attempt is submitted.
-const AttemptOpenEnded = ({ classId, text, files, onTextChange, onFilesChange }) => {
+const FileRow = ({ icon: Icon, name, size, href, note, onRemove }) => (
+    <li className='flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5'>
+        <Icon className='w-4 h-4 text-purple-500 shrink-0' />
+        {href ? (
+            <a href={href} target='_blank' rel='noopener noreferrer' className='flex-1 min-w-0 truncate text-sm text-slate-700 hover:text-purple-600'>{name}</a>
+        ) : (
+            <span className='flex-1 min-w-0 truncate text-sm text-slate-700'>{name}</span>
+        )}
+        {note && <span className='text-xs text-green-600 shrink-0'>{note}</span>}
+        <span className='text-xs text-slate-400 shrink-0'>{formatFileSize(size)}</span>
+        <button type='button' onClick={onRemove} aria-label={`Remove ${name}`} className='text-slate-300 hover:text-red-500'>
+            <X className='w-4 h-4' />
+        </button>
+    </li>
+);
+
+//savedFiles are already stored with the saved attempt; files are new ones that go up on the next Save Attempt or
+//Submit. Removing a saved file only takes effect on that next save/submit.
+const AttemptOpenEnded = ({ classId, text, files, savedFiles = [], onTextChange, onFilesChange, onSavedFilesChange }) => {
     const inputRef = useRef(null);
 
     const addFiles = (list) => {
@@ -25,7 +42,7 @@ const AttemptOpenEnded = ({ classId, text, files, onTextChange, onFilesChange })
                 toast.error(`${file.name} is larger than 50MB.`);
                 continue;
             }
-            if (next.length >= MAX_FILES) {
+            if (savedFiles.length + next.length >= MAX_FILES) {
                 toast.error(`You can attach up to ${MAX_FILES} files.`);
                 break;
             }
@@ -68,27 +85,32 @@ const AttemptOpenEnded = ({ classId, text, files, onTextChange, onFilesChange })
                 }
             />
 
-            {files.length > 0 && (
+            {(savedFiles.length > 0 || files.length > 0) && (
                 <ul className='mt-3 space-y-2'>
+                    {savedFiles.map((file) => (
+                        <FileRow
+                            key={`saved-${file.id}`}
+                            icon={CheckCircle2}
+                            name={file.original_name}
+                            size={file.file_size}
+                            href={`${BASE_URL}/uploads/problem-set-answers/${file.file_name}`}
+                            note='Saved'
+                            onRemove={() => onSavedFilesChange(savedFiles.filter((f) => f.id !== file.id))}
+                        />
+                    ))}
                     {files.map((file, index) => (
-                        <li key={`${file.name}-${index}`} className='flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-2.5'>
-                            <Paperclip className='w-4 h-4 text-purple-500 shrink-0' />
-                            <span className='flex-1 min-w-0 truncate text-sm text-slate-700'>{file.name}</span>
-                            <span className='text-xs text-slate-400 shrink-0'>{formatFileSize(file.size)}</span>
-                            <button
-                                type='button'
-                                onClick={() => onFilesChange(files.filter((_, i) => i !== index))}
-                                aria-label={`Remove ${file.name}`}
-                                className='text-slate-300 hover:text-red-500'
-                            >
-                                <X className='w-4 h-4' />
-                            </button>
-                        </li>
+                        <FileRow
+                            key={`new-${file.name}-${index}`}
+                            icon={Paperclip}
+                            name={file.name}
+                            size={file.size}
+                            onRemove={() => onFilesChange(files.filter((_, i) => i !== index))}
+                        />
                     ))}
                 </ul>
             )}
             <p className='text-xs text-slate-400 mt-2'>
-                Use the upload icon to attach up to {MAX_FILES} files (PDF, Jupyter Notebook, ZIP, Word, text or images, max 50MB each). They're uploaded when you submit.
+                Use the upload icon to attach up to {MAX_FILES} files (PDF, Jupyter Notebook, ZIP, Word, text or images, max 50MB each).
             </p>
         </div>
     );
