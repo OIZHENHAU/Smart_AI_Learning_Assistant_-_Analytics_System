@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { getToken, getStoredUser, saveSession, saveUser, clearSession } from "../utils/authStorage";
 
 // createContext() is a React API that creates a "container" for data you want to share 
 // across many components without manually passing the props down through every level.
@@ -30,11 +31,10 @@ export const AuthProvider = ({children}) => {
 
     const checkAuthStatus = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
+            const token = getToken();
+            const userData = getStoredUser();
 
-            if (token && userStr) {
-                const userData = JSON.parse(userStr);
+            if (token && userData) {
                 setUser(userData);
                 setIsAuthenticated(true);
             }
@@ -50,16 +50,14 @@ export const AuthProvider = ({children}) => {
     };
 
     const login = (userData, token) => {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        saveSession(token, userData);
 
         setUser(userData);
         setIsAuthenticated(true);
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        clearSession();
 
         setUser(null);
         setIsAuthenticated(false);
@@ -69,7 +67,7 @@ export const AuthProvider = ({children}) => {
 
     const updateUser = (updatedUserData) => {
         const newUserData = { ...user, ...updatedUserData };
-        localStorage.setItem('user', JSON.stringify(newUserData));
+        saveUser(newUserData);
         setUser(newUserData);
     }
 

@@ -5,6 +5,7 @@ import achievementService from '../../services/AchievementService';
 import { Brain, User, Mail, Lock, ArrowRight, GraduationCap, Presentation, Users, ShieldCheck, Clock } from "lucide-react";
 import toast from 'react-hot-toast';
 import Modal from '../../components/common/Modal';
+import { saveToken, clearSession } from '../../utils/authStorage';
 
 const ROLE_OPTIONS = [
     { value: 'student', label: 'Student', icon: GraduationCap },
@@ -60,7 +61,7 @@ const RegisterPage = () => {
             const { data } = await authService.register(username, email, password, role);
             const { token } = data;
             //Temporarily store the token so the follow-up achievement calls are authenticated.
-            localStorage.setItem('token', token);
+            saveToken(token);
             //Add daily goals when creating the account.
             await achievementService.postAllDailyGoals();
             //Add all badges when creating an account
@@ -82,7 +83,7 @@ const RegisterPage = () => {
             toast.error(msg);
         } finally {
             //Clear the token again since the user is expected to log in manually.
-            localStorage.removeItem('token');
+            clearSession();
             setLoading(false);
         }
     };
