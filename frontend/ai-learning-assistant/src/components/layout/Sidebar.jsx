@@ -12,7 +12,6 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
     const location = useLocation();
 
     const isActive = (to) => {
-        // When navigating to a quiz page from the Documents context, keep Documents highlighted
         const fromDocuments = location.state?.from === 'documents';
         if (fromDocuments && location.pathname.startsWith('/quizzes')) {
             return to === '/documents';
@@ -39,7 +38,6 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: '/profile', icon: UserCircle2, text: "Profile"}
     ]
 
-    //Inside /classes/:classId/... the sidebar shows the class sections instead of the normal menu.
     const classMatch = useMatch('/classes/:classId/*');
     const classBase = classMatch ? `/classes/${classMatch.params.classId}` : '';
 
@@ -59,7 +57,6 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},
     ]
 
-    //Links with a `roles` list are only shown to those roles; links without one are shown to everyone.
     const navLinks = (classMatch ? classNavLinks : baseNavLinks)
         .filter(link => !link.roles || link.roles.includes(user?.role))
 
@@ -85,7 +82,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                     </button>
                 </div>
 
-                {/* The class that is open (only inside a class) */}
+                {/* When the class section is open */}
                 {classMatch && currentClass && String(currentClass.id) === classMatch.params.classId && (
                     <div className='px-5 py-4 border-b border-slate-200/60'>
                         <div className='flex items-center gap-3'>
@@ -116,7 +113,6 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
                                         ${active
                                             ? "bg-linear-to-r from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
                                             : link.back
-                                                //Back to Classes always has the grey background, it gets a little darker on hover.
                                                 ? 'bg-slate-100 text-slate-900 hover:bg-slate-200'
                                                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                                         }`}

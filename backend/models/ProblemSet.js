@@ -122,7 +122,7 @@ const ProblemSet = {
         return result.insertId;
     },
 
-    //Replaces the question's fields and its whole option list in one transaction.
+    //Saves the question's fields and its option list in one transaction.
     async updateQuestion(questionId, { type, title, description, points, options }) {
         const connection = await db.getConnection();
         try {
@@ -132,14 +132,40 @@ const ProblemSet = {
                 `UPDATE problem_set_questions SET type = ?, title = ?, description = ?, points = ? WHERE id = ?`,
                 [type, title, description, points, questionId]
             );
-            await connection.execute(`DELETE FROM problem_set_options WHERE question_id = ?`, [questionId]);
 
-            if (options.length > 0) {
-                const placeholders = options.map(() => '(?, ?, ?, ?)').join(', ');
-                const params = options.flatMap((opt, index) => [questionId, index + 1, opt.text, !!opt.isCorrect]);
+            //Options that still exist keep their row (and id), so students' submitted answers that point at them stay
+            //linked. Only options the lecturer removed are deleted. An id is only trusted if it belongs to this question.
+            const [existingRows] = await connection.execute(`SELECT id FROM problem_set_options WHERE question_id = ?`, [questionId]);
+            const existingIds = new Set(existingRows.map((row) => row.id));
+            const reused = new Set();
+            const toUpdate = [];
+            const toInsert = [];
+            options.forEach((opt, index) => {
+                const row = { ...opt, position: index + 1 };
+                if (opt.id != null && existingIds.has(opt.id) && !reused.has(opt.id)) {
+                    reused.add(opt.id);
+                    toUpdate.push(row);
+                } else {
+                    toInsert.push(row);
+                }
+            });
+
+            const removedIds = [...existingIds].filter((id) => !reused.has(id));
+            if (removedIds.length > 0) {
                 await connection.execute(
-                    `INSERT INTO problem_set_options (question_id, position, option_text, is_correct) VALUES ${placeholders}`,
-                    params
+                    `DELETE FROM problem_set_options WHERE id IN (${removedIds.map(() => '?').join(', ')})`, removedIds
+                );
+            }
+            for (const opt of toUpdate) {
+                await connection.execute(
+                    `UPDATE problem_set_options SET position = ?, option_text = ?, is_correct = ? WHERE id = ?`,
+                    [opt.position, opt.text, !!opt.isCorrect, opt.id]
+                );
+            }
+            for (const opt of toInsert) {
+                await connection.execute(
+                    `INSERT INTO problem_set_options (question_id, position, option_text, is_correct) VALUES (?, ?, ?, ?)`,
+                    [questionId, opt.position, opt.text, !!opt.isCorrect]
                 );
             }
 

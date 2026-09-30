@@ -215,7 +215,7 @@ const ClassProblemSetsPage = () => {
                                     </td>
                                     <td className='py-4 pr-4'>
                                         {!canManage && set.my_attempt ? (
-                                            <span className='px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700'>
+                                            <span className='px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700'>
                                                 Submitted
                                             </span>
                                         ) : (

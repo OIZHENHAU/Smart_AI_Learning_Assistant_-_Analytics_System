@@ -24,7 +24,7 @@ const toQuestionDraft = (q) => {
         points: q.points ?? '',
         description: q.description || '',
         options: type === 'mcq' && q.options.length
-            ? q.options.map((o) => ({ text: o.option_text, isCorrect: o.is_correct }))
+            ? q.options.map((o) => ({ id: o.id, text: o.option_text, isCorrect: o.is_correct }))
             : blankOptions(type),
         //A fill-in-the-blank's blank answers live in the passage; its options that aren't correct are the extra words.
         distractors: type === 'fill_blank' ? q.options.filter((o) => !o.is_correct).map((o) => o.option_text) : []

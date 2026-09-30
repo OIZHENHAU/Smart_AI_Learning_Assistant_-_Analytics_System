@@ -205,7 +205,14 @@ const readQuestionBody = (body) => {
     //A fill-in-the-blank's answers are always read back out of the passage itself, never taken from the client.
     let options = [];
     if (type === 'mcq' && Array.isArray(body.options)) {
-        options = body.options.map((o) => ({ text: (o.text || '').trim(), isCorrect: !!o.isCorrect })).filter((o) => o.text);
+        //id is the option's existing row (none for a newly added option), so saving can update it in place.
+        options = body.options
+            .map((o) => ({
+                id: Number.isInteger(Number(o.id)) && o.id != null ? Number(o.id) : null,
+                text: (o.text || '').trim(),
+                isCorrect: !!o.isCorrect
+            }))
+            .filter((o) => o.text);
     } else if (type === 'fill_blank') {
         //The blanks (correct, in reading order) come first, then the extra wrong words for the word bank.
         //An extra word that repeats a blank answer or another extra word is dropped, ignoring case.

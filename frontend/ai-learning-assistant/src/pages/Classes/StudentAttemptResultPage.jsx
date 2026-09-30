@@ -64,8 +64,6 @@ const OpenEndedAnswer = ({ q }) => (
     </div>
 );
 
-//Lets the student see what they submitted, not whether it was right or what they scored — the API itself
-//never sends that data here, so there's nothing to accidentally reveal.
 const StudentAttemptResultPage = () => {
     const { classData } = useOutletContext();
     const { setId } = useParams();

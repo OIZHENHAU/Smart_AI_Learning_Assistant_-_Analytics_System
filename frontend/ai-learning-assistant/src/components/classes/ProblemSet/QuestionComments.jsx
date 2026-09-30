@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, ChevronDown, Send, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import problemSetService from '../../../services/ProblemSetService';
@@ -52,12 +52,14 @@ const Composer = ({ classId, initial = '', submitLabel, busyLabel, onSubmit, onC
 //  Student: sees only their own conversation and writes into it (their first message starts it).
 //  Staff:   sees every student's conversation, one card per student, and replies inside each.
 //The server decides what each person receives; this component only lays it out.
-//collapsible = starts closed and only loads when opened (used where many questions are listed at once).
+//collapsible = starts closed (used where many questions are listed at once). It still loads straight away, so the
+//header can show how many messages there are, and a student who already has a conversation sees it opened.
 const QuestionComments = ({ classId, setId, questionId, collapsible = false }) => {
     const { user } = useAuth();
     const isStaff = STAFF_ROLES.includes(user?.role);
 
     const [open, setOpen] = useState(!collapsible);
+    const autoOpened = useRef(false);
     const [threads, setThreads] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
@@ -68,7 +70,14 @@ const QuestionComments = ({ classId, setId, questionId, collapsible = false }) =
     const fetchComments = async () => {
         try {
             const result = await problemSetService.getQuestionComments(classId, setId, questionId);
-            setThreads(Array.isArray(result?.data) ? result.data : []);
+            const data = Array.isArray(result?.data) ? result.data : [];
+            setThreads(data);
+
+            //Only on the first load, so a student who then collapses it isn't forced open again by every reload.
+            if (!autoOpened.current) {
+                autoOpened.current = true;
+                if (!isStaff && data.length > 0) setOpen(true);
+            }
 
         } catch (error) {
             toast.error(error.error || "Failed to load the conversation.");
@@ -80,9 +89,8 @@ const QuestionComments = ({ classId, setId, questionId, collapsible = false }) =
     };
 
     useEffect(() => {
-        if (open) fetchComments();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, classId, setId, questionId]);
+        fetchComments();
+    }, [classId, setId, questionId]);
 
     //Runs one change, then reloads. Returns whether it worked, for the composer.
     const run = async (action, failMessage) => {
@@ -149,7 +157,7 @@ const QuestionComments = ({ classId, setId, questionId, collapsible = false }) =
                 <button onClick={() => setOpen((prev) => !prev)} className='w-full flex items-center justify-between text-left' aria-expanded={open}>
                     <span className='flex items-center gap-2 text-base font-semibold text-slate-900'>
                         <MessageSquare className='w-4 h-4 text-purple-600' />
-                        {heading}{open && !loading ? ` (${summary})` : ''}
+                        {heading}{!loading && threads.length > 0 ? ` (${summary})` : ''}
                     </span>
                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
                 </button>
