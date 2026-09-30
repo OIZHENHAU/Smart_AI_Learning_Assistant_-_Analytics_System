@@ -36,7 +36,9 @@ import ClassProblemSetsPage from './pages/Classes/ClassProblemSetsPage';
 import ProblemSetBuilderPage from './pages/Classes/ProblemSetBuilderPage';
 import StudentAttemptPage from './pages/Classes/StudentAttemptPage';
 import StudentAttemptResultPage from './pages/Classes/StudentAttemptResultPage';
-import { Trophy, Video, ClipboardCheck, BookOpen, Users, Home, MessageSquare } from 'lucide-react';
+import ClassSubmissionsPage from './pages/Classes/ClassSubmissionsPage';
+import SubmissionGradingPage from './pages/Classes/SubmissionGradingPage';
+import { Trophy, Video, BookOpen, Users, Home, MessageSquare } from 'lucide-react';
 
 
 const App = () => {
@@ -96,7 +98,8 @@ const App = () => {
                         <Route path='video' element={<ClassSectionPage title='Video' description='Lecture videos for this class.' icon={Video}/>}/>
                         <Route path='settings' element={<ClassSettingsPage/>}/>
                         <Route path='permission' element={<ClassPermissionPage/>}/>
-                        <Route path='submission' element={<ClassSectionPage title='Submission' description='Assignments submitted by students.' icon={ClipboardCheck}/>}/>
+                        <Route path='submission' element={<ClassSubmissionsPage/>}/>
+                        <Route path='submission/:attemptId' element={<SubmissionGradingPage/>}/>
                     </Route>
                 </Route>
 

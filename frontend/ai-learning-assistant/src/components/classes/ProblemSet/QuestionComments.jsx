@@ -178,7 +178,7 @@ const QuestionComments = ({ classId, setId, questionId, collapsible = false }) =
                             threads.map((thread) => (
                                 <div key={thread.id} className='border border-slate-200 rounded-xl p-4 space-y-2'>
                                     <p className='text-sm font-semibold text-slate-700'>
-                                        Conversation with <span className='text-purple-600'>{thread.author_name}</span>
+                                        Conversation with <span className='text-purple-600'>{thread.student_name || thread.author_name}</span>
                                     </p>
                                     {[thread, ...thread.replies].map((item) => renderMessage(item))}
                                     {replyingTo === thread.id ? (
@@ -195,7 +195,7 @@ const QuestionComments = ({ classId, setId, questionId, collapsible = false }) =
                                         />
                                     ) : (
                                         <button onClick={() => setReplyingTo(thread.id)} className='text-xs font-semibold text-purple-600 hover:text-purple-700'>
-                                            Reply to {thread.author_name}
+                                            Reply to {thread.student_name || thread.author_name}
                                         </button>
                                     )}
                                 </div>

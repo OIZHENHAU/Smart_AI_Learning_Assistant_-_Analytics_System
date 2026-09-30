@@ -1,6 +1,6 @@
 import sanitizeHTML from 'sanitize-html';
 import ProblemSet from '../models/ProblemSet.js';
-import ProblemSetComment from '../models/ProblemSetComment.js';
+import ProblemSetComment, { threadOwner } from '../models/ProblemSetComment.js';
 import { getClassAccess, sendError, COMMENT_CLEAN_OPTIONS } from '../utils/ClassAccess.js';
 
 //Same text without any tags, so an empty <p></p> does not count as a comment.
@@ -36,7 +36,7 @@ const loadComment = async (req) => {
     if (!comment || comment.question_id !== result.question.id) return { status: 404, error: "Comment not found." };
 
     const thread = comment.parent_id === null ? comment : await ProblemSetComment.getById(comment.parent_id);
-    if (!result.canManage && thread?.author_id !== req.user.id) return { status: 404, error: "Comment not found." };
+    if (!result.canManage && (!thread || threadOwner(thread) !== req.user.id)) return { status: 404, error: "Comment not found." };
 
     return { ...result, comment, thread };
 };
@@ -89,13 +89,13 @@ export const createQuestionComment = async (req, res, next) => {
             //Must be a conversation on this question that the caller may see: any when staff, a student's own otherwise.
             const parent = Number.isInteger(parentId) ? await ProblemSetComment.getById(parentId) : null;
             if (!parent || parent.question_id !== result.question.id || parent.parent_id !== null
-                || (!result.canManage && parent.author_id !== req.user.id)) {
+                || (!result.canManage && threadOwner(parent) !== req.user.id)) {
                 return sendError(res, 404, "Comment not found.");
             }
         }
 
         const id = await ProblemSetComment.create({
-            questionId: result.question.id, parentId, authorId: req.user.id, content: body.content
+            questionId: result.question.id, parentId, studentId: req.user.id, authorId: req.user.id, content: body.content
         });
 
         res.status(201).json({ success: true, message: "Message sent successfully.", data: { id }, statusCode: 201 });

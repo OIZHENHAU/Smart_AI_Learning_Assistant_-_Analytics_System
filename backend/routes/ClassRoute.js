@@ -59,6 +59,7 @@ import {
     deleteQuestionFile
 } from '../controller/ProblemSetController.js';
 import { getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft } from '../controller/ProblemSetAttemptController.js';
+import { getSubmissions, getSubmissionForGrading, gradeSubmission, saveGradingDraft } from '../controller/ProblemSetSubmissionController.js';
 import {
     getQuestionComments,
     createQuestionComment,
@@ -123,6 +124,12 @@ router.post('/:id/problem-sets/:setId/images', staffOnly, requireClassManager, u
 router.get('/:id/problem-sets/:setId/attempt', everyone, getAttemptView);
 router.post('/:id/problem-sets/:setId/attempt', everyone, uploadAnswerFiles.any(), submitAttempt);
 router.put('/:id/problem-sets/:setId/attempt/draft', everyone, uploadAnswerFiles.any(), saveAttemptDraft);
+
+//Everyone can list submissions and open one (a student only their own, once graded); only lecturer, parents and admin can grade.
+router.get('/:id/submissions', everyone, getSubmissions);
+router.get('/:id/submissions/:attemptId', everyone, getSubmissionForGrading);
+router.put('/:id/submissions/:attemptId/grade', staffOnly, gradeSubmission);
+router.put('/:id/submissions/:attemptId/draft', staffOnly, saveGradingDraft);
 router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
 
 //Private lecturer–student conversations on each question; the controller decides who can see which.

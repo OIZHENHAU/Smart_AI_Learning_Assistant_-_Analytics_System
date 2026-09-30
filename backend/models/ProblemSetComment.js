@@ -1,15 +1,20 @@
 import db from '../config/MySQL.js';
 
-const SELECT_COMMENT = `SELECT c.id, c.question_id, c.parent_id, c.author_id, u.username AS author_name,
-                               c.content, c.created_at, c.updated_at
+const SELECT_COMMENT = `SELECT c.id, c.question_id, c.parent_id, c.student_id, c.author_id, u.username AS author_name,
+                               s.username AS student_name, c.content, c.created_at, c.updated_at
                         FROM problem_set_question_comments c
-                        JOIN users u ON u.id = c.author_id`;
+                        JOIN users u ON u.id = c.author_id
+                        LEFT JOIN users s ON s.id = COALESCE(c.student_id, c.author_id)`;
+
+//The student a conversation belongs to (student_id; older rows without one belong to their first author).
+export const threadOwner = (thread) => thread.student_id ?? thread.author_id;
 
 //When a conversation last had a message, so the most recently active ones come first.
 const lastActivity = (thread) => new Date((thread.replies.at(-1) || thread).created_at).getTime();
 
-//A conversation is a top-level comment written by a student plus the replies under it. Its first message's
-//author is the student it belongs to, and only that student (and staff) may ever see it.
+//A conversation is a top-level comment plus the replies under it. It belongs to one student (student_id), usually
+//the one who wrote the first message, though a lecturer can start it from the grading page. Only that student
+//(and staff) may ever see it.
 const ProblemSetComment = {
     //Every conversation on a question, or only that student's own when studentId is given.
     //The filtering happens here on the server, so another student's messages are never sent at all.
@@ -19,7 +24,7 @@ const ProblemSetComment = {
         );
 
         const threads = rows
-            .filter((row) => row.parent_id === null && (studentId === null || row.author_id === studentId))
+            .filter((row) => row.parent_id === null && (studentId === null || threadOwner(row) === studentId))
             .map((thread) => ({ ...thread, replies: [] }));
         const threadById = new Map(threads.map((thread) => [thread.id, thread]));
         rows.filter((row) => row.parent_id !== null).forEach((reply) => threadById.get(reply.parent_id)?.replies.push(reply));
@@ -31,7 +36,7 @@ const ProblemSetComment = {
     async getThreadByStudent(questionId, studentId) {
         const [rows] = await db.execute(
             `SELECT id FROM problem_set_question_comments
-             WHERE question_id = ? AND parent_id IS NULL AND author_id = ? ORDER BY id ASC LIMIT 1`,
+             WHERE question_id = ? AND parent_id IS NULL AND COALESCE(student_id, author_id) = ? ORDER BY id ASC LIMIT 1`,
             [questionId, studentId]
         );
         return rows[0];
@@ -42,11 +47,12 @@ const ProblemSetComment = {
         return rows[0];
     },
 
-    async create({ questionId, parentId, authorId, content }) {
+    //A new conversation (no parentId) records the student it belongs to; a reply inherits it from its conversation.
+    async create({ questionId, parentId, studentId = null, authorId, content }) {
         const [result] = await db.execute(
-            `INSERT INTO problem_set_question_comments (question_id, parent_id, author_id, content, created_at)
-             VALUES (?, ?, ?, ?, ?)`,
-            [questionId, parentId, authorId, content, new Date()]
+            `INSERT INTO problem_set_question_comments (question_id, parent_id, student_id, author_id, content, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [questionId, parentId, parentId ? null : studentId, authorId, content, new Date()]
         );
         return result.insertId;
     },

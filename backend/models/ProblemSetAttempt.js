@@ -1,5 +1,6 @@
 import db from '../config/MySQL.js';
 import { maskBlanks } from '../utils/ProblemSetBlanks.js';
+import { gradeFillBlank, roundPoints } from '../utils/ProblemSetGrading.js';
 
 //Fisher-Yates, so the word bank never gives away the order of the blanks.
 const shuffle = (items) => {
@@ -10,9 +11,6 @@ const shuffle = (items) => {
     }
     return result;
 };
-
-//How a fill-in-the-blank answer is compared: case, surrounding spaces and repeated spaces don't matter.
-const normalise = (text) => String(text ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 //execute() (prepared statements) does not expand an array into IN (?), so one placeholder per id is built here.
 const inPlaceholders = (ids) => ids.map(() => '?').join(', ');
@@ -105,17 +103,20 @@ const ProblemSetAttempt = {
 
             for (const q of questions) {
                 const picked = answers.find((a) => a.questionId === q.id);
-                const row = { questionId: q.id, optionId: null, answerText: null, blankAnswers: null, isCorrect: false, files: [] };
+                const row = { questionId: q.id, optionId: null, answerText: null, blankAnswers: null, isCorrect: false, pointsAwarded: null, files: [] };
 
                 if (q.type === 'fill_blank') {
-                    //Right only when every blank is right, in order. The extra wrong words are not blanks.
+                    //Partial credit: (correct blanks / total blanks) × points. is_correct still means "every blank right".
+                    //The extra wrong words are not blanks.
                     const expected = options.filter((o) => o.question_id === q.id && o.is_correct).map((o) => o.option_text);
                     const given = expected.map((_, i) => String(picked?.blanks?.[i] ?? '').trim().slice(0, 500));
+                    const grade = gradeFillBlank(expected, given, q.points);
                     row.blankAnswers = JSON.stringify(given);
-                    row.isCorrect = expected.length > 0 && expected.every((text, i) => normalise(text) === normalise(given[i]));
+                    row.isCorrect = grade.allCorrect;
+                    row.pointsAwarded = grade.points;
 
                 } else if (q.type === 'open_ended') {
-                    //Marked by the lecturer later, so an open-ended answer never counts as correct automatically.
+                    //Marked by the lecturer later, so it has no mark yet.
                     row.answerText = picked?.text || null;
                     row.files = filesByQuestion[q.id] || [];
 
@@ -124,11 +125,13 @@ const ProblemSetAttempt = {
                     const chosen = picked ? options.find((o) => o.id === picked.optionId && o.question_id === q.id) : null;
                     row.optionId = chosen?.id ?? null;
                     row.isCorrect = !!chosen?.is_correct;
+                    row.pointsAwarded = row.isCorrect ? (q.points || 0) : 0;
                 }
 
-                if (row.isCorrect) score += q.points || 0;
+                score += row.pointsAwarded ?? 0;
                 answerRows.push(row);
             }
+            score = roundPoints(score);
 
             const [attemptResult] = await connection.execute(
                 `INSERT INTO problem_set_attempts (problem_set_id, user_id, score, total_points, submitted_at)
@@ -141,9 +144,9 @@ const ProblemSetAttempt = {
             for (const row of answerRows) {
                 const [answerResult] = await connection.execute(
                     `INSERT INTO problem_set_attempt_answers
-                        (attempt_id, question_id, selected_option_id, answer_text, blank_answers, is_correct)
-                     VALUES (?, ?, ?, ?, ?, ?)`,
-                    [attemptId, row.questionId, row.optionId, row.answerText, row.blankAnswers, row.isCorrect]
+                        (attempt_id, question_id, selected_option_id, answer_text, blank_answers, is_correct, points_awarded)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [attemptId, row.questionId, row.optionId, row.answerText, row.blankAnswers, row.isCorrect, row.pointsAwarded]
                 );
                 for (const file of row.files) {
                     await connection.execute(

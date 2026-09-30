@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { Navigate, useOutletContext } from 'react-router-dom';
 import { Settings, UserCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import moment from 'moment';
 import classService from '../../services/ClassService';
+import { useAuth } from '../../context/AuthContext';
 
 const ClassProfilePage = () => {
     const { classData, setClassData } = useOutletContext();
+    const { user } = useAuth();
     //Only the owner (or an admin) can edit, students just see the class information.
     const isOwner = classData.class_role === 'owner';
 
@@ -36,6 +38,11 @@ const ClassProfilePage = () => {
             setSaving(false);
         }
     };
+
+    //Students don't have a Settings page (the sidebar hides it); one who types the URL goes back to the class.
+    if (user?.role === 'student') {
+        return <Navigate to={`/classes/${classData.id}/announcement`} replace />;
+    }
 
     return (
         <div>

@@ -54,7 +54,7 @@ const Sidebar = ({isSidebarOpen, toggleSidebar}) => {
         {to: `${classBase}/comments`, icon: MessageSquare, text: 'Comments'},
         {to: `${classBase}/users`, icon: Users, text: 'Users'},
         {to: `${classBase}/permission`, icon: ShieldCheck, text: 'Permission', roles: ['lecturer', 'parents', 'admin']},
-        {to: `${classBase}/settings`, icon: Settings, text: 'Settings'},
+        {to: `${classBase}/settings`, icon: Settings, text: 'Settings', roles: ['lecturer', 'parents', 'admin']},
     ]
 
     const navLinks = (classMatch ? classNavLinks : baseNavLinks)
