@@ -110,13 +110,21 @@ const saveAttemptDraft = (classId, setId, answers, files = {}, keepFileIds = [])
 const getAttemptResult = (classId, setId) =>
     request(() => axiosInstance.get(API_PATHS.CLASS.PROBLEM_SET_ATTEMPT_RESULT(classId, setId)), "get the attempt result");
 
+//The student's earned achievements in a class; unseen = only the ones the popup hasn't shown yet.
+const getMyAchievements = (classId, unseen = false) =>
+    request(() => axiosInstance.get(API_PATHS.CLASS.MY_ACHIEVEMENTS(classId), { params: unseen ? { unseen: true } : {} }), "get the achievements");
+
+const markAchievementSeen = (classId, setId) =>
+    request(() => axiosInstance.put(API_PATHS.CLASS.MY_ACHIEVEMENT_SEEN(classId, setId)), "mark the achievement as seen");
+
 const problemSetService = {
     getProblemSets, createProblemSet, getProblemSet, updateTitle, deleteProblemSet, publishProblemSet,
     addQuestion, updateQuestion, deleteQuestion,
     createAchievementDraft, saveAchievement, removeAchievement, uploadQuestionImage,
     uploadQuestionFile, deleteQuestionFile,
     getQuestionComments, createQuestionComment, updateQuestionComment, deleteQuestionComment,
-    getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft
+    getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft,
+    getMyAchievements, markAchievementSeen
 };
 
 export default problemSetService;

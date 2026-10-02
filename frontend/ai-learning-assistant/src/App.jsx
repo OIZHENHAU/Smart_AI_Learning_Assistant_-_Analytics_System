@@ -38,7 +38,8 @@ import StudentAttemptPage from './pages/Classes/StudentAttemptPage';
 import StudentAttemptResultPage from './pages/Classes/StudentAttemptResultPage';
 import ClassSubmissionsPage from './pages/Classes/ClassSubmissionsPage';
 import SubmissionGradingPage from './pages/Classes/SubmissionGradingPage';
-import { Trophy, Video, BookOpen, Users, Home, MessageSquare } from 'lucide-react';
+import ClassLeaderboardPage from './pages/Classes/ClassLeaderboardPage';
+import { Video, BookOpen, Users, Home, MessageSquare } from 'lucide-react';
 
 
 const App = () => {
@@ -89,7 +90,7 @@ const App = () => {
                         <Route path='documents' element={<ClassDocumentsPage/>}/>
                         <Route path='documents/:documentId' element={<ClassDocumentDetailPage/>}/>
                         <Route path='users' element={<ClassSectionPage title='Users' description='The people who joined this class.' icon={Users}/>}/>
-                        <Route path='leaderboard' element={<ClassSectionPage title='Leaderboard' description='See how everyone in the class ranks.' icon={Trophy}/>}/>
+                        <Route path='leaderboard' element={<ClassLeaderboardPage/>}/>
                         <Route path='comments' element={<ClassSectionPage title='Comments' description='Discussion and comments for this class.' icon={MessageSquare}/>}/>
                         <Route path='problem-sets' element={<ClassProblemSetsPage/>}/>
                         <Route path='problem-sets/:setId' element={<ProblemSetBuilderPage/>}/>

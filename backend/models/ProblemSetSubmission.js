@@ -1,11 +1,93 @@
 import db from '../config/MySQL.js';
 import ProblemSetComment from './ProblemSetComment.js';
+import ClassPoints from './ClassPoints.js';
 import { maskBlanks } from '../utils/ProblemSetBlanks.js';
 import { gradeFillBlank, normaliseAnswer, roundPoints } from '../utils/ProblemSetGrading.js';
 
 const inPlaceholders = (ids) => ids.map(() => '?').join(', ');
 //mysql2 returns DECIMAL columns as strings.
 const toNumber = (value) => (value == null ? null : Number(value));
+
+//End of the achievement's expiry day, so a submission any time on that day still counts.
+const endOfDay = (date) => {
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    return end;
+};
+
+//Awards (or removes) the problem set's achievement for this attempt's student, inside the grading transaction.
+//Earned when: min_points <= score <= the set's total points, and the student submitted by the expiry date.
+//Returns true only when the student newly earns it (so the lecturer can be told); false otherwise.
+const awardAchievement = async (connection, attempt, score, totalPoints) => {
+    const [[achievement]] = await connection.execute(
+        `SELECT min_points, expiry_date FROM problem_set_achievements WHERE problem_set_id = ?`, [attempt.problem_set_id]
+    );
+    if (!achievement || achievement.min_points == null) return false;
+
+    const onTime = !achievement.expiry_date || new Date(attempt.submitted_at) <= endOfDay(achievement.expiry_date);
+    const qualifies = onTime && score >= achievement.min_points && score <= totalPoints;
+
+    if (!qualifies) {
+        await connection.execute(
+            `DELETE FROM problem_set_user_achievements WHERE problem_set_id = ? AND user_id = ?`,
+            [attempt.problem_set_id, attempt.user_id]
+        );
+        return false;
+    }
+
+    //Already earned before (a regrade that still qualifies): keep it and its "seen" state, just update the score.
+    const [result] = await connection.execute(
+        `INSERT INTO problem_set_user_achievements (problem_set_id, user_id, attempt_id, score, earned_at) VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE score = VALUES(score), attempt_id = VALUES(attempt_id)`,
+        [attempt.problem_set_id, attempt.user_id, attempt.id, score, new Date()]
+    );
+    return result.affectedRows === 1; //1 = inserted (new); 2 or 0 = it was already there
+};
+
+//Problem set XP: the student's level XP goes up by their graded score, rounded to a whole number (total_xp is an INT).
+//problem_set_attempts.xp_awarded remembers what this submission already gave, so a regrade only applies the difference
+//(28 -> 29 adds 1, 28 -> 25 takes 3). Runs inside the grading transaction. Returns { xpGained, level, leveledUp }.
+const awardXP = async (connection, attempt, score) => {
+    const xp = Math.round(score);
+    const [[previous]] = await connection.execute(
+        `SELECT xp_awarded FROM problem_set_attempts WHERE id = ? FOR UPDATE`, [attempt.id]
+    );
+    const delta = xp - (previous?.xp_awarded ?? 0);
+    if (delta === 0) return { xpGained: 0, level: null, leveledUp: false };
+
+    const [[stats]] = await connection.execute(
+        `SELECT total_xp, current_level FROM achievements WHERE user_id = ? FOR UPDATE`, [attempt.user_id]
+    );
+    if (!stats) return { xpGained: 0, level: null, leveledUp: false }; //no gamification row for this user
+
+    //Same level rule as quizzes and fill-in-the-blank: the highest level whose level_length the XP has reached.
+    const newXP = Math.max(0, stats.total_xp + delta);
+    const [levels] = await connection.execute(
+        `SELECT level_number, level_length FROM gamification_level ORDER BY level_number ASC`
+    );
+    let level = stats.current_level;
+    for (const l of levels) {
+        if (newXP >= l.level_length) level = l.level_number;
+        else break;
+    }
+
+    await connection.execute(
+        `UPDATE achievements SET total_xp = ?, current_level = ? WHERE user_id = ?`, [newXP, level, attempt.user_id]
+    );
+    await connection.execute(`UPDATE problem_set_attempts SET xp_awarded = ? WHERE id = ?`, [xp, attempt.id]);
+
+    //Counts toward the "Gain 100XP" daily goal, like quiz XP does.
+    if (delta > 0) {
+        await connection.execute(
+            `UPDATE daily_goal
+             SET number_complete = LEAST(number_complete + ?, num_achieve), completed = (number_complete >= num_achieve)
+             WHERE user_id = ? AND main_focus = 'xp' AND number_complete < num_achieve`,
+            [delta, attempt.user_id]
+        );
+    }
+
+    return { xpGained: delta, level, leveledUp: level > stats.current_level };
+};
 
 const ProblemSetSubmission = {
     //Submitted attempts in a class, newest first. userId limits it to one student's own.
@@ -183,6 +265,13 @@ const ProblemSetSubmission = {
                 [score, totalPoints, new Date(), graderId, attempt.id]
             );
 
+            //Does this score earn the set's achievement? Checked on every Submit/Update, so a regrade can also take it away.
+            const achievementEarned = await awardAchievement(connection, attempt, score, totalPoints);
+
+            //The student's level XP and class points both follow this (re)graded score.
+            const xp = await awardXP(connection, attempt, score);
+            await ClassPoints.recalcForStudent(attempt.class_id, attempt.user_id, connection);
+
             //Each comment joins this student's conversation on that question, or starts it.
             for (const comment of comments) {
                 const [[thread]] = await connection.execute(
@@ -201,7 +290,7 @@ const ProblemSetSubmission = {
             await connection.execute(`DELETE FROM problem_set_grading_drafts WHERE attempt_id = ?`, [attempt.id]);
 
             await connection.commit();
-            return { score, totalPoints };
+            return { score, totalPoints, achievementEarned, ...xp };
 
         } catch (error) {
             await connection.rollback();

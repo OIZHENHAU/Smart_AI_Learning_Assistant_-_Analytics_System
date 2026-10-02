@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
+import ClassPoints from '../models/ClassPoints.js';
 import ProblemSet from '../models/ProblemSet.js';
 import ProblemSetAttempt from '../models/ProblemSetAttempt.js';
 import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
@@ -162,6 +163,7 @@ export const deleteProblemSet = async (req, res, next) => {
         const questionFiles = await ProblemSet.getFileNamesBySet(result.set.id);
         const answerFiles = await ProblemSetAttempt.getFileNamesBySet(result.set.id);
         await ProblemSet.deleteSet(result.set.id); //questions/options/files/attempts/achievement cascade
+        await ClassPoints.recalcForClass(result.set.class_id); //their class points drop; XP already earned is kept
         if (achievement) await removeBadgeFile(achievement.badge_image);
         await removeQuestionFiles(questionFiles);
         await removeAnswerFiles(answerFiles);

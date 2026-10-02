@@ -18,6 +18,16 @@ const CLASS_SELECT = `SELECT c.id, c.owner_id, u.username AS owner_name, c.class
                       JOIN users u ON u.id = c.owner_id`;
 
 const Classroom = {
+    //A new code no other class has right now (the unique index on class_code still guards the save itself).
+    async generateUniqueCode() {
+        for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
+            const classCode = generateClassCode();
+            const [rows] = await db.execute(`SELECT 1 FROM classes WHERE class_code = ? LIMIT 1`, [classCode]);
+            if (rows.length === 0) return classCode;
+        }
+        throw new Error("Could not generate a unique class code.");
+    },
+
     async createClassroom({ ownerId, className, maxStudents }) {
         for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
             const classCode = generateClassCode();

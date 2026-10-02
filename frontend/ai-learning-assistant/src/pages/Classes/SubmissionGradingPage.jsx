@@ -135,9 +135,18 @@ const SubmissionGradingPage = () => {
     const handleConfirm = async () => {
         setSaving(true);
         try {
-            await submissionService.gradeSubmission(classData.id, attemptId, buildPayload());
+            const result = await submissionService.gradeSubmission(classData.id, attemptId, buildPayload());
             setDirty(false);
             toast.success(isGraded ? "Marks updated successfully." : "Marks saved successfully.");
+            if (result.data?.achievementEarned) {
+                toast.success(`${attempt.studentName} earned this problem set's achievement!`, { icon: '🏆' });
+            }
+            //XP follows the score: the first grading adds it, a regrade only adds or removes the difference.
+            const { xpGained, leveledUp, level } = result.data || {};
+            if (xpGained) {
+                const change = xpGained > 0 ? `gained ${xpGained} XP` : `lost ${-xpGained} XP`;
+                toast.success(`${attempt.studentName} ${change}${leveledUp ? ` and reached level ${level}` : ''}.`, { icon: '⭐' });
+            }
             setConfirmOpen(false);
             navigate(`/classes/${classData.id}/submission`);
 

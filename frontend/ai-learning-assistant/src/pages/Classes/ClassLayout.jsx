@@ -4,6 +4,9 @@ import toast from 'react-hot-toast';
 import classService from '../../services/ClassService';
 import Spinner from '../../components/common/Spinner';
 import { useCurrentClass } from '../../context/ClassContext';
+import { useAuth } from '../../context/AuthContext';
+import problemSetService from '../../services/ProblemSetService';
+import AchievementUnlockedModal from '../../components/classes/ProblemSet/AchievementUnlockedModal';
 
 const LOADING_MS = 3000;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,6 +15,8 @@ const ClassLayout = () => {
     const { classId } = useParams();
     const navigate = useNavigate();
     const { setCurrentClass } = useCurrentClass();
+    const { user } = useAuth();
+    const [newAchievements, setNewAchievements] = useState([]); // earned but not shown yet, shown one at a time
     //The loaded class is stored with its id, so opening a different class automatically shows the loading page again.
     const [loaded, setLoaded] = useState(null);
     const classData = loaded?.classId === classId ? loaded.data : null;
@@ -46,6 +51,22 @@ const ClassLayout = () => {
         return () => setCurrentClass(null);
     }, [classData, setCurrentClass]);
 
+    //Once the class is open, a student sees any problem set achievement they earned since last time.
+    const openedClassId = classData?.id;
+    useEffect(() => {
+        if (!openedClassId || user?.role !== 'student') return;
+        problemSetService.getMyAchievements(openedClassId, true)
+            .then((result) => setNewAchievements(Array.isArray(result?.data) ? result.data : []))
+            .catch((error) => console.error(error)); //a missing popup shouldn't interrupt the class
+    }, [openedClassId, user?.role]);
+
+    //Closing one marks it as seen (so it never shows again) and moves on to the next.
+    const handleCloseAchievement = () => {
+        const [current, ...rest] = newAchievements;
+        setNewAchievements(rest);
+        problemSetService.markAchievementSeen(openedClassId, current.problem_set_id).catch((error) => console.error(error));
+    };
+
     if (!classData) {
         return (
             <div className='fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center'>
@@ -59,6 +80,14 @@ const ClassLayout = () => {
         <div className='max-w-7xl mx-auto'>
             {/* Pages under this layout read the class through useOutletContext() */}
             <Outlet context={{ classData, setClassData }} />
+
+            {newAchievements.length > 0 && (
+                <AchievementUnlockedModal
+                    achievement={newAchievements[0]}
+                    remaining={newAchievements.length - 1}
+                    onClose={handleCloseAchievement}
+                />
+            )}
         </div>
     );
 };

@@ -60,6 +60,10 @@ import {
 } from '../controller/ProblemSetController.js';
 import { getAttemptView, submitAttempt, getAttemptResult, saveAttemptDraft } from '../controller/ProblemSetAttemptController.js';
 import { getSubmissions, getSubmissionForGrading, gradeSubmission, saveGradingDraft } from '../controller/ProblemSetSubmissionController.js';
+import { getMyAchievements, markAchievementSeen } from '../controller/ProblemSetAchievementController.js';
+import { getClassLeaderboard } from '../controller/ClassLeaderboardController.js';
+import { getClassLevels, saveClassSettings, generateClassCode } from '../controller/ClassSettingsController.js';
+import uploadLevelBadges from '../config/classLevelBadgeUpload.js';
 import {
     getQuestionComments,
     createQuestionComment,
@@ -130,6 +134,18 @@ router.get('/:id/submissions', everyone, getSubmissions);
 router.get('/:id/submissions/:attemptId', everyone, getSubmissionForGrading);
 router.put('/:id/submissions/:attemptId/grade', staffOnly, gradeSubmission);
 router.put('/:id/submissions/:attemptId/draft', staffOnly, saveGradingDraft);
+
+//A student's own earned problem set achievements (and closing the "new achievement" popup).
+router.get('/:id/my-achievements', everyone, getMyAchievements);
+router.put('/:id/my-achievements/:setId/seen', everyone, markAchievementSeen);
+
+//The class leaderboard: approved students ranked by their class points (graded problem set scores).
+router.get('/:id/leaderboard', everyone, getClassLeaderboard);
+
+//Settings page: the class's levels (anyone in the class can read them), a fresh unused class code, and saving it all.
+router.get('/:id/levels', everyone, getClassLevels);
+router.post('/:id/class-code', staffOnly, generateClassCode);
+router.put('/:id/settings', staffOnly, uploadLevelBadges.any(), saveClassSettings);
 router.get('/:id/problem-sets/:setId/attempt/result', everyone, getAttemptResult);
 
 //Private lecturer–student conversations on each question; the controller decides who can see which.

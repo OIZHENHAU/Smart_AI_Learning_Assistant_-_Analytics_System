@@ -7,6 +7,8 @@ import { removeBadgeFile } from '../config/problemSetBadgeUpload.js';
 import { removeQuestionFiles } from '../config/problemSetFileUpload.js';
 import { removeAnswerFiles } from '../config/problemSetAnswerUpload.js';
 import ProblemSetAttempt from '../models/ProblemSetAttempt.js';
+import ClassLevel from '../models/ClassLevel.js';
+import { removeLevelBadgeFiles } from '../config/classLevelBadgeUpload.js';
 import { extractImageFilenames, deleteUnusedImages } from '../utils/AnnouncementImages.js';
 import {
     extractImageFilenames as extractDescriptionImages,
@@ -251,6 +253,7 @@ export const deleteClass = async (req, res, next) => {
         const announcements = await Announcement.getContentByClass(classroom.id);
         const documentFiles = await ClassDocument.getFileNamesByClass(classroom.id);
         const badgeFiles = await ProblemSet.getBadgeFileNamesByClass(classroom.id);
+        const levelBadges = await ClassLevel.getBadgeFileNamesByClass(classroom.id);
         const descriptions = await ProblemSet.getDescriptionsByClass(classroom.id);
         const questionFiles = await ProblemSet.getFileNamesByClass(classroom.id);
         const answerFiles = await ProblemSetAttempt.getFileNamesByClass(classroom.id);
@@ -258,6 +261,7 @@ export const deleteClass = async (req, res, next) => {
         await deleteUnusedImages([...new Set(announcements.flatMap((a) => extractImageFilenames(a.content)))]);
         await removeClassDocumentFiles(documentFiles);
         await Promise.all(badgeFiles.map(removeBadgeFile));
+        await removeLevelBadgeFiles(levelBadges);
         await deleteUnusedDescriptionImages([...new Set(descriptions.flatMap((d) => extractDescriptionImages(d)))]);
         await removeQuestionFiles(questionFiles);
         await removeAnswerFiles(answerFiles);

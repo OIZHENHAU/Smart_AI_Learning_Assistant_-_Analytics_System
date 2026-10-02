@@ -122,9 +122,59 @@ const removeClassMember = async (classId, userId) => {
     }
 };
 
+//Approved students ranked by their class points (sum of their graded problem set scores).
+const getClassLeaderboard = async (classId) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.CLASS.CLASS_LEADERBOARD(classId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the class leaderboard at the service due to: " + error);
+        throw error.response?.data || error;
+    }
+};
+
+const getClassLevels = async (classId) => {
+    try {
+        const response = await axiosInstance.get(API_PATHS.CLASS.CLASS_LEVELS(classId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to get the class levels at the service due to: " + error);
+        throw error.response?.data || error;
+    }
+};
+
+//A new class code that no other class uses (saved only when the settings are saved).
+const generateClassCode = async (classId) => {
+    try {
+        const response = await axiosInstance.post(API_PATHS.CLASS.CLASS_NEW_CODE(classId));
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to generate a class code at the service due to: " + error);
+        throw error.response?.data || error;
+    }
+};
+
+//formData: className, maxStudents, classCode, levels (JSON) and badge_<index> images.
+const saveClassSettings = async (classId, formData) => {
+    try {
+        const response = await axiosInstance.put(API_PATHS.CLASS.CLASS_SETTINGS(classId), formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+
+    } catch (error) {
+        console.error("Fail to save the class settings at the service due to: " + error);
+        throw error.response?.data || error;
+    }
+};
+
 const classService = {
     getAllClasses, findClassByCode, getClassWorkspace, createClass, updateClass, deleteClass, joinClass,
-    getClassMembers, approveClassMember, deactivateClassMember, removeClassMember
+    getClassMembers, approveClassMember, deactivateClassMember, removeClassMember, getClassLeaderboard,
+    getClassLevels, generateClassCode, saveClassSettings
 };
 
 export default classService;
